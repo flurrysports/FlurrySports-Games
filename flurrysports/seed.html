@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seed Quizzes — FlurrySports Admin</title>
+  <link rel="icon" type="image/png" href="/images/logo-crown.png">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/supabase-config.js"></script>
+<script>var supabase = (window.supabase || window.Supabase).createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
+</head>
+<body style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;">
+<div style="background:var(--card-bg);border:1px solid var(--card-border);border-radius:20px;padding:2.5rem;width:100%;max-width:560px;text-align:center;">
+  <img src="/images/logo-icon-gold.png" style="height:80px;margin-bottom:1.25rem;">
+  <h2 style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;text-transform:uppercase;margin-bottom:0.5rem;">Quiz Seeder</h2>
+  <p style="color:var(--gray-light);margin-bottom:2rem;font-size:0.9rem;">Click the button below to load all 6 starter quizzes into your Supabase database. <strong>Only run this once!</strong></p>
+  <button class="btn btn-primary btn-lg" style="width:100%;justify-content:center;margin-bottom:1rem;" onclick="runSeed()" id="seed-btn">🚀 Seed All Quizzes</button>
+  <div id="seed-log" style="text-align:left;font-size:0.85rem;color:var(--gray-light);line-height:2;"></div>
+</div>
+
+<script src="/js/supabase-config.js"></script>
+<script>const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
+<script src="/js/seed-quizzes.js"></script>
+<script>
+  async function runSeed() {
+    const btn = document.getElementById('seed-btn');
+    const log = document.getElementById('seed-log');
+    btn.disabled = true;
+    btn.textContent = 'Seeding...';
+    log.innerHTML = '';
+
+    const original = console.log;
+    console.log = (...args) => {
+      original(...args);
+      const line = document.createElement('div');
+      line.textContent = args.join(' ');
+      line.style.color = args[0]?.includes('✅') ? 'var(--success)' : args[0]?.includes('error') ? 'var(--error)' : 'var(--gray-light)';
+      log.appendChild(line);
+    };
+
+    await seedAllQuizzes();
+
+    console.log = original;
+    btn.textContent = '✅ Done! Delete this page before going live.';
+
+    setTimeout(() => {
+      log.innerHTML += '<div style="margin-top:1rem;"><a href="/" class="btn btn-primary" style="display:inline-flex;">Go to Home Page →</a></div>';
+    }, 500);
+  }
+</script>
+</body>
+</html>

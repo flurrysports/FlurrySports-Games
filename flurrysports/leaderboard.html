@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaderboard — FlurrySports Trivia</title>
+  <link rel="icon" type="image/png" href="/images/logo-crown.png">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/supabase-config.js"></script>
+<script>var supabase = (window.supabase || window.Supabase).createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="/"><img src="/images/logo-yeti-orange.png" alt="FlurrySports" style="height:48px;width:auto;"></a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="/quizzes.html">Quizzes</a></li>
+    <li><a href="/leaderboard.html" class="active">Leaderboard</a></li>
+  </ul>
+  <div class="nav-actions" id="nav-actions">
+    <button class="btn btn-ghost btn-sm" onclick="openModal('login')">Log In</button>
+    <button class="btn btn-primary btn-sm" onclick="openModal('signup')">Sign Up</button>
+  </div>
+</nav>
+
+<div class="section lb-page" style="padding-top:2.5rem;">
+  <div style="text-align:center;margin-bottom:2.5rem;">
+    <img src="/images/logo-crown.png" style="height:80px;margin-bottom:1rem;">
+    <h1 style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:3rem;text-transform:uppercase;line-height:1;">
+      Leader<span style="color:var(--gold);">board</span>
+    </h1>
+    <p style="color:var(--gray-light);margin-top:0.5rem;">Top sports minds competing for the crown 👑</p>
+  </div>
+
+  <div class="leaderboard-tabs">
+    <button class="tab-btn active" id="tab-alltime" onclick="switchTab('alltime')">All-Time</button>
+    <button class="tab-btn" id="tab-weekly" onclick="switchTab('weekly')">This Week</button>
+  </div>
+
+  <div class="card" style="padding:1rem;margin-bottom:2rem;">
+    <div class="leaderboard-table" id="lb-table">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <!-- User's own rank -->
+  <div id="my-rank-section" class="hidden">
+    <h3 style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.25rem;text-transform:uppercase;margin-bottom:0.75rem;">Your Standing</h3>
+    <div class="card" style="padding:1rem;">
+      <div id="my-rank-row"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <img src="/images/logo-icon-blue.png" alt="FlurrySports" style="height:48px;width:auto;">
+  <p>© 2026 <a href="/">FlurrySports</a>. All rights reserved.</p>
+</footer>
+
+<script src="/js/auth.js"></script>
+<script>
+  let currentTab = 'alltime';
+
+  async function loadLeaderboard(tab) {
+    const container = document.getElementById('lb-table');
+    container.innerHTML = '<div class="spinner"></div>';
+
+    // Build attempts query
+    let attemptsQuery = supabase
+      .from('attempts')
+      .select('user_id, score, quiz_id, created_at')
+      .not('user_id', 'is', null);
+
+    if (tab === 'weekly') {
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      attemptsQuery = attemptsQuery.gte('created_at', oneWeekAgo);
+    }
+
+    const { data, error } = await attemptsQuery;
+
+    if (error) { container.innerHTML = '<p style="color:var(--error);padding:2rem;">Failed to load leaderboard: ' + error.message + '</p>'; return; }
+    if (!data || data.length === 0) {
+      container.innerHTML = '<p style="text-align:center;padding:2.5rem;color:var(--gray);">No scores yet for this period. Be the first to take a quiz!</p>';
+      return;
+    }
+
+    // Get unique user IDs then fetch their profiles
+    const userIds = [...new Set(data.map(a => a.user_id))];
+    const { data: profiles } = await supabase.from('profiles').select('id, username').in('id', userIds);
+    const profileMap = {};
+    (profiles || []).forEach(p => { profileMap[p.id] = p.username; });
+
+    // Deduplicate: one attempt per user per quiz (first one wins — no re-attempts allowed)
+    const seenUserQuiz = new Set();
+    const userMap = {};
+    data.forEach(a => {
+      if (!a.user_id) return;
+      const key = `${a.user_id}__${a.quiz_id}`;
+      if (seenUserQuiz.has(key)) return; // skip any duplicates
+      seenUserQuiz.add(key);
+      const username = profileMap[a.user_id] || 'Anonymous';
+      if (!userMap[a.user_id]) userMap[a.user_id] = { uid: a.user_id, username, total: 0, count: 0 };
+      userMap[a.user_id].total += a.score;
+      userMap[a.user_id].count++;
+    });
+
+    const sorted = Object.values(userMap).sort((a, b) => b.total - a.total).slice(0, 25);
+
+    if (sorted.length === 0) {
+      container.innerHTML = '<p style="text-align:center;padding:2.5rem;color:var(--gray);">No scores yet for this period. Be the first to take a quiz!</p>';
+      return;
+    }
+
+    const medals = ['🥇','🥈','🥉'];
+    const rankClasses = ['top-1','top-2','top-3'];
+
+    container.innerHTML = `
+      <div class="lb-row header">
+        <span>Rank</span><span>Player</span><span>Total Score</span><span>Quizzes Played</span>
+      </div>
+      ${sorted.map((u, i) => `
+        <div class="lb-row ${rankClasses[i] || ''}">
+          <span class="lb-rank">${medals[i] || (i + 1)}</span>
+          <div class="lb-user">
+            <div class="lb-avatar">${u.username.charAt(0).toUpperCase()}</div>
+            <span class="lb-username">${u.username}</span>
+          </div>
+          <span class="lb-score">${u.total.toLocaleString()}</span>
+          <span class="lb-quizzes">${u.count}</span>
+        </div>
+      `).join('')}
+    `;
+
+    // Show user's own rank
+    const user = await getCurrentUser();
+    if (user) {
+      const myRank = sorted.findIndex(u => u.uid === user.id);
+      const sorted_full = Object.values(userMap).sort((a, b) => b.total - a.total);
+      const mySection = document.getElementById('my-rank-section');
+      const myRow = document.getElementById('my-rank-row');
+      if (myRank >= 0) {
+        const me = sorted[myRank];
+        mySection.classList.remove('hidden');
+        myRow.innerHTML = `
+          <div class="lb-row" style="background:rgba(245,197,24,0.06);border:1px solid rgba(245,197,24,0.2);border-radius:10px;">
+            <span class="lb-rank" style="color:var(--gold);">${medals[myRank] || getOrdinal(myRank + 1)}</span>
+            <div class="lb-user">
+              <div class="lb-avatar" style="border-color:var(--gold);">${me.username.charAt(0).toUpperCase()}</div>
+              <span class="lb-username">${me.username} <span style="color:var(--gold);font-size:0.8rem;">(You)</span></span>
+            </div>
+            <span class="lb-score">${me.total.toLocaleString()}</span>
+            <span class="lb-quizzes">${me.count}</span>
+          </div>
+        `;
+      } else {
+        mySection.classList.remove('hidden');
+        myRow.innerHTML = `<p style="text-align:center;color:var(--gray);padding:1rem;">You haven't played any quizzes ${tab === 'weekly' ? 'this week' : 'yet'}. <a href="/quizzes.html" style="color:var(--gold);">Take one now!</a></p>`;
+      }
+    }
+  }
+
+  function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('tab-alltime').classList.toggle('active', tab === 'alltime');
+    document.getElementById('tab-weekly').classList.toggle('active', tab === 'weekly');
+    loadLeaderboard(tab);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    updateNavAuth();
+    loadLeaderboard('alltime');
+  });
+</script>
+</body>
+</html>

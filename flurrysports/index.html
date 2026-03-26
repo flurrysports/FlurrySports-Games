@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlurrySports Trivia — New Quiz Every Day</title>
+  <meta name="description" content="Test your sports knowledge with FlurrySports Trivia. A new quiz every day covering NFL, NBA, NHL, MLB, and more.">
+  <link rel="icon" type="image/png" href="/images/logo-crown.png">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/supabase-config.js"></script>
+<script>var supabase = (window.supabase || window.Supabase).createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="/">
+    <img src="/images/logo-yeti-orange.png" alt="FlurrySports" style="height:48px;width:auto;">
+  </a>
+  <ul class="nav-links">
+    <li><a href="/" class="active">Home</a></li>
+    <li><a href="/quizzes.html">Quizzes</a></li>
+    <li><a href="/leaderboard.html">Leaderboard</a></li>
+  </ul>
+  <div class="nav-actions" id="nav-actions">
+    <button class="btn btn-ghost btn-sm" onclick="openModal('login')">Log In</button>
+    <button class="btn btn-primary btn-sm" onclick="openModal('signup')">Sign Up</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <img src="/images/logo-icon-noborder.png" alt="" class="hero-mascot">
+  <div class="hero-badge">🏆 New Quiz Every Day</div>
+  <h1>Think You<br><span>Know Sports?</span></h1>
+  <p>New quiz daily!<br>Build your streak. Climb the leaderboard. Be the champ.</p>
+  <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;align-items:center;">
+    <a href="/quizzes.html" class="btn btn-primary btn-lg">Browse All Quizzes</a>
+    <a href="/leaderboard.html" class="btn btn-outline btn-lg">Leaderboard</a>
+  </div>
+  <!-- Streak badge renders here -->
+  <div id="streak-badge-hero" style="margin-top:1.5rem;display:flex;justify-content:center;"></div>
+</section>
+
+<!-- DAILY QUIZ -->
+<div style="position:relative;z-index:1;background:linear-gradient(135deg,rgba(245,197,24,0.08),rgba(26,31,94,0.4));border-top:1px solid rgba(245,197,24,0.2);border-bottom:1px solid rgba(245,197,24,0.2);padding:2.5rem 2rem;">
+  <div style="max-width:1200px;margin:0 auto;">
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
+      <span style="background:var(--gold);color:var(--navy-dark);font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;padding:0.25rem 0.75rem;border-radius:4px;">Today's Quiz</span>
+      <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.08em;" id="today-date"></span>
+    </div>
+    <div id="daily-quiz-content">
+      <div class="spinner"></div>
+    </div>
+  </div>
+</div>
+
+<!-- DAILY STREAK BANNER -->
+<div style="position:relative;z-index:1;padding:1.25rem 2rem;background:rgba(8,12,46,0.6);border-bottom:1px solid var(--card-border);">
+  <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+      <div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.2rem;text-transform:uppercase;">🔥 Daily Streak Challenge</div>
+        <div style="font-size:0.85rem;color:var(--gray-light);">Play 7 days in a row to go <strong style="color:#ff6400;">On Fire</strong> — earn +10% points on every answer!</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.5rem;align-items:center;" id="streak-pip-row">
+      <!-- Filled by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- FEATURED QUIZZES -->
+<div class="section">
+  <div class="section-header">
+    <h2 class="section-title">All <span>Quizzes</span></h2>
+    <a href="/quizzes.html" class="btn btn-ghost btn-sm">View All →</a>
+  </div>
+  <div class="quiz-grid" id="featured-quizzes">
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<!-- STATS BAR -->
+<div style="position:relative;z-index:1;background:var(--card-bg);border-top:1px solid var(--card-border);border-bottom:1px solid var(--card-border);padding:2rem;">
+  <div style="max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;text-align:center;">
+    <div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2.5rem;color:var(--gold);" id="stat-quizzes">—</div>
+      <div style="font-size:0.85rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.1em;font-weight:600;">Quizzes</div>
+    </div>
+    <div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2.5rem;color:var(--gold);" id="stat-attempts">—</div>
+      <div style="font-size:0.85rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.1em;font-weight:600;">Attempts</div>
+    </div>
+    <div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2.5rem;color:var(--gold);" id="stat-players">—</div>
+      <div style="font-size:0.85rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.1em;font-weight:600;">Players</div>
+    </div>
+  </div>
+</div>
+
+<!-- LEADERBOARD PREVIEW -->
+<div class="section">
+  <div class="section-header">
+    <h2 class="section-title">Top <span>Players</span></h2>
+    <a href="/leaderboard.html" class="btn btn-ghost btn-sm">Full Board →</a>
+  </div>
+  <div class="card" style="padding:1rem;">
+    <div class="leaderboard-table" id="home-leaderboard">
+      <div class="spinner"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <img src="/images/logo-wordmark.png" alt="FlurrySports">
+  <p>© 2026 <a href="/">FlurrySports</a>. All rights reserved. · A new quiz drops every day.</p>
+</footer>
+
+<script src="/js/auth.js"></script>
+<script>
+  // ─── TODAY'S DATE ──────────────────────────────────────────────
+  document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+  // ─── DAILY QUIZ (most recently added active quiz) ──────────────
+  async function loadDailyQuiz() {
+    const container = document.getElementById('daily-quiz-content');
+    const { data: quizzes, error } = await supabase
+      .from('quizzes')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (error || !quizzes || quizzes.length === 0) {
+      container.innerHTML = `<p style="color:var(--gray);">No quiz today yet — check back soon!</p>`;
+      return;
+    }
+    const q = quizzes[0];
+    const attempted = await hasAttemptedQuiz(q.id);
+    container.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1.5rem;">
+        <div>
+          <span class="quiz-type-badge ${q.type === 'multiple_choice' ? 'badge-mc' : 'badge-rankings'}" style="margin-bottom:0.6rem;display:inline-block;">
+            ${q.type === 'multiple_choice' ? '🎯 Multiple Choice' : '📋 Rankings'}
+          </span>
+          <h2 style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;text-transform:uppercase;line-height:1.1;margin-bottom:0.4rem;">${q.title}</h2>
+          <p style="color:var(--gray-light);font-size:0.95rem;max-width:520px;">${q.description || 'Test your sports knowledge!'}</p>
+          <div style="display:flex;gap:1rem;margin-top:0.6rem;font-size:0.82rem;color:var(--gray);">
+            ${q.theme ? `<span>🏷️ ${q.theme}</span>` : ''}
+            ${q.timer_seconds ? `<span>⏱️ ${q.type === 'multiple_choice' ? q.timer_seconds + 's per question' : formatTime(q.timer_seconds) + ' total'}</span>` : ''}
+          </div>
+        </div>
+        <div style="flex-shrink:0;">
+          ${attempted
+            ? `<div style="text-align:center;">
+                <div style="color:var(--success);font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.1rem;text-transform:uppercase;margin-bottom:0.5rem;">✅ Completed!</div>
+                <a href="/quizzes.html" class="btn btn-outline">Find Another Quiz</a>
+              </div>`
+            : `<a href="/quiz.html?id=${q.id}" class="btn btn-primary btn-lg">Play Now →</a>`
+          }
+        </div>
+      </div>
+    `;
+  }
+
+  // ─── STREAK PIPS ──────────────────────────────────────────────
+  function renderStreakPips() {
+    const { streak, fire } = getStreakDisplay();
+    const pipRow = document.getElementById('streak-pip-row');
+    pipRow.innerHTML = [...Array(7)].map((_, i) => `
+      <div title="Day ${i+1}" style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.9rem;
+        background:${i < streak ? (fire ? '#ff6400' : 'var(--gold)') : 'rgba(255,255,255,0.06)'};
+        border:2px solid ${i < streak ? (fire ? '#ff6400' : 'var(--gold)') : 'rgba(255,255,255,0.1)'};
+        color:${i < streak ? 'var(--navy-dark)' : 'var(--gray)'};font-weight:700;font-size:0.8rem;">
+        ${i < streak ? (fire && i === 6 ? '🔥' : '✓') : i + 1}
+      </div>
+    `).join('');
+  }
+
+  // ─── FEATURED QUIZZES ─────────────────────────────────────────
+  async function loadFeaturedQuizzes() {
+    const container = document.getElementById('featured-quizzes');
+    const { data: quizzes, error } = await supabase
+      .from('quizzes')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(6);
+
+    if (error || !quizzes || quizzes.length === 0) {
+      container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--gray);"><p>No quizzes yet. Check back soon!</p></div>`;
+      return;
+    }
+    container.innerHTML = quizzes.map(q => `
+      <a href="/quiz.html?id=${q.id}" class="card quiz-card">
+        <div class="quiz-card-inner">
+          <span class="quiz-type-badge ${q.type === 'multiple_choice' ? 'badge-mc' : 'badge-rankings'}">
+            ${q.type === 'multiple_choice' ? '🎯 Multiple Choice' : '📋 Rankings'}
+          </span>
+          <h3>${q.title}</h3>
+          <p>${q.description || 'Test your sports knowledge!'}</p>
+          <div class="quiz-meta">
+            ${q.theme ? `<span>🏷️ ${q.theme}</span>` : ''}
+            ${q.timer_seconds ? `<span>⏱️ ${q.type === 'multiple_choice' ? q.timer_seconds + 's/q' : formatTime(q.timer_seconds)}</span>` : ''}
+          </div>
+        </div>
+      </a>
+    `).join('');
+  }
+
+  // ─── LEADERBOARD ──────────────────────────────────────────────
+  async function loadHomeLeaderboard() {
+    const container = document.getElementById('home-leaderboard');
+
+    // Fetch all logged-in attempts
+    const { data, error } = await supabase
+      .from('attempts')
+      .select('user_id, score, quiz_id')
+      .not('user_id', 'is', null);
+
+    if (error) {
+      console.error('Leaderboard error:', error.message);
+      container.innerHTML = `<p style="text-align:center;padding:2rem;color:var(--gray);">Could not load leaderboard.</p>`;
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      container.innerHTML = `<p style="text-align:center;padding:2rem;color:var(--gray);">No scores yet — be the first!</p>`;
+      return;
+    }
+
+    // Fetch profiles separately
+    const userIds = [...new Set(data.map(a => a.user_id).filter(Boolean))];
+    const { data: profiles, error: pErr } = await supabase
+      .from('profiles')
+      .select('id, username')
+      .in('id', userIds);
+
+    if (pErr) console.error('Profiles error:', pErr.message);
+    const profileMap = {};
+    (profiles || []).forEach(p => { profileMap[p.id] = p.username; });
+
+    // One attempt per user per quiz — deduplicate
+    const seenUserQuiz = new Set();
+    const userScores = {};
+    data.forEach(a => {
+      if (!a.user_id) return;
+      const key = `${a.user_id}__${a.quiz_id}`;
+      if (seenUserQuiz.has(key)) return;
+      seenUserQuiz.add(key);
+      const username = profileMap[a.user_id] || 'Player';
+      if (!userScores[a.user_id]) userScores[a.user_id] = { username, total: 0, count: 0 };
+      userScores[a.user_id].total += a.score;
+      userScores[a.user_id].count++;
+    });
+
+    const sorted = Object.values(userScores).sort((a, b) => b.total - a.total).slice(0, 5);
+
+    if (sorted.length === 0) {
+      container.innerHTML = `<p style="text-align:center;padding:2rem;color:var(--gray);">No scores yet — be the first!</p>`;
+      return;
+    }
+
+    const medals = ['🥇','🥈','🥉'];
+    const rankClass = ['top-1','top-2','top-3','',''];
+    container.innerHTML = `
+      <div class="lb-row header"><span>Rank</span><span>Player</span><span>Score</span><span>Quizzes</span></div>
+      ${sorted.map((u, i) => `
+        <div class="lb-row ${rankClass[i] || ''}">
+          <span class="lb-rank">${medals[i] || i+1}</span>
+          <div class="lb-user">
+            <div class="lb-avatar">${u.username.charAt(0).toUpperCase()}</div>
+            <span class="lb-username">${u.username}</span>
+          </div>
+          <span class="lb-score">${u.total.toLocaleString()}</span>
+          <span class="lb-quizzes">${u.count} quiz${u.count !== 1 ? 'zes' : ''}</span>
+        </div>
+      `).join('')}
+    `;
+  }
+
+  // ─── STATS ────────────────────────────────────────────────────
+  async function loadStats() {
+    const [{ count: qCount }, { count: aCount }, { count: pCount }] = await Promise.all([
+      supabase.from('quizzes').select('*', { count: 'exact', head: true }).eq('is_active', true),
+      supabase.from('attempts').select('*', { count: 'exact', head: true }),
+      supabase.from('profiles').select('*', { count: 'exact', head: true })
+    ]);
+    document.getElementById('stat-quizzes').textContent = qCount || 0;
+    document.getElementById('stat-attempts').textContent = (aCount || 0).toLocaleString();
+    document.getElementById('stat-players').textContent = (pCount || 0).toLocaleString();
+  }
+
+  // ─── INIT ──────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', async () => {
+    updateNavAuth();
+    renderStreakBadge(document.getElementById('streak-badge-hero'));
+    renderStreakPips();
+    loadDailyQuiz();
+    loadFeaturedQuizzes();
+    loadHomeLeaderboard();
+    loadStats();
+  });
+</script>
+</body>
+</html>

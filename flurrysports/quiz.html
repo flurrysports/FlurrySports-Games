@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz — FlurrySports Trivia</title>
+  <link rel="icon" type="image/png" href="/images/logo-crown.png">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/supabase-config.js"></script>
+<script>var supabase = (window.supabase || window.Supabase).createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="/"><img src="/images/logo-yeti-orange.png" alt="FlurrySports" style="height:48px;width:auto;"></a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="/quizzes.html">Quizzes</a></li>
+    <li><a href="/leaderboard.html">Leaderboard</a></li>
+  </ul>
+  <div class="nav-actions" id="nav-actions">
+    <button class="btn btn-ghost btn-sm" onclick="openModal('login')">Log In</button>
+    <button class="btn btn-primary btn-sm" onclick="openModal('signup')">Sign Up</button>
+  </div>
+</nav>
+
+<!-- COUNTDOWN OVERLAY -->
+<div class="countdown-overlay hidden" id="countdown-overlay">
+  <canvas id="snow-canvas" style="position:absolute;inset:0;pointer-events:none;"></canvas>
+  <img src="/images/logo-icon-gold.png" style="height:110px;margin-bottom:2rem;opacity:0.85;position:relative;z-index:2;filter:drop-shadow(0 0 20px rgba(245,197,24,0.5));">
+  <div class="countdown-number" id="countdown-num">3</div>
+  <div class="countdown-label" id="countdown-label">GET READY!</div>
+</div>
+
+<!-- MAIN QUIZ AREA -->
+<div class="quiz-page" id="quiz-page">
+  <div id="quiz-loading" style="text-align:center;padding:4rem;">
+    <div class="spinner"></div>
+    <p style="color:var(--gray);margin-top:1rem;">Loading quiz...</p>
+  </div>
+
+  <!-- ALREADY ATTEMPTED -->
+  <div id="already-attempted" class="hidden" style="text-align:center;padding:4rem 2rem;">
+    <img src="/images/logo-icon-gold.png" style="height:100px;margin-bottom:1.5rem;opacity:0.5;">
+    <h2 style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;text-transform:uppercase;margin-bottom:0.75rem;">Already Completed</h2>
+    <p style="color:var(--gray);margin-bottom:2rem;">You've already taken this quiz. Each quiz allows only one attempt.</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <a href="/quizzes.html" class="btn btn-primary">Find Another Quiz</a>
+      <a href="/leaderboard.html" class="btn btn-outline">View Leaderboard</a>
+    </div>
+  </div>
+
+  <!-- QUIZ INTRO -->
+  <div id="quiz-intro" class="hidden">
+    <div style="text-align:center;margin-bottom:2.5rem;">
+      <img src="/images/logo-icon-gold.png" style="height:90px;margin-bottom:1.25rem;">
+      <div class="quiz-type-badge badge-mc" id="intro-badge" style="margin-bottom:1rem;"></div>
+      <h1 id="intro-title" style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2.5rem;text-transform:uppercase;line-height:1.1;margin-bottom:0.75rem;"></h1>
+      <p id="intro-desc" style="color:var(--gray-light);font-size:1rem;margin-bottom:1.5rem;max-width:480px;margin-left:auto;margin-right:auto;"></p>
+      <div style="display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;margin-bottom:2rem;">
+        <div style="text-align:center;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;color:var(--gold);" id="intro-question-count">—</div>
+          <div style="font-size:0.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.1em;">Questions</div>
+        </div>
+        <div style="text-align:center;" id="intro-timer-block">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;color:var(--gold);" id="intro-timer">—</div>
+          <div style="font-size:0.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.1em;">Time Limit</div>
+        </div>
+      </div>
+      <div style="background:rgba(245,197,24,0.08);border:1px solid rgba(245,197,24,0.2);border-radius:12px;padding:1rem 1.5rem;max-width:440px;margin:0 auto 2rem;font-size:0.9rem;color:var(--gray-light);" id="intro-rules"></div>
+      <button class="btn btn-primary btn-lg" onclick="startCountdown()">Start Quiz →</button>
+    </div>
+  </div>
+
+  <!-- MC QUIZ -->
+  <div id="mc-quiz" class="hidden">
+    <div class="quiz-header">
+      <div class="quiz-progress-bar">
+        <div class="quiz-progress-fill" id="mc-progress"></div>
+      </div>
+      <div class="quiz-info-row">
+        <span id="mc-question-counter" style="font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;">Question 1 of 10</span>
+        <span class="quiz-timer" id="mc-timer"></span>
+        <span style="color:var(--gold);font-family:'Barlow Condensed',sans-serif;font-weight:800;">Score: <span id="mc-score">0</span></span>
+      </div>
+    </div>
+
+    <div class="question-number" id="mc-q-num">Question 1</div>
+    <div class="question-text" id="mc-q-text"></div>
+    <div class="mc-options" id="mc-options"></div>
+    <div id="mc-feedback" class="hidden" style="padding:1rem;border-radius:10px;margin-bottom:1rem;font-weight:600;font-size:0.95rem;"></div>
+    <div style="display:flex;justify-content:flex-end;">
+      <button class="btn btn-primary hidden" id="mc-next-btn" onclick="nextMCQuestion()">Next Question →</button>
+    </div>
+  </div>
+
+  <!-- RANKINGS QUIZ -->
+  <div id="rankings-quiz" class="hidden">
+    <div class="quiz-header">
+      <div class="quiz-info-row" style="margin-bottom:0.75rem;">
+        <span id="rank-q-counter" style="font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--gold);">Rankings Challenge</span>
+        <span class="quiz-timer" id="rank-timer">0:00</span>
+      </div>
+      <div class="rankings-timer-bar">
+        <div class="rankings-timer-fill" id="rank-timer-bar"></div>
+      </div>
+    </div>
+    <div class="question-text" id="rank-q-text"></div>
+
+    <!-- Single typing input -->
+    <div style="margin-bottom:1.25rem;">
+      <input class="form-input" id="rank-single-input" type="text"
+        placeholder="Type a name and press Enter..."
+        autocomplete="off" autocorrect="off" spellcheck="false"
+        style="font-size:1.1rem;padding:0.85rem 1.1rem;border-color:rgba(245,197,24,0.4);"
+        onkeydown="if(event.key==='Enter'){checkSporcleAnswer()}">
+    </div>
+
+    <!-- Score counter -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.08em;">
+        Found: <span id="rank-found-count" style="color:var(--gold);">0</span> / <span id="rank-total-count">0</span>
+      </span>
+      <button class="btn btn-primary btn-sm" id="rank-submit-btn" onclick="submitRankings()">Give Up &amp; See Results</button>
+    </div>
+
+    <!-- Rankings list -->
+    <div class="rankings-container" id="rankings-rows"></div>
+  </div>
+</div>
+
+<!-- RESULTS PAGE -->
+<div id="results-page" class="results-page hidden">
+  <div style="text-align:center;margin-bottom:1rem;">
+    <img src="/images/logo-icon-gold.png" style="height:70px;margin-bottom:1rem;">
+    <div class="quiz-type-badge badge-mc" id="results-badge"></div>
+  </div>
+
+  <div class="results-score-ring">
+    <svg viewBox="0 0 160 160" width="160" height="160">
+      <circle class="ring-bg" cx="80" cy="80" r="68" />
+      <circle class="ring-fill" id="ring-fill-el" cx="80" cy="80" r="68"
+        stroke-dasharray="427" stroke-dashoffset="427" />
+    </svg>
+    <div class="score-inside">
+      <div class="score-pts" id="result-score">0</div>
+      <div class="score-label">Points</div>
+    </div>
+  </div>
+
+  <h2 class="results-title" id="results-title">Quiz Complete!</h2>
+  <p class="results-percentile" id="results-percentile"></p>
+
+  <!-- Auth prompt for guests -->
+  <div class="auth-prompt hidden" id="auth-prompt">
+    <p>🏆 Sign up or log in to save your score to the leaderboard and track your progress over time!</p>
+    <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="openModal('signup')">Create Account</button>
+      <button class="btn btn-outline" onclick="openModal('login')">Log In</button>
+    </div>
+  </div>
+
+  <!-- Share -->
+  <div class="share-section">
+    <div class="share-title">Challenge your friends!</div>
+    <div class="share-buttons">
+      <button class="share-btn share-sms" onclick="doShare('sms')">💬 Text</button>
+      <button class="share-btn share-fb" onclick="doShare('facebook')">📘 Facebook</button>
+      <button class="share-btn share-x" onclick="doShare('x')">𝕏 Post</button>
+    </div>
+  </div>
+
+  <hr class="divider">
+  <p style="margin-bottom:1rem;color:var(--gray-light);font-size:0.9rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;">Your Answers</p>
+  <div id="results-breakdown" style="text-align:left;"></div>
+
+  <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:2rem;">
+    <a href="/quizzes.html" class="btn btn-primary">More Quizzes</a>
+    <a href="/leaderboard.html" class="btn btn-outline">Leaderboard</a>
+  </div>
+</div>
+
+<footer>
+  <img src="/images/logo-icon-blue.png" alt="FlurrySports" style="height:48px;width:auto;">
+  <p>© 2026 <a href="/">FlurrySports</a>. All rights reserved.</p>
+</footer>
+
+<script src="/js/auth.js"></script>
+<script>
+  // ─── STATE ─────────────────────────────────────────────
+  let quiz = null;
+  let questions = [];
+  let currentQ = 0;
+  let score = 0;
+  let userAnswers = [];
+  let mcTimerInterval = null;
+  let rankTimerInterval = null;
+  let quizStartTime = null;
+
+  // MC per-question timing
+  let questionStartTime = null;
+  const BASE_POINTS = 100;
+  const SPEED_BONUS_MAX = 100; // up to 100 extra for instant answer
+
+  // ─── INIT ──────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', async () => {
+    updateNavAuth();
+    const params = new URLSearchParams(window.location.search);
+    const quizId = params.get('id');
+    if (!quizId) { window.location.href = '/quizzes.html'; return; }
+
+    // Check if already attempted
+    const already = await hasAttemptedQuiz(quizId);
+    if (already) {
+      document.getElementById('quiz-loading').classList.add('hidden');
+      document.getElementById('already-attempted').classList.remove('hidden');
+      return;
+    }
+
+    // Load quiz data
+    const { data: q, error: qErr } = await supabase.from('quizzes').select('*').eq('id', quizId).single();
+    const { data: qs, error: qsErr } = await supabase.from('questions').select('*').eq('quiz_id', quizId).order('sort_order');
+    if (qErr || qsErr || !q) { document.getElementById('quiz-loading').innerHTML = '<p style="color:var(--error)">Failed to load quiz. <a href="/quizzes.html">Back to quizzes</a></p>'; return; }
+
+    quiz = q;
+    questions = qs || [];
+    document.title = `${quiz.title} — FlurrySports Trivia`;
+    showIntro();
+  });
+
+  // ─── SHOW INTRO ────────────────────────────────────────
+  function showIntro() {
+    document.getElementById('quiz-loading').classList.add('hidden');
+    document.getElementById('quiz-intro').classList.remove('hidden');
+    document.getElementById('intro-title').textContent = quiz.title;
+    document.getElementById('intro-desc').textContent = quiz.description || '';
+    document.getElementById('intro-question-count').textContent = questions.length;
+    const badge = document.getElementById('intro-badge');
+    badge.className = `quiz-type-badge ${quiz.type === 'multiple_choice' ? 'badge-mc' : 'badge-rankings'}`;
+    badge.textContent = quiz.type === 'multiple_choice' ? '🎯 Multiple Choice' : '📋 Rankings Fill-In';
+    if (quiz.timer_seconds) {
+      document.getElementById('intro-timer').textContent = formatTime(quiz.timer_seconds);
+    } else {
+      document.getElementById('intro-timer-block').style.display = 'none';
+    }
+    const rules = document.getElementById('intro-rules');
+    if (quiz.type === 'multiple_choice') {
+      rules.innerHTML = `<strong style="color:var(--gold);">How to play:</strong> Answer each question as fast as you can! You earn up to 200 points per question — 100 for being correct, plus up to 100 speed bonus points. You have one attempt only.`;
+    } else {
+      rules.innerHTML = `<strong style="color:var(--gold);">How to play:</strong> Fill in the blanks on the rankings list before time runs out. Enter the player's last name or full name. You earn points for each correct answer. One attempt only!`;
+    }
+  }
+
+  // ─── SNOW EFFECT ────────────────────────────────────────
+  let snowAnimId = null;
+  function startSnow() {
+    const canvas = document.getElementById('snow-canvas');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext('2d');
+    const flakes = Array.from({ length: 130 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 4 + 1,
+      speed: Math.random() * 1.5 + 0.5,
+      drift: Math.random() * 0.8 - 0.4,
+      opacity: Math.random() * 0.6 + 0.3
+    }));
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      flakes.forEach(f => {
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(200,230,255,${f.opacity})`;
+        ctx.fill();
+        f.y += f.speed;
+        f.x += f.drift;
+        if (f.y > canvas.height) { f.y = -5; f.x = Math.random() * canvas.width; }
+        if (f.x > canvas.width) f.x = 0;
+        if (f.x < 0) f.x = canvas.width;
+      });
+      snowAnimId = requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function stopSnow() {
+    if (snowAnimId) { cancelAnimationFrame(snowAnimId); snowAnimId = null; }
+    const canvas = document.getElementById('snow-canvas');
+    if (canvas) {
+      let alpha = 1;
+      const ctx = canvas.getContext('2d');
+      function fade() {
+        alpha -= 0.08;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (alpha > 0) requestAnimationFrame(fade);
+      }
+      fade();
+    }
+  }
+
+  // ─── COUNTDOWN ─────────────────────────────────────────
+  function startCountdown() {
+    document.getElementById('quiz-intro').classList.add('hidden');
+    const overlay = document.getElementById('countdown-overlay');
+    overlay.classList.remove('hidden');
+    const numEl = document.getElementById('countdown-num');
+    const labelEl = document.getElementById('countdown-label');
+    let count = 3;
+    startSnow();
+
+    function tick() {
+      if (count > 0) {
+        numEl.textContent = count;
+        numEl.style.color = '#a8d8f0';
+        numEl.style.textShadow = '0 0 80px rgba(168,216,240,0.7)';
+        numEl.style.animation = 'none';
+        numEl.offsetHeight;
+        numEl.style.animation = 'countPulse 1s ease-in-out forwards';
+        count--;
+        setTimeout(tick, 1000);
+      } else {
+        numEl.textContent = 'GO!';
+        numEl.style.color = 'var(--gold)';
+        numEl.style.textShadow = '0 0 80px rgba(245,197,24,0.9)';
+        numEl.style.animation = 'none';
+        numEl.offsetHeight;
+        numEl.style.animation = 'countPulse 0.6s ease-in-out forwards';
+        labelEl.textContent = "LET'S GO!";
+        labelEl.style.color = 'var(--gold)';
+        labelEl.style.textShadow = '0 0 40px rgba(245,197,24,0.7)';
+        stopSnow();
+        setTimeout(() => {
+          overlay.classList.add('hidden');
+          startQuiz();
+        }, 700);
+      }
+    }
+    tick();
+  }
+
+  // ─── START QUIZ ────────────────────────────────────────
+  function startQuiz() {
+    quizStartTime = Date.now();
+    score = 0;
+    currentQ = 0;
+    userAnswers = [];
+    if (quiz.type === 'multiple_choice') startMCQuiz();
+    else startRankingsQuiz();
+  }
+
+  // ─── MULTIPLE CHOICE ────────────────────────────────────
+  function startMCQuiz() {
+    document.getElementById('mc-quiz').classList.remove('hidden');
+    showMCQuestion();
+  }
+
+  function showMCQuestion() {
+    const q = questions[currentQ];
+    const total = questions.length;
+    document.getElementById('mc-progress').style.width = `${(currentQ / total) * 100}%`;
+    document.getElementById('mc-question-counter').textContent = `Question ${currentQ + 1} of ${total}`;
+    document.getElementById('mc-q-num').textContent = `Question ${currentQ + 1}`;
+    document.getElementById('mc-q-text').textContent = q.question_text;
+    document.getElementById('mc-score').textContent = score.toLocaleString();
+    document.getElementById('mc-feedback').classList.add('hidden');
+    document.getElementById('mc-next-btn').classList.add('hidden');
+    clearInterval(mcTimerInterval);
+
+    const choices = q.choices || [];
+    const letters = ['A','B','C','D'];
+    document.getElementById('mc-options').innerHTML = choices.map((c, i) => `
+      <button class="mc-option" onclick="selectMCOption(this, '${c.replace(/'/g,"\\'")}')">
+        <span class="option-letter">${letters[i]}</span>
+        <span>${c}</span>
+      </button>
+    `).join('');
+
+    // Per-question timer for MC (timer_seconds = seconds per question)
+    questionStartTime = Date.now();
+    if (quiz.timer_seconds) {
+      let timeLeft = quiz.timer_seconds;
+      document.getElementById('mc-timer').textContent = formatTime(timeLeft);
+      document.getElementById('mc-timer').classList.remove('urgent');
+      mcTimerInterval = setInterval(() => {
+        timeLeft--;
+        document.getElementById('mc-timer').textContent = formatTime(timeLeft);
+        if (timeLeft <= 5) document.getElementById('mc-timer').classList.add('urgent');
+        if (timeLeft <= 0) {
+          clearInterval(mcTimerInterval);
+          timeExpiredMC();
+        }
+      }, 1000);
+    } else {
+      document.getElementById('mc-timer').textContent = '';
+    }
+  }
+
+  function selectMCOption(btn, choice) {
+    clearInterval(mcTimerInterval);
+    const q = questions[currentQ];
+    const elapsed = (Date.now() - questionStartTime) / 1000;
+    const allOptions = document.querySelectorAll('.mc-option');
+    allOptions.forEach(b => { b.disabled = true; b.style.cursor = 'default'; });
+
+    const correct = choice === q.answer;
+    let pointsEarned = 0;
+    if (correct) {
+      const maxTime = quiz.timer_seconds ? quiz.timer_seconds : 30;
+      const speedRatio = Math.max(0, 1 - elapsed / maxTime);
+      const speedBonus = Math.round(speedRatio * SPEED_BONUS_MAX);
+      pointsEarned = BASE_POINTS + speedBonus;
+      score += pointsEarned;
+      btn.classList.add('correct');
+    } else {
+      btn.classList.add('incorrect');
+      // Show correct answer
+      allOptions.forEach(b => {
+        const bText = b.querySelector('span:last-child').textContent;
+        if (bText === q.answer) b.classList.add('correct');
+      });
+    }
+
+    userAnswers.push({ question: q.question_text, chosen: choice, correct: q.answer, isCorrect: correct, points: pointsEarned });
+
+    const feedback = document.getElementById('mc-feedback');
+    feedback.classList.remove('hidden');
+    if (correct) {
+      feedback.style.background = 'rgba(0,214,143,0.1)';
+      feedback.style.border = '1px solid rgba(0,214,143,0.3)';
+      feedback.style.color = 'var(--success)';
+      const speedBonus = pointsEarned - BASE_POINTS;
+      const isFirst = currentQ === 0;
+      if (isFirst && speedBonus > 0) {
+        feedback.innerHTML = `✅ Correct! <strong>+${pointsEarned} pts</strong> <span style="font-size:0.85em;opacity:0.8;">(+${speedBonus} speed bonus)</span>`;
+      } else {
+        feedback.innerHTML = `✅ Correct! <strong>+${pointsEarned} pts</strong>`;
+      }
+    } else {
+      feedback.style.background = 'rgba(255,77,109,0.08)';
+      feedback.style.border = '1px solid rgba(255,77,109,0.2)';
+      feedback.style.color = 'var(--error)';
+      feedback.innerHTML = `❌ Incorrect. The correct answer was <strong>${q.answer}</strong>`;
+    }
+
+    document.getElementById('mc-score').textContent = score.toLocaleString();
+    document.getElementById('mc-next-btn').classList.remove('hidden');
+    document.getElementById('mc-next-btn').textContent = currentQ + 1 < questions.length ? 'Next Question →' : 'See Results →';
+  }
+
+  function timeExpiredMC() {
+    const q = questions[currentQ];
+    userAnswers.push({ question: q.question_text, chosen: null, correct: q.answer, isCorrect: false, points: 0 });
+    const allOptions = document.querySelectorAll('.mc-option');
+    allOptions.forEach(b => {
+      b.disabled = true;
+      const bText = b.querySelector('span:last-child').textContent;
+      if (bText === q.answer) b.classList.add('correct');
+    });
+    const feedback = document.getElementById('mc-feedback');
+    feedback.classList.remove('hidden');
+    feedback.style.background = 'rgba(255,77,109,0.08)';
+    feedback.style.border = '1px solid rgba(255,77,109,0.2)';
+    feedback.style.color = 'var(--error)';
+    feedback.innerHTML = `⏱️ Time's up! The correct answer was <strong>${q.answer}</strong>`;
+    document.getElementById('mc-next-btn').classList.remove('hidden');
+    document.getElementById('mc-next-btn').textContent = currentQ + 1 < questions.length ? 'Next Question →' : 'See Results →';
+  }
+
+  function nextMCQuestion() {
+    document.getElementById('mc-timer').classList.remove('urgent');
+    currentQ++;
+    if (currentQ < questions.length) {
+      showMCQuestion();
+    } else {
+      endQuiz();
+    }
+  }
+
+  // ─── RANKINGS QUIZ ─────────────────────────────────────
+  // ─── RANKINGS STATE ──────────────────────────────────────
+  let rankAnswers = [];
+  let rankRevealed = [];
+
+  function startRankingsQuiz() {
+    const container = document.getElementById('rankings-quiz');
+    container.classList.remove('hidden');
+    const q = questions[0];
+    if (!q) { endQuiz(); return; }
+    document.getElementById('rank-q-text').textContent = q.question_text;
+
+    try { rankAnswers = JSON.parse(q.answer); } catch(e) { rankAnswers = [q.answer]; }
+    rankRevealed = new Array(rankAnswers.length).fill(false);
+
+    document.getElementById('rank-total-count').textContent = rankAnswers.length;
+    document.getElementById('rank-found-count').textContent = '0';
+
+    document.getElementById('rankings-rows').innerHTML = rankAnswers.map((ans, i) => `
+      <div class="ranking-row" id="row-${i}">
+        <span class="ranking-num">${i + 1}</span>
+        <span class="ranking-answer-slot" id="slot-${i}" style="flex:1;font-size:0.95rem;color:var(--gray);letter-spacing:0.05em;">———</span>
+      </div>
+    `).join('');
+
+    setTimeout(() => document.getElementById('rank-single-input')?.focus(), 100);
+
+    if (quiz.timer_seconds) {
+      let timeLeft = quiz.timer_seconds;
+      document.getElementById('rank-timer').textContent = formatTime(timeLeft);
+      document.getElementById('rank-timer-bar').style.width = '100%';
+      rankTimerInterval = setInterval(() => {
+        timeLeft--;
+        const pct = (timeLeft / quiz.timer_seconds) * 100;
+        document.getElementById('rank-timer').textContent = formatTime(timeLeft);
+        document.getElementById('rank-timer-bar').style.width = pct + '%';
+        if (timeLeft <= 10) {
+          document.getElementById('rank-timer').classList.add('urgent');
+          document.getElementById('rank-timer-bar').classList.add('urgent');
+        }
+        if (timeLeft <= 0) { clearInterval(rankTimerInterval); submitRankings(); }
+      }, 1000);
+    } else {
+      document.getElementById('rank-timer').textContent = 'No timer';
+    }
+  }
+
+  // Strip stat info in parens: "James Cook III (1,621 yds)" -> "James Cook III"
+  function getPlayerName(answerStr) {
+    return answerStr.replace(/\s*\(.*\)\s*$/, '').trim();
+  }
+
+  // Returns the last word: last name for players, mascot for teams
+  function getLastWord(name) {
+    const parts = name.trim().split(' ');
+    return parts[parts.length - 1].toLowerCase();
+  }
+
+  function normalizeStr(str) {
+    return str.trim().toLowerCase().replace(/[^a-z0-9'\s]/gi, '');
+  }
+
+  function checkSporcleAnswer() {
+    const input = document.getElementById('rank-single-input');
+    const val = input.value.trim();
+    if (!val) return;
+
+    const valNorm = normalizeStr(val);
+    let anyMatch = false;
+
+    rankAnswers.forEach((ans, i) => {
+      if (rankRevealed[i]) return;
+      const name = getPlayerName(ans);
+      const fullNorm = normalizeStr(name);
+      const lastWordNorm = getLastWord(name);
+
+      // Accept: full name match OR last word match (last name / team mascot)
+      // Do NOT accept first name only
+      if (valNorm === fullNorm || valNorm === lastWordNorm) {
+        revealSlot(i, ans);
+        anyMatch = true;
+      }
+    });
+
+    if (anyMatch) {
+      input.value = '';
+      input.style.borderColor = 'rgba(245,197,24,0.4)';
+      if (rankRevealed.every(Boolean)) setTimeout(() => submitRankings(), 600);
+    } else {
+      // Flash red to indicate wrong answer
+      input.style.borderColor = 'var(--error)';
+      input.style.background = 'rgba(255,77,109,0.08)';
+      setTimeout(() => {
+        input.style.borderColor = 'rgba(245,197,24,0.4)';
+        input.style.background = 'rgba(255,255,255,0.05)';
+      }, 700);
+    }
+  }
+
+  function revealSlot(i, ans) {
+    rankRevealed[i] = true;
+    const slot = document.getElementById(`slot-${i}`);
+    const row = document.getElementById(`row-${i}`);
+    if (slot) {
+      slot.textContent = ans;
+      slot.style.color = 'var(--success)';
+      slot.style.fontWeight = '700';
+    }
+    if (row) {
+      row.style.background = 'rgba(0,214,143,0.08)';
+      row.style.borderColor = 'rgba(0,214,143,0.3)';
+    }
+    document.getElementById('rank-found-count').textContent = rankRevealed.filter(Boolean).length;
+  }
+
+  function submitRankings() {
+    clearInterval(rankTimerInterval);
+    const btn = document.getElementById('rank-submit-btn');
+    if (btn) btn.disabled = true;
+    const singleInput = document.getElementById('rank-single-input');
+    if (singleInput) singleInput.disabled = true;
+
+    rankAnswers.forEach((ans, i) => {
+      if (!rankRevealed[i]) {
+        const slot = document.getElementById(`slot-${i}`);
+        const row = document.getElementById(`row-${i}`);
+        if (slot) { slot.textContent = ans; slot.style.color = 'var(--error)'; slot.style.fontWeight = '600'; }
+        if (row) { row.style.background = 'rgba(255,77,109,0.06)'; row.style.borderColor = 'rgba(255,77,109,0.2)'; }
+      }
+    });
+
+    userAnswers = rankAnswers.map((ans, i) => ({
+      question: `#${i+1}`,
+      chosen: rankRevealed[i] ? getPlayerName(ans) : '',
+      correct: ans,
+      isCorrect: rankRevealed[i],
+      points: rankRevealed[i] ? BASE_POINTS : 0
+    }));
+
+    score = rankRevealed.filter(Boolean).length * BASE_POINTS;
+    setTimeout(() => endQuiz(), 800);
+  }
+
+  // ─── END QUIZ ───────────────────────────────────────────
+  async function endQuiz() {
+    clearInterval(mcTimerInterval);
+    clearInterval(rankTimerInterval);
+    const timeTaken = Math.floor((Date.now() - quizStartTime) / 1000);
+
+    // Apply On Fire bonus (+10%) if streak >= 7
+    updateStreak();
+    const fireActive = isOnFire();
+    if (fireActive) score = applyFireBonus(score);
+
+    // Save attempt
+    await saveAttempt(quiz.id, score, timeTaken, userAnswers);
+
+    // Show results
+    document.getElementById('quiz-page').classList.add('hidden');
+    const resultsPage = document.getElementById('results-page');
+    resultsPage.classList.remove('hidden');
+    document.title = `Results — ${quiz.title}`;
+
+    document.getElementById('results-badge').textContent = quiz.title;
+
+    // Show fire banner if on fire
+    if (fireActive) {
+      const fireBanner = document.createElement('div');
+      fireBanner.style.cssText = 'background:rgba(255,100,0,0.15);border:1px solid rgba(255,100,0,0.4);border-radius:10px;padding:0.65rem 1rem;margin-bottom:1.25rem;color:#ff6400;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:1rem;text-transform:uppercase;letter-spacing:0.05em;';
+      fireBanner.innerHTML = '🔥 On Fire Bonus Active! Score boosted by +10%';
+      document.getElementById('results-page').insertBefore(fireBanner, document.getElementById('results-page').querySelector('.results-score-ring'));
+    }
+    document.getElementById('result-score').textContent = score.toLocaleString();
+
+    // Animate score ring
+    const maxPossible = questions.length * (BASE_POINTS + SPEED_BONUS_MAX);
+    const pct = Math.min(1, score / maxPossible);
+    const circumference = 427;
+    setTimeout(() => {
+      document.getElementById('ring-fill-el').style.strokeDashoffset = circumference - (pct * circumference);
+    }, 200);
+
+    // Grade
+    const grades = [
+      { min: 0.9, label: '🔥 Legendary Performance!', sub: 'You absolutely dominated that quiz!' },
+      { min: 0.7, label: '⭐ Excellent Work!', sub: 'You really know your sports!' },
+      { min: 0.5, label: '💪 Solid Effort!', sub: 'Not bad — keep practicing!' },
+      { min: 0, label: '📚 Keep Learning!', sub: "Tough quiz — you'll do better next time!" }
+    ];
+    const grade = grades.find(g => pct >= g.min);
+    document.getElementById('results-title').textContent = grade.label;
+
+    // Percentile
+    const percentile = await getPercentile(quiz.id, score);
+    const percentEl = document.getElementById('results-percentile');
+    if (percentile !== null) {
+      percentEl.innerHTML = `${grade.sub}<br>You scored better than <strong>${percentile}%</strong> of players!`;
+    } else {
+      percentEl.textContent = grade.sub;
+    }
+
+    // Auth prompt for guests
+    const user = await getCurrentUser();
+    if (!user) document.getElementById('auth-prompt').classList.remove('hidden');
+
+    // Share links
+    window._shareLinks = shareScore(quiz.title, score, window.location.href);
+
+    // Breakdown
+    const breakdown = document.getElementById('results-breakdown');
+    breakdown.innerHTML = userAnswers.map((a, i) => `
+      <div style="background:var(--card-bg);border:1px solid ${a.isCorrect ? 'rgba(0,214,143,0.2)' : 'rgba(255,77,109,0.15)'};border-radius:10px;padding:1rem;margin-bottom:0.65rem;">
+        <div style="font-size:0.8rem;color:var(--gray);margin-bottom:0.3rem;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:0.08em;">Q${i+1} · ${a.isCorrect ? `<span style="color:var(--success)">+${a.points} pts ✓</span>` : '<span style="color:var(--error)">0 pts ✗</span>'}</div>
+        <div style="font-weight:600;font-size:0.95rem;margin-bottom:${a.isCorrect ? 0 : '0.3rem'}">${a.question}</div>
+        ${!a.isCorrect ? `<div style="font-size:0.85rem;color:var(--success)">Correct: ${a.correct}</div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  function doShare(platform) {
+    if (!window._shareLinks) return;
+    const url = window._shareLinks[platform];
+    if (platform === 'sms') window.location.href = url;
+    else window.open(url, '_blank', 'noopener');
+  }
+</script>
+</body>
+</html>

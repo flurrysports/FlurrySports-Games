@@ -3,13 +3,103 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FlurrySports Trivia — New Quiz Every Day</title>
-  <meta name="description" content="Test your sports knowledge with FlurrySports Trivia. A new quiz every day covering NFL, NBA, NHL, MLB, and more.">
+  <title>FlurrySports Games — New Games Every Day</title>
+  <meta name="description" content="Play daily sports games with FlurrySports. New games every day covering NFL, NBA, trivia, and more.">
   <link rel="icon" type="image/png" href="/images/logo-crown.png">
   <link rel="stylesheet" href="/css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/js/supabase-config.js"></script>
-<script>var supabase = (window.supabase || window.Supabase).createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
+  <script src="/js/supabase-config.js"></script>
+  <script>var supabase = (window.supabase || window.Supabase).createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
+  <style>
+    /* ─── TODAY'S GAMES SECTION ─── */
+    .todays-games-section {
+      position: relative; z-index: 1;
+      background: linear-gradient(135deg, rgba(245,197,24,0.08), rgba(26,31,94,0.4));
+      border-top: 1px solid rgba(245,197,24,0.2);
+      border-bottom: 1px solid rgba(245,197,24,0.2);
+      padding: 2.5rem 2rem;
+    }
+    .todays-games-inner { max-width: 1200px; margin: 0 auto; }
+    .todays-games-header {
+      display: flex; align-items: center; gap: 0.75rem;
+      margin-bottom: 1.25rem; flex-wrap: wrap;
+    }
+    .todays-label {
+      background: var(--gold); color: var(--navy-dark);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 900; font-size: 0.75rem;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      padding: 0.25rem 0.75rem; border-radius: 4px;
+    }
+    .todays-date {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700; font-size: 0.85rem;
+      color: var(--gray); text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.25rem;
+    }
+    .game-tile {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px; overflow: hidden;
+      transition: var(--transition);
+      display: flex; flex-direction: column;
+    }
+    .game-tile:hover {
+      border-color: rgba(245,197,24,0.35);
+      transform: translateY(-3px);
+      box-shadow: var(--shadow), var(--shadow-gold);
+    }
+    .game-tile-header {
+      padding: 1rem 1.25rem 0.75rem;
+      border-bottom: 1px solid var(--card-border);
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .game-tile-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem; flex-shrink: 0;
+    }
+    .game-tile-icon.quiz { background: rgba(245,197,24,0.15); }
+    .game-tile-icon.snap { background: rgba(76,175,80,0.15); }
+    .game-tile-icon.wtp { background: rgba(52,152,219,0.15); }
+    .game-tile-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 900; font-size: 1.1rem;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .game-tile-tag {
+      font-size: 0.75rem; color: var(--gray);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; margin-top: 1px;
+    }
+    .game-tile-body { padding: 1rem 1.25rem; flex: 1; }
+    .game-tile-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 800; font-size: 1.2rem;
+      text-transform: uppercase; line-height: 1.1;
+      margin-bottom: 0.35rem;
+    }
+    .game-tile-desc { font-size: 0.875rem; color: var(--gray-light); line-height: 1.5; }
+    .game-tile-footer {
+      padding: 0.875rem 1.25rem;
+      border-top: 1px solid var(--card-border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .game-tile-meta { font-size: 0.8rem; color: var(--gray); }
+    .game-completed-badge {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      background: rgba(0,214,143,0.1); border: 1px solid rgba(0,214,143,0.3);
+      color: var(--success); border-radius: 6px; padding: 0.3rem 0.7rem;
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+      font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase;
+    }
+  </style>
 </head>
 <body>
 
@@ -32,25 +122,24 @@
 <!-- HERO -->
 <section class="hero">
   <img src="/images/logo-icon-noborder.png" alt="" class="hero-mascot">
-  <div class="hero-badge">🏆 New Quiz Every Day</div>
+  <div class="hero-badge">🏆 New Games Every Day</div>
   <h1>Think You<br><span>Know Sports?</span></h1>
-  <p>New quiz daily!<br>Build your streak. Climb the leaderboard. Be the champ.</p>
+  <p>New games daily!<br>Build your streak. Climb the leaderboard. Be the champ.</p>
   <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;align-items:center;">
     <a href="/quizzes.html" class="btn btn-primary btn-lg">Browse All Quizzes</a>
     <a href="/leaderboard.html" class="btn btn-outline btn-lg">Leaderboard</a>
   </div>
-  <!-- Streak badge renders here -->
   <div id="streak-badge-hero" style="margin-top:1.5rem;display:flex;justify-content:center;"></div>
 </section>
 
-<!-- DAILY QUIZ -->
-<div style="position:relative;z-index:1;background:linear-gradient(135deg,rgba(245,197,24,0.08),rgba(26,31,94,0.4));border-top:1px solid rgba(245,197,24,0.2);border-bottom:1px solid rgba(245,197,24,0.2);padding:2.5rem 2rem;">
-  <div style="max-width:1200px;margin:0 auto;">
-    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
-      <span style="background:var(--gold);color:var(--navy-dark);font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;padding:0.25rem 0.75rem;border-radius:4px;">Today's Quiz</span>
-      <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.08em;" id="today-date"></span>
+<!-- TODAY'S GAMES -->
+<div class="todays-games-section">
+  <div class="todays-games-inner">
+    <div class="todays-games-header">
+      <span class="todays-label">Today's Games</span>
+      <span class="todays-date" id="today-date"></span>
     </div>
-    <div id="daily-quiz-content">
+    <div class="games-grid" id="todays-games-grid">
       <div class="spinner"></div>
     </div>
   </div>
@@ -65,9 +154,7 @@
         <div style="font-size:0.85rem;color:var(--gray-light);">Play 7 days in a row to go <strong style="color:#ff6400;">On Fire</strong> — earn +10% points on every answer!</div>
       </div>
     </div>
-    <div style="display:flex;gap:0.5rem;align-items:center;" id="streak-pip-row">
-      <!-- Filled by JS -->
-    </div>
+    <div style="display:flex;gap:0.5rem;align-items:center;" id="streak-pip-row"></div>
   </div>
 </div>
 
@@ -116,50 +203,230 @@
 <!-- FOOTER -->
 <footer>
   <img src="/images/logo-wordmark.png" alt="FlurrySports">
-  <p>© 2026 <a href="/">FlurrySports</a>. All rights reserved. · A new quiz drops every day.</p>
+  <p>© 2026 <a href="/">FlurrySports</a>. All rights reserved. · New games drop every single day.</p>
 </footer>
 
 <script src="/js/auth.js"></script>
 <script>
-  // ─── TODAY'S DATE ──────────────────────────────────────────────
-  document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  // ─── DATE ─────────────────────────────────────────────────────
+  const today = new Date();
+  document.getElementById('today-date').textContent = today.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
 
-  // ─── DAILY QUIZ (most recently added active quiz) ──────────────
-  async function loadDailyQuiz() {
-    const container = document.getElementById('daily-quiz-content');
-    const { data: quizzes, error } = await supabase
-      .from('quizzes')
-      .select('*')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
-      .limit(1);
+  // ─── DATE SEED (consistent per day) ───────────────────────────
+  function dateSeed(offset = 0) {
+    const d = new Date();
+    d.setDate(d.getDate() + offset);
+    return parseInt(d.toISOString().slice(0,10).replace(/-/g,''));
+  }
 
-    if (error || !quizzes || quizzes.length === 0) {
-      container.innerHTML = `<p style="color:var(--gray);">No quiz today yet — check back soon!</p>`;
-      return;
-    }
-    const q = quizzes[0];
-    const attempted = await hasAttemptedQuiz(q.id);
-    container.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1.5rem;">
-        <div>
-          <span class="quiz-type-badge ${q.type === 'multiple_choice' ? 'badge-mc' : 'badge-rankings'}" style="margin-bottom:0.6rem;display:inline-block;">
-            ${q.type === 'multiple_choice' ? '🎯 Multiple Choice' : '📋 Rankings'}
-          </span>
-          <h2 style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;text-transform:uppercase;line-height:1.1;margin-bottom:0.4rem;">${q.title}</h2>
-          <p style="color:var(--gray-light);font-size:0.95rem;max-width:520px;">${q.description || 'Test your sports knowledge!'}</p>
-          <div style="display:flex;gap:1rem;margin-top:0.6rem;font-size:0.82rem;color:var(--gray);">
-            ${q.theme ? `<span>🏷️ ${q.theme}</span>` : ''}
-            ${q.timer_seconds ? `<span>⏱️ ${q.type === 'multiple_choice' ? q.timer_seconds + 's per question' : formatTime(q.timer_seconds) + ' total'}</span>` : ''}
+  function seededRandom(seed) {
+    let s = seed;
+    return function() {
+      s = (s * 9301 + 49297) % 233280;
+      return s / 233280;
+    };
+  }
+
+  // ─── DAILY QUIZ GENERATOR ─────────────────────────────────────
+  const QUIZ_THEMES = [
+    { theme: 'NFL Legends', emoji: '🏈', questions: nflLegendsQuiz },
+    { theme: 'NBA History', emoji: '🏀', questions: nbaHistoryQuiz },
+    { theme: 'Super Bowl Trivia', emoji: '🏆', questions: superBowlQuiz },
+    { theme: 'NFL Rookies & Draft', emoji: '📋', questions: nflDraftQuiz },
+    { theme: 'NBA Awards', emoji: '⭐', questions: nbaAwardsQuiz },
+    { theme: 'Sports Records', emoji: '📊', questions: sportsRecordsQuiz },
+    { theme: 'Fantasy Football', emoji: '🎯', questions: fantasyFootballQuiz },
+  ];
+
+  function nflLegendsQuiz(rng) {
+    return [
+      { q: "How many Super Bowl titles did Tom Brady win in his career?", options: ["5","6","7","8"], correct: 2 },
+      { q: "Which team did Jerry Rice win most of his Super Bowls with?", options: ["Dallas Cowboys","San Francisco 49ers","Oakland Raiders","Green Bay Packers"], correct: 1 },
+      { q: "Who holds the NFL record for most career rushing yards?", options: ["Emmitt Smith","Barry Sanders","Walter Payton","Adrian Peterson"], correct: 0 },
+      { q: "What year did the New Orleans Saints win their only Super Bowl?", options: ["2008","2009","2010","2011"], correct: 2 },
+      { q: "Which QB threw for 5 touchdowns in Super Bowl LV?", options: ["Patrick Mahomes","Aaron Rodgers","Tom Brady","Josh Allen"], correct: 2 },
+    ];
+  }
+
+  function nbaHistoryQuiz(rng) {
+    return [
+      { q: "How many NBA championships did Michael Jordan win with the Bulls?", options: ["4","5","6","7"], correct: 2 },
+      { q: "Who was the first overall pick in the 2003 NBA Draft?", options: ["Carmelo Anthony","Dwyane Wade","Chris Bosh","LeBron James"], correct: 3 },
+      { q: "Which team won the 2016 NBA championship after being down 3-1?", options: ["Golden State Warriors","Cleveland Cavaliers","Oklahoma City Thunder","Boston Celtics"], correct: 1 },
+      { q: "Kobe Bryant played his entire career with which team?", options: ["Chicago Bulls","Boston Celtics","Los Angeles Lakers","Orlando Magic"], correct: 2 },
+      { q: "Which player has won the most NBA MVP awards?", options: ["LeBron James","Kareem Abdul-Jabbar","Michael Jordan","Bill Russell"], correct: 1 },
+    ];
+  }
+
+  function superBowlQuiz(rng) {
+    return [
+      { q: "Which team has appeared in the most Super Bowls?", options: ["Dallas Cowboys","New England Patriots","Pittsburgh Steelers","San Francisco 49ers"], correct: 1 },
+      { q: "What was the score of the largest Super Bowl blowout in history (Super Bowl XLVIII)?", options: ["43-8","55-10","48-7","52-14"], correct: 0 },
+      { q: "Who caught the famous 'Helmet Catch' in Super Bowl XLII?", options: ["Plaxico Burress","Amani Toomer","David Tyree","Steve Smith"], correct: 2 },
+      { q: "Which team completed the largest comeback in Super Bowl history, down 28-3?", options: ["New England Patriots","Los Angeles Rams","Seattle Seahawks","Kansas City Chiefs"], correct: 0 },
+      { q: "How many Super Bowls have the Pittsburgh Steelers won?", options: ["4","5","6","7"], correct: 2 },
+    ];
+  }
+
+  function nflDraftQuiz(rng) {
+    return [
+      { q: "Patrick Mahomes was drafted in which round of the 2017 NFL Draft?", options: ["1st","2nd","3rd","4th"], correct: 0 },
+      { q: "Which team drafted Josh Allen in 2018?", options: ["Kansas City Chiefs","Buffalo Bills","Cleveland Browns","Arizona Cardinals"], correct: 1 },
+      { q: "What pick was Tom Brady taken in the 2000 NFL Draft?", options: ["6th round, 199th overall","4th round, 137th overall","7th round, 254th overall","5th round, 163rd overall"], correct: 0 },
+      { q: "Which position did the Chicago Bears take #1 overall in 2024?", options: ["Wide Receiver","Quarterback","Offensive Tackle","Defensive End"], correct: 1 },
+      { q: "Who was the #1 overall pick in the 2021 NFL Draft?", options: ["Zach Wilson","Mac Jones","Trevor Lawrence","Justin Fields"], correct: 2 },
+    ];
+  }
+
+  function nbaAwardsQuiz(rng) {
+    return [
+      { q: "Who won the 2023-24 NBA MVP award?", options: ["Luka Doncic","Nikola Jokic","Giannis Antetokounmpo","Shai Gilgeous-Alexander"], correct: 1 },
+      { q: "Who won the 2016 NBA Defensive Player of the Year?", options: ["Rudy Gobert","Draymond Green","Kawhi Leonard","Avery Bradley"], correct: 1 },
+      { q: "Which player has won the most NBA Scoring titles?", options: ["Michael Jordan","LeBron James","Kobe Bryant","Kevin Durant"], correct: 0 },
+      { q: "Who was the 2019 NBA Finals MVP?", options: ["Kevin Durant","Klay Thompson","Kawhi Leonard","Steph Curry"], correct: 2 },
+      { q: "Giannis Antetokounmpo won back-to-back MVPs in which two seasons?", options: ["2017-18, 2018-19","2018-19, 2019-20","2019-20, 2020-21","2016-17, 2017-18"], correct: 1 },
+    ];
+  }
+
+  function sportsRecordsQuiz(rng) {
+    return [
+      { q: "What is the NFL record for most receiving yards in a single season?", options: ["1,964","1,848","2,105","1,911"], correct: 0 },
+      { q: "Which player holds the NBA record for most points in a single game?", options: ["Michael Jordan","Wilt Chamberlain","Kobe Bryant","LeBron James"], correct: 1 },
+      { q: "How many consecutive games did Cal Ripken Jr. play in MLB?", options: ["2,130","2,632","2,428","2,015"], correct: 1 },
+      { q: "Who holds the NFL record for most career passing touchdowns?", options: ["Peyton Manning","Brett Favre","Tom Brady","Drew Brees"], correct: 2 },
+      { q: "What is the NBA record for most 3-pointers made in a single game?", options: ["11","12","13","14"], correct: 2 },
+    ];
+  }
+
+  function fantasyFootballQuiz(rng) {
+    return [
+      { q: "In a standard PPR league, how many points is a reception worth?", options: ["0","0.5","1","1.5"], correct: 2 },
+      { q: "Which stat line earns a QB a 'bonus' in most fantasy formats?", options: ["200 passing yards","300 passing yards","400 passing yards","100 passing yards"], correct: 1 },
+      { q: "Which position typically has the highest average fantasy points per game?", options: ["Wide Receiver","Running Back","Quarterback","Tight End"], correct: 2 },
+      { q: "A defensive TD returned for a score typically scores how many fantasy points?", options: ["4","6","8","10"], correct: 1 },
+      { q: "What does 'FAAB' stand for in fantasy football?", options: ["Free Agent Auction Budget","Fantasy All Around Base","Free Agency Allowance Bid","Fantasy All Access Bonus"], correct: 0 },
+    ];
+  }
+
+  function getDailyQuiz() {
+    const seed = dateSeed();
+    const rng = seededRandom(seed);
+    const themeIdx = Math.floor(rng() * QUIZ_THEMES.length);
+    const theme = QUIZ_THEMES[themeIdx];
+    const questions = theme.questions(rng);
+    // Shuffle options within each question using seed
+    return { ...theme, questions, id: `daily-quiz-${seed}` };
+  }
+
+  // ─── WHO'S THAT PLAYER DATA ───────────────────────────────────
+  const NFL_PLAYERS = [
+    { name:"Patrick Mahomes", pos:"QB", team:"Kansas City Chiefs", college:"Texas Tech", drafted:"2017 · 1st Round · 10th Pick", clues:["Led NFL in passing TDs in 2018 with 50","Won Super Bowl MVP at age 23","His father played MLB for 11 years","Known for his no-look passes and improvisation"] },
+    { name:"Josh Allen", pos:"QB", team:"Buffalo Bills", college:"Wyoming", drafted:"2018 · 1st Round · 7th Pick", clues:["Led the Bills to multiple AFC Championship games","Known for his rare combination of passing and rushing ability","Had a 49-TD season in 2020","Won the Lamar Jackson Award in college"] },
+    { name:"Justin Jefferson", pos:"WR", team:"Minnesota Vikings", college:"LSU", drafted:"2020 · 1st Round · 22nd Pick", clues:["Broke Randy Moss's Vikings receiving record","Set the record for most receiving yards in first 4 NFL seasons","Won a national championship at LSU in 2019","Known for the 'Griddy' touchdown celebration"] },
+    { name:"Ja'Marr Chase", pos:"WR", team:"Cincinnati Bengals", college:"LSU", drafted:"2021 · 1st Round · 5th Pick", clues:["Played with Joe Burrow at LSU","Won Offensive Rookie of the Year in 2021","Set NFL record for most receiving yards by a rookie","Opted out of 2020 college season"] },
+    { name:"CeeDee Lamb", pos:"WR", team:"Dallas Cowboys", college:"Oklahoma", drafted:"2020 · 1st Round · 17th Pick", clues:["Became the Cowboys' #1 WR after Amari Cooper trade","Led NFL in receiving yards in 2024","Went to Oklahoma as a highly recruited prospect","Part of a loaded 2020 WR draft class"] },
+    { name:"Lamar Jackson", pos:"QB", team:"Baltimore Ravens", college:"Louisville", drafted:"2018 · 1st Round · 32nd Pick", clues:["Won the Heisman Trophy in 2016","Has won multiple NFL MVP awards","Holds the NFL record for most rushing yards by a QB in a season","Was the final pick of the first round in his draft year"] },
+    { name:"Tyreek Hill", pos:"WR", team:"Miami Dolphins", college:"West Alabama", drafted:"2016 · 5th Round · 165th Pick", clues:["Former collegiate track and field athlete","Was traded from Kansas City to Miami in 2022","Nicknamed 'Cheetah' for his elite speed","Set the NFL record for most receiving yards in a single game (215)"] },
+    { name:"Travis Kelce", pos:"TE", team:"Kansas City Chiefs", college:"Cincinnati", drafted:"2013 · 3rd Round · 63rd Pick", clues:["His brother Jason is also an NFL player","Has the most receiving yards in NFL history by a tight end","Won multiple Super Bowls with the Chiefs","Known for his partnership with Taylor Swift"] },
+  ];
+
+  const NBA_PLAYERS = [
+    { name:"LeBron James", pos:"SF", team:"Los Angeles Lakers", college:"None (HS Draft)", drafted:"2003 · 1st Round · 1st Pick", clues:["Known as 'The King' and 'LBJ'","All-time NBA scoring leader","Won 4 NBA championships with 3 different teams","Came straight to the NBA from high school in Akron, Ohio"] },
+    { name:"Stephen Curry", pos:"PG", team:"Golden State Warriors", college:"Davidson", drafted:"2009 · 1st Round · 7th Pick", clues:["Revolutionized the game with his 3-point shooting","Went undrafted by Davidson but became a top-7 pick","His father Dell also played in the NBA","Won 4 NBA titles, all with the Warriors"] },
+    { name:"Nikola Jokic", pos:"C", team:"Denver Nuggets", college:"None (International)", drafted:"2014 · 2nd Round · 41st Pick", clues:["Was announced during a Taco Bell commercial at the 2014 Draft","Won 3 NBA MVP awards in 4 seasons","Led Denver to their first-ever NBA championship in 2023","Known for his unique passing ability as a center"] },
+    { name:"Giannis Antetokounmpo", pos:"PF", team:"Milwaukee Bucks", college:"None (International)", drafted:"2013 · 1st Round · 15th Pick", clues:["Nicknamed 'The Greek Freak'","Came from Greece with an extremely difficult childhood","Led Milwaukee to their first championship in 50 years","Won back-to-back MVP awards in 2019 and 2020"] },
+    { name:"Luka Doncic", pos:"PG", team:"Dallas Mavericks", college:"None (International)", drafted:"2018 · 1st Round · 3rd Pick", clues:["Won EuroLeague MVP before coming to the NBA","Was originally drafted by Atlanta but traded to Dallas","Led Slovenia to the Olympics","Known for his step-back three and court vision"] },
+    { name:"Jayson Tatum", pos:"SF", team:"Boston Celtics", college:"Duke", drafted:"2017 · 1st Round · 3rd Pick", clues:["Led Boston to back-to-back Finals appearances","Grew up idolizing Kobe Bryant","Won the 2024 NBA Championship and Finals MVP","Is close friends with Jaylen Brown, his teammate"] },
+    { name:"Joel Embiid", pos:"C", team:"Philadelphia 76ers", college:"Kansas", drafted:"2014 · 1st Round · 3rd Pick", clues:["Grew up in Cameroon and didn't play basketball until his teens","Won the 2022-23 NBA MVP award","Known for the 'Process' era in Philadelphia","Played only one college season before entering the draft"] },
+    { name:"Ja Morant", pos:"PG", team:"Memphis Grizzlies", college:"Murray State", drafted:"2019 · 1st Round · 2nd Pick", clues:["Came from a small mid-major school in Murray State","Won Rookie of the Year in 2019-20","Known for his explosive athleticism and highlight dunks","Averaged 25+ points per game in his prime seasons"] },
+    { name:"Anthony Edwards", pos:"SG", team:"Minnesota Timberwolves", college:"Georgia", drafted:"2020 · 1st Round · 1st Pick", clues:["Was the consensus #1 pick in the 2020 Draft","Nicknamed 'Ant-Man'","Led Minnesota to the Western Conference Finals","Known for his personality, charisma, and elite athleticism"] },
+    { name:"Shai Gilgeous-Alexander", pos:"PG", team:"Oklahoma City Thunder", college:"Kentucky", drafted:"2018 · 1st Round · 11th Pick", clues:["Originally drafted by Charlotte, traded to OKC via LA Clippers","Won the 2024-25 NBA MVP award","Led OKC to the best record in the NBA","From Canada, known as 'SGA'"] },
+  ];
+
+  function getDailyPlayer() {
+    const seed = dateSeed();
+    const rng = seededRandom(seed + 7); // offset so it differs from quiz
+    const useNFL = rng() > 0.5;
+    const pool = useNFL ? NFL_PLAYERS : NBA_PLAYERS;
+    const idx = Math.floor(rng() * pool.length);
+    const player = pool[idx];
+    return { ...player, league: useNFL ? 'NFL' : 'NBA', id: `wtp-${seed}` };
+  }
+
+  // ─── BUILD TODAY'S GAMES GRID ─────────────────────────────────
+  async function loadTodaysGames() {
+    const grid = document.getElementById('todays-games-grid');
+
+    const dailyQuiz = getDailyQuiz();
+    const dailyPlayer = getDailyPlayer();
+
+    const quizDone = hasAttemptedLocally(dailyQuiz.id);
+    const snapDone = hasAttemptedLocally('snap-decision-v1');
+    const wtpDone = hasAttemptedLocally(dailyPlayer.id);
+
+    grid.innerHTML = `
+      <!-- DAILY QUIZ TILE -->
+      <div class="game-tile">
+        <div class="game-tile-header">
+          <div class="game-tile-icon quiz">${dailyQuiz.emoji}</div>
+          <div>
+            <div class="game-tile-name" style="color:var(--gold);">Daily Quiz</div>
+            <div class="game-tile-tag">5 Questions · Multiple Choice</div>
           </div>
         </div>
-        <div style="flex-shrink:0;">
-          ${attempted
-            ? `<div style="text-align:center;">
-                <div style="color:var(--success);font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.1rem;text-transform:uppercase;margin-bottom:0.5rem;">✅ Completed!</div>
-                <a href="/quizzes.html" class="btn btn-outline">Find Another Quiz</a>
-              </div>`
-            : `<a href="/quiz.html?id=${q.id}" class="btn btn-primary btn-lg">Play Now →</a>`
+        <div class="game-tile-body">
+          <div class="game-tile-title">${dailyQuiz.theme}</div>
+          <div class="game-tile-desc">5 sports trivia questions with today's theme. Earn points for every correct answer — faster answers score more!</div>
+        </div>
+        <div class="game-tile-footer">
+          <span class="game-tile-meta">⏱️ 15s per question</span>
+          ${quizDone
+            ? `<span class="game-completed-badge">✓ Completed</span>`
+            : `<a href="/daily-quiz.html" class="btn btn-primary btn-sm">Play Now →</a>`
+          }
+        </div>
+      </div>
+
+      <!-- SNAP DECISION TILE -->
+      <div class="game-tile">
+        <div class="game-tile-header">
+          <div class="game-tile-icon snap">🏈</div>
+          <div>
+            <div class="game-tile-name" style="color:#4caf50;">Snap Decision</div>
+            <div class="game-tile-tag">Read the Defense · Call the Play</div>
+          </div>
+        </div>
+        <div class="game-tile-body">
+          <div class="game-tile-title">Drive for a Touchdown</div>
+          <div class="game-tile-desc">Read 4 defensive looks and call the right play each time. 3.5 seconds per snap. Score a touchdown to win.</div>
+        </div>
+        <div class="game-tile-footer">
+          <span class="game-tile-meta">⏱️ 3.5s per snap · 4 Downs</span>
+          ${snapDone
+            ? `<span class="game-completed-badge">✓ Completed</span>`
+            : `<a href="/snap-decision.html" class="btn btn-sm" style="background:#4caf50;color:#030f03;font-family:'Barlow Condensed',sans-serif;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;border-radius:8px;padding:0.4rem 0.9rem;text-decoration:none;">Play Now →</a>`
+          }
+        </div>
+      </div>
+
+      <!-- WHO'S THAT PLAYER TILE -->
+      <div class="game-tile">
+        <div class="game-tile-header">
+          <div class="game-tile-icon wtp">❓</div>
+          <div>
+            <div class="game-tile-name" style="color:#3498db;">Who's That, Player?</div>
+            <div class="game-tile-tag">${dailyPlayer.league} · Active Player</div>
+          </div>
+        </div>
+        <div class="game-tile-body">
+          <div class="game-tile-title">Mystery ${dailyPlayer.league} Player</div>
+          <div class="game-tile-desc">5 clues are revealed one at a time. Guess the player as early as possible — the sooner you guess correctly, the more points you earn.</div>
+        </div>
+        <div class="game-tile-footer">
+          <span class="game-tile-meta">Up to 5 clues · ${dailyPlayer.league}</span>
+          ${wtpDone
+            ? `<span class="game-completed-badge">✓ Completed</span>`
+            : `<a href="/whos-that-player.html" class="btn btn-sm" style="background:#1a4a6a;color:#3498db;border:1px solid #1a4a6a;font-family:'Barlow Condensed',sans-serif;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;border-radius:8px;padding:0.4rem 0.9rem;text-decoration:none;">Play Now →</a>`
           }
         </div>
       </div>
@@ -184,12 +451,8 @@
   async function loadFeaturedQuizzes() {
     const container = document.getElementById('featured-quizzes');
     const { data: quizzes, error } = await supabase
-      .from('quizzes')
-      .select('*')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
-      .limit(6);
-
+      .from('quizzes').select('*').eq('is_active', true)
+      .order('created_at', { ascending: false }).limit(6);
     if (error || !quizzes || quizzes.length === 0) {
       container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--gray);"><p>No quizzes yet. Check back soon!</p></div>`;
       return;
@@ -214,36 +477,13 @@
   // ─── LEADERBOARD ──────────────────────────────────────────────
   async function loadHomeLeaderboard() {
     const container = document.getElementById('home-leaderboard');
-
-    // Fetch all logged-in attempts
-    const { data, error } = await supabase
-      .from('attempts')
-      .select('user_id, score, quiz_id')
-      .not('user_id', 'is', null);
-
-    if (error) {
-      console.error('Leaderboard error:', error.message);
-      container.innerHTML = `<p style="text-align:center;padding:2rem;color:var(--gray);">Could not load leaderboard.</p>`;
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      container.innerHTML = `<p style="text-align:center;padding:2rem;color:var(--gray);">No scores yet — be the first!</p>`;
-      return;
-    }
-
-    // Fetch profiles separately
+    const { data, error } = await supabase.from('attempts').select('user_id, score, quiz_id').not('user_id', 'is', null);
+    if (error) { container.innerHTML = `<p style="text-align:center;padding:2rem;color:var(--gray);">Could not load leaderboard.</p>`; return; }
+    if (!data || data.length === 0) { container.innerHTML = `<p style="text-align:center;padding:2rem;color:var(--gray);">No scores yet — be the first!</p>`; return; }
     const userIds = [...new Set(data.map(a => a.user_id).filter(Boolean))];
-    const { data: profiles, error: pErr } = await supabase
-      .from('profiles')
-      .select('id, username')
-      .in('id', userIds);
-
-    if (pErr) console.error('Profiles error:', pErr.message);
+    const { data: profiles } = await supabase.from('profiles').select('id, username').in('id', userIds);
     const profileMap = {};
     (profiles || []).forEach(p => { profileMap[p.id] = p.username; });
-
-    // One attempt per user per quiz — deduplicate
     const seenUserQuiz = new Set();
     const userScores = {};
     data.forEach(a => {
@@ -256,18 +496,12 @@
       userScores[a.user_id].total += a.score;
       userScores[a.user_id].count++;
     });
-
     const sorted = Object.values(userScores).sort((a, b) => b.total - a.total).slice(0, 5);
-
-    if (sorted.length === 0) {
-      container.innerHTML = `<p style="text-align:center;padding:2rem;color:var(--gray);">No scores yet — be the first!</p>`;
-      return;
-    }
-
+    if (sorted.length === 0) { container.innerHTML = `<p style="text-align:center;padding:2rem;color:var(--gray);">No scores yet — be the first!</p>`; return; }
     const medals = ['🥇','🥈','🥉'];
     const rankClass = ['top-1','top-2','top-3','',''];
     container.innerHTML = `
-      <div class="lb-row header"><span>Rank</span><span>Player</span><span>Score</span><span>Quizzes</span></div>
+      <div class="lb-row header"><span>Rank</span><span>Player</span><span>Score</span><span>Games</span></div>
       ${sorted.map((u, i) => `
         <div class="lb-row ${rankClass[i] || ''}">
           <span class="lb-rank">${medals[i] || i+1}</span>
@@ -276,30 +510,28 @@
             <span class="lb-username">${u.username}</span>
           </div>
           <span class="lb-score">${u.total.toLocaleString()}</span>
-          <span class="lb-quizzes">${u.count} quiz${u.count !== 1 ? 'zes' : ''}</span>
+          <span class="lb-quizzes">${u.count}</span>
         </div>
       `).join('')}
     `;
   }
 
-  // ─── STATS ────────────────────────────────────────────────────
   async function loadStats() {
     const [{ count: qCount }, { count: aCount }, { count: pCount }] = await Promise.all([
-      supabase.from('quizzes').select('*', { count: 'exact', head: true }).eq('is_active', true),
-      supabase.from('attempts').select('*', { count: 'exact', head: true }),
-      supabase.from('profiles').select('*', { count: 'exact', head: true })
+      supabase.from('quizzes').select('*', { count:'exact', head:true }).eq('is_active', true),
+      supabase.from('attempts').select('*', { count:'exact', head:true }),
+      supabase.from('profiles').select('*', { count:'exact', head:true })
     ]);
     document.getElementById('stat-quizzes').textContent = qCount || 0;
     document.getElementById('stat-attempts').textContent = (aCount || 0).toLocaleString();
     document.getElementById('stat-players').textContent = (pCount || 0).toLocaleString();
   }
 
-  // ─── INIT ──────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', async () => {
     updateNavAuth();
     renderStreakBadge(document.getElementById('streak-badge-hero'));
     renderStreakPips();
-    loadDailyQuiz();
+    loadTodaysGames();
     loadFeaturedQuizzes();
     loadHomeLeaderboard();
     loadStats();

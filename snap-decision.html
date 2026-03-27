@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snap Decision — FlurrySports</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,400;0,600;0,700;1,400&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080f08;
+    --bg2: #0d180d;
+    --bg3: #111f11;
+    --green: #4caf50;
+    --green-dark: #2a5a2a;
+    --gold: #e8a020;
+    --gold-dark: #7a4a00;
+    --red: #c0392b;
+    --red-dark: #5a1010;
+    --yellow: #e8c020;
+    --yellow-dark: #6a5000;
+    --white: #f5f2ee;
+    --muted: #3a5a3a;
+    --border: #1a2e1a;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'Barlow', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .screen { display: none; width: 100%; max-width: 860px; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ── HEADER ── */
+  .game-header {
+    background: #060f06;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: 12px 12px 0 0;
+  }
+  .game-logo { font-family:'Bebas Neue',sans-serif; font-size:18px; color:var(--green); letter-spacing:2px; }
+  .game-logo span { color:var(--white); }
+  .game-hud { display:flex; align-items:center; gap:20px; }
+  .hud-item { text-align:center; }
+  .hud-val { font-family:'Bebas Neue',sans-serif; font-size:22px; color:var(--gold); line-height:1; }
+  .hud-lbl { font-family:'Barlow Condensed',sans-serif; font-size:9px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:var(--muted); }
+
+  /* ── DOWN BAR ── */
+  .down-bar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .down-info { }
+  .down-text { font-family:'Bebas Neue',sans-serif; font-size:26px; color:var(--white); letter-spacing:1px; line-height:1; }
+  .down-sub { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:var(--green); margin-top:2px; }
+  .drive-dots { display:flex; gap:6px; margin-bottom:4px; }
+  .drive-dot { width:24px; height:7px; border-radius:4px; background:var(--border); }
+  .drive-dot.done { background:var(--green-dark); }
+  .drive-dot.active { background:var(--green); }
+  .drive-dot.neutral { background:var(--yellow-dark); }
+  .drive-dot.wrong { background:var(--red-dark); }
+  .timer-wrap { display:flex; flex-direction:column; align-items:center; }
+  .timer-num { font-family:'Bebas Neue',sans-serif; font-size:44px; color:var(--gold); line-height:1; }
+  .timer-num.urgent { color:var(--red); animation: pulse 0.5s infinite alternate; }
+  .timer-lbl { font-family:'Barlow Condensed',sans-serif; font-size:9px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:var(--muted); }
+
+  @keyframes pulse { from { opacity:1; } to { opacity:0.4; } }
+
+  /* ── FIELD ── */
+  .field-section { padding:12px 16px 10px; background:var(--bg); }
+  .field-label { font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-bottom:5px; }
+  .coverage-tag { text-align:center; margin-bottom:7px; }
+  .coverage-pill {
+    display:inline-block;
+    background:rgba(52,152,219,0.12);
+    border:1px solid rgba(52,152,219,0.3);
+    border-radius:20px;
+    padding:3px 14px;
+    font-family:'Barlow Condensed',sans-serif;
+    font-size:11px; font-weight:700;
+    letter-spacing:0.15em; text-transform:uppercase;
+    color:#3498db;
+  }
+  .field-svg { display:block; border-radius:8px; width:100%; }
+
+  /* ── PLAYS ── */
+  .plays-section { padding:10px 16px 14px; background:var(--bg); border-radius:0 0 12px 12px; }
+  .plays-label { font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  .plays-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .play-card {
+    background:var(--bg2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:10px 10px 8px;
+    cursor:pointer;
+    transition:border-color 0.15s, transform 0.1s;
+    user-select:none;
+  }
+  .play-card:hover { border-color:#3a6a3a; transform:translateY(-1px); }
+  .play-card:active { transform:scale(0.98); }
+  .play-name { font-family:'Bebas Neue',sans-serif; font-size:16px; color:var(--white); letter-spacing:1px; margin-bottom:1px; }
+  .play-type { font-family:'Barlow Condensed',sans-serif; font-size:9px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:5px; }
+  .play-concept { font-family:'Barlow Condensed',sans-serif; font-size:9px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#1a4a3a; margin-bottom:5px; }
+  .play-svg { display:block; width:100%; margin-bottom:4px; }
+  .play-desc { font-size:10px; color:#2a4a2a; line-height:1.35; }
+
+  /* ── RESULT FLASH ── */
+  .result-flash {
+    position:fixed; inset:0;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    z-index:100;
+    animation: flashIn 0.15s ease, flashOut 0.3s ease 0.85s forwards;
+  }
+  .result-flash.correct { background:rgba(20,80,20,0.97); }
+  .result-flash.neutral-run { background:rgba(80,70,0,0.97); }
+  .result-flash.neutral-pass { background:rgba(80,70,0,0.97); }
+  .result-flash.wrong { background:rgba(80,10,10,0.97); }
+  .result-flash.delay { background:rgba(30,20,0,0.97); }
+
+  @keyframes flashIn { from { opacity:0; transform:scale(1.05); } to { opacity:1; transform:scale(1); } }
+  @keyframes flashOut { from { opacity:1; } to { opacity:0; pointer-events:none; } }
+
+  .flash-main {
+    font-family:'Bebas Neue',sans-serif;
+    font-size:88px;
+    letter-spacing:4px;
+    line-height:1;
+    text-align:center;
+  }
+  .result-flash.correct .flash-main { color:#4caf50; }
+  .result-flash.neutral-run .flash-main,
+  .result-flash.neutral-pass .flash-main { color:var(--yellow); }
+  .result-flash.wrong .flash-main { color:var(--red); }
+  .result-flash.delay .flash-main { color:var(--gold); }
+
+  .flash-sub {
+    font-family:'Barlow Condensed',sans-serif;
+    font-size:16px; font-weight:700;
+    letter-spacing:0.2em; text-transform:uppercase;
+    margin-top:10px;
+    color:rgba(255,255,255,0.5);
+  }
+  .flash-pts {
+    font-family:'Bebas Neue',sans-serif;
+    font-size:32px;
+    color:var(--gold);
+    margin-top:6px;
+    letter-spacing:2px;
+  }
+
+  /* ── END SCREENS ── */
+  .end-screen {
+    border-radius:12px;
+    overflow:hidden;
+    width:100%;
+    max-width:860px;
+  }
+
+  .end-header {
+    padding:12px 20px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+
+  .end-body {
+    padding:36px 28px;
+    display:flex; flex-direction:column;
+    align-items:center; text-align:center;
+  }
+
+  .end-main {
+    font-family:'Bebas Neue',sans-serif;
+    font-size:96px;
+    letter-spacing:5px;
+    line-height:1;
+    margin-bottom:8px;
+  }
+
+  .end-badge {
+    display:inline-flex; align-items:center; gap:6px;
+    border-radius:20px; padding:5px 16px;
+    margin-bottom:20px;
+    font-family:'Barlow Condensed',sans-serif;
+    font-size:12px; font-weight:700;
+    letter-spacing:0.15em; text-transform:uppercase;
+  }
+
+  .end-divider { width:60px; height:2px; margin:0 auto 22px; }
+
+  .score-hero {
+    border-radius:12px; padding:18px 50px; margin-bottom:22px;
+  }
+  .score-num {
+    font-family:'Bebas Neue',sans-serif;
+    font-size:72px; line-height:1; letter-spacing:2px;
+  }
+  .score-lbl {
+    font-family:'Barlow Condensed',sans-serif;
+    font-size:11px; font-weight:700;
+    letter-spacing:0.2em; text-transform:uppercase;
+  }
+
+  .stats-row {
+    display:flex; gap:1px;
+    border-radius:10px; overflow:hidden;
+    margin-bottom:20px;
+    width:100%; max-width:440px;
+  }
+  .stat-block {
+    flex:1; padding:14px 6px; text-align:center;
+  }
+  .stat-val {
+    font-family:'Bebas Neue',sans-serif;
+    font-size:26px; line-height:1;
+  }
+  .stat-lbl {
+    font-family:'Barlow Condensed',sans-serif;
+    font-size:9px; font-weight:700;
+    letter-spacing:0.1em; text-transform:uppercase;
+    margin-top:3px;
+  }
+
+  .end-desc {
+    font-size:14px; max-width:460px;
+    line-height:1.7; margin-bottom:26px;
+  }
+
+  .play-summary {
+    width:100%; max-width:440px;
+    margin-bottom:24px;
+  }
+  .play-summary-title {
+    font-family:'Barlow Condensed',sans-serif;
+    font-size:10px; font-weight:700;
+    letter-spacing:0.2em; text-transform:uppercase;
+    margin-bottom:8px;
+  }
+  .play-row {
+    display:flex; align-items:center;
+    gap:10px; padding:8px 10px;
+    border-radius:6px; margin-bottom:4px;
+    font-size:12px;
+  }
+  .play-row-dot {
+    width:10px; height:10px;
+    border-radius:50%; flex-shrink:0;
+  }
+  .play-row-name { font-weight:600; flex:1; text-align:left; }
+  .play-row-result { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.1em; }
+  .play-row-pts { font-family:'Bebas Neue',sans-serif; font-size:16px; }
+
+  .btn-primary {
+    font-family:'Bebas Neue',sans-serif;
+    font-size:20px; letter-spacing:2px;
+    border:none; border-radius:8px;
+    padding:14px 40px;
+    cursor:pointer;
+    width:100%; max-width:440px;
+    margin-bottom:10px;
+  }
+  .btn-secondary {
+    background:transparent;
+    border:1px solid;
+    border-radius:8px;
+    padding:11px 40px;
+    font-family:'Barlow Condensed',sans-serif;
+    font-size:12px; font-weight:700;
+    letter-spacing:0.15em; text-transform:uppercase;
+    cursor:pointer;
+    width:100%; max-width:440px;
+  }
+
+  /* TOUCHDOWN */
+  .td-screen { background:#030f03; }
+  .td-screen .end-header { background:#020a02; border-bottom:1px solid #0a2a0a; }
+  .td-screen .end-main { color:var(--green); }
+  .td-screen .end-badge { background:rgba(232,160,32,0.1); border:1px solid rgba(232,160,32,0.3); color:var(--gold); }
+  .td-screen .end-divider { background:#0a2a0a; }
+  .td-screen .score-hero { background:#0a1f0a; border:1px solid #1a4a1a; }
+  .td-screen .score-num { color:var(--green); }
+  .td-screen .score-lbl { color:#2a5a2a; }
+  .td-screen .stats-row { background:#0a1f0a; }
+  .td-screen .stat-block { background:#060f06; }
+  .td-screen .stat-val { color:var(--green); }
+  .td-screen .stat-lbl { color:#1a3a1a; }
+  .td-screen .end-desc { color:#2a5a2a; }
+  .td-screen .play-summary-title { color:#1a3a1a; }
+  .td-screen .btn-primary { background:var(--green); color:#030f03; }
+  .td-screen .btn-secondary { border-color:#0a2a0a; color:#2a5a2a; }
+
+  /* LOSS */
+  .loss-screen { background:#0f0303; }
+  .loss-screen .end-header { background:#080101; border-bottom:1px solid #2a0808; }
+  .loss-screen .end-main { color:var(--red); }
+  .loss-screen .end-badge { background:rgba(192,57,43,0.1); border:1px solid rgba(192,57,43,0.3); color:#e74c3c; }
+  .loss-screen .end-divider { background:#2a0808; }
+  .loss-screen .score-hero { background:#1a0505; border:1px solid #3a1010; }
+  .loss-screen .score-num { color:var(--red); }
+  .loss-screen .score-lbl { color:#5a2020; }
+  .loss-screen .stats-row { background:#1a0505; }
+  .loss-screen .stat-block { background:#0f0303; }
+  .loss-screen .stat-val { color:var(--red); }
+  .loss-screen .stat-lbl { color:#3a1a1a; }
+  .loss-screen .end-desc { color:#5a3030; }
+  .loss-screen .play-summary-title { color:#3a1a1a; }
+  .loss-screen .btn-primary { background:var(--red); color:var(--white); }
+  .loss-screen .btn-secondary { border-color:#2a0808; color:#5a2020; }
+
+  /* START SCREEN */
+  .start-screen {
+    background:#080f08;
+    border-radius:16px;
+    overflow:hidden;
+    width:100%; max-width:860px;
+  }
+  .start-accent { height:5px; background:var(--green); }
+  .start-body { padding:50px 40px; text-align:center; }
+  .start-logo { font-family:'Bebas Neue',sans-serif; font-size:18px; color:var(--green); letter-spacing:3px; margin-bottom:4px; }
+  .start-logo span { color:var(--white); }
+  .start-presents { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.25em; text-transform:uppercase; color:var(--muted); margin-bottom:30px; }
+  .start-title { font-family:'Bebas Neue',sans-serif; font-size:86px; color:var(--white); letter-spacing:4px; line-height:0.95; margin-bottom:6px; }
+  .start-title span { color:var(--green); }
+  .start-subtitle { font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-bottom:30px; }
+  .start-rules { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:22px 28px; margin-bottom:32px; text-align:left; max-width:480px; margin-left:auto; margin-right:auto; }
+  .rules-title { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+  .rule-item { font-size:13px; color:#4a6a4a; line-height:1.6; padding:4px 0; border-bottom:1px solid var(--border); }
+  .rule-item:last-child { border:none; }
+  .rule-item strong { color:var(--white); font-weight:600; }
+  .start-btn {
+    background:var(--green);
+    border:none; border-radius:8px;
+    padding:16px 60px;
+    font-family:'Bebas Neue',sans-serif;
+    font-size:24px; letter-spacing:3px;
+    color:#030f03; cursor:pointer;
+    transition:background 0.15s;
+  }
+  .start-btn:hover { background:#5dbf61; }
+  .start-footer { margin-top:20px; font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:#1a2e1a; }
+</style>
+
+<script>
+function markAttemptedLocally(id) {
+  try {
+    const attempted = JSON.parse(localStorage.getItem('fs_attempted') || '[]');
+    if (!attempted.includes(id)) { attempted.push(id); localStorage.setItem('fs_attempted', JSON.stringify(attempted)); }
+  } catch(e) {}
+}
+function hasAttemptedLocally(id) {
+  try { return JSON.parse(localStorage.getItem('fs_attempted') || '[]').includes(id); } catch(e) { return false; }
+}
+</script>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     START SCREEN
+════════════════════════════════════════ -->
+<nav style="position:sticky;top:0;z-index:100;background:rgba(8,12,46,0.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(245,197,24,0.15);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;">
+  <a href="/" style="display:flex;align-items:center;text-decoration:none;">
+    <img src="/images/logo-yeti-orange.png" alt="FlurrySports" style="height:38px;width:auto;">
+  </a>
+  <a href="/" style="color:rgba(255,255,255,0.5);text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;letter-spacing:0.08em;text-transform:uppercase;">← Back to Games</a>
+</nav>
+
+<div id="startScreen" class="start-screen">
+  <div class="start-accent"></div>
+  <div class="start-body">
+    <div class="start-logo">Flurry<span>Sports</span></div>
+    <div class="start-presents">Presents</div>
+    <div class="start-title">SNAP<br><span>DECISION</span></div>
+    <div class="start-subtitle">Read the defense. Call the play.</div>
+    <div class="start-rules">
+      <div class="rules-title">How to Play</div>
+      <div class="rule-item">You have <strong>3.5 seconds</strong> to read the defense and call the right play</div>
+      <div class="rule-item">Drive through <strong>4 downs</strong> — score a touchdown to win</div>
+      <div class="rule-item"><strong style="color:var(--green)">Correct play</strong> = points based on your decision speed</div>
+      <div class="rule-item"><strong style="color:var(--yellow)">Neutral play</strong> = no points, but the drive continues (plays 1-3)</div>
+      <div class="rule-item"><strong style="color:var(--red)">Wrong play</strong> = turnover, game over immediately</div>
+      <div class="rule-item">Run out the clock = <strong>Delay of Game</strong>, game over</div>
+      <div class="rule-item">A neutral on 4th down = <strong>Turnover on Downs</strong>, game over</div>
+    </div>
+    <button class="start-btn" onclick="startGame()">HIKE!</button>
+    <div class="start-footer">FlurrySports.org</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     GAME SCREEN
+════════════════════════════════════════ -->
+<div id="gameScreen" class="screen">
+  <div class="game-header">
+    <div class="game-logo">Snap<span>Decision</span></div>
+    <div class="game-hud">
+      <div class="hud-item">
+        <div class="hud-val" id="scoreDisplay">0</div>
+        <div class="hud-lbl">Points</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="down-bar">
+    <div class="down-info">
+      <div class="down-text" id="downText">1ST & 10</div>
+      <div class="down-sub" id="downSub">Opening Drive</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:18px;">
+      <div>
+        <div class="drive-dots" id="driveDots">
+          <div class="drive-dot active" id="dot0"></div>
+          <div class="drive-dot" id="dot1"></div>
+          <div class="drive-dot" id="dot2"></div>
+          <div class="drive-dot" id="dot3"></div>
+        </div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);text-align:center;">Drive</div>
+      </div>
+      <div class="timer-wrap">
+        <div class="timer-num" id="timerDisplay">3</div>
+        <div class="timer-lbl">Secs</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="field-section">
+    <div class="field-label">Read the defense</div>
+    <div class="coverage-tag"><span class="coverage-pill" id="coveragePill">Cover 1 Man</span></div>
+    <svg id="fieldSvg" class="field-svg" viewBox="0 0 640 230" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+
+  <div class="plays-section">
+    <div class="plays-label">Choose your play — <span style="color:var(--gold)">3.5 seconds</span></div>
+    <div class="plays-grid" id="playsGrid"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     TOUCHDOWN SCREEN
+════════════════════════════════════════ -->
+<div id="tdScreen" class="end-screen td-screen" style="display:none;">
+  <div class="end-header">
+    <div class="game-logo" style="color:var(--green);">Snap<span style="color:var(--white);">Decision</span></div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#1a3a1a;">by FlurrySports</div>
+  </div>
+  <div class="end-body">
+    <div class="end-main">TOUCHDOWN!</div>
+    <div class="end-badge">Perfect Read — 4 Plays Called</div>
+    <div class="end-divider"></div>
+    <div class="score-hero">
+      <div class="score-num" id="tdScore">0</div>
+      <div class="score-lbl">Total Points This Drive</div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-block">
+        <div class="stat-val" id="tdCorrect">0</div>
+        <div class="stat-lbl">Correct Reads</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-val" id="tdNeutral">0</div>
+        <div class="stat-lbl">Neutral Plays</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-val" id="tdAvgTime">0s</div>
+        <div class="stat-lbl">Avg Decision</div>
+      </div>
+    </div>
+    <div class="play-summary" id="tdPlaySummary"></div>
+    <button class="btn-primary" onclick="resetGame()">PLAY AGAIN</button>
+    <button class="btn-secondary" style="border-color:#0a2a0a;color:#2a5a2a;" onclick="resetGame()">Back to Home</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     LOSS SCREEN
+════════════════════════════════════════ -->
+<div id="lossScreen" class="end-screen loss-screen" style="display:none;">
+  <div class="end-header">
+    <div class="game-logo" style="color:var(--red);">Snap<span style="color:var(--white);">Decision</span></div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#3a1010;">by FlurrySports</div>
+  </div>
+  <div class="end-body">
+    <div class="end-main" id="lossMain">TURNOVER!</div>
+    <div class="end-badge" id="lossBadge">Misread the coverage</div>
+    <div class="end-divider" style="background:#2a0808;"></div>
+    <div class="score-hero">
+      <div class="score-num" id="lossScore">0</div>
+      <div class="score-lbl">Points This Drive</div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-block">
+        <div class="stat-val" id="lossCorrect">0</div>
+        <div class="stat-lbl">Correct Reads</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-val" id="lossDown">1</div>
+        <div class="stat-lbl">Fell on Down</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-val" id="lossNeeded">4</div>
+        <div class="stat-lbl">Needed</div>
+      </div>
+    </div>
+    <div class="end-desc" id="lossDesc">Lace up your cleats tomorrow — every great QB gets picked off.</div>
+    <div class="play-summary" id="lossPlaySummary"></div>
+    <button class="btn-primary" onclick="resetGame()">TRY AGAIN TOMORROW</button>
+    <button class="btn-secondary" style="border-color:#2a0808;color:#5a2020;" onclick="resetGame()">Back to Home</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// PLAY DATA
+// ═══════════════════════════════════════
+
+const PLAYS = [
+  {
+    down: '1ST & 10',
+    sub: 'Opening Drive — Read Zone',
+    coverage: 'Cover 1 Man',
+    coverageColor: '#3498db',
+    fieldSvg: buildCover1Field,
+    options: [
+      {
+        name: 'Slant-Flat',
+        type: 'Pass · Concept',
+        concept: 'Slant-Flat Concept',
+        result: 'correct',
+        buildSvg: buildSlantFlatCard,
+        desc: 'WR slant holds man LB, RB flat is wide open underneath'
+      },
+      {
+        name: 'HB Dive',
+        type: 'Run · Inside',
+        concept: '',
+        result: 'neutral',
+        buildSvg: buildHBDiveCard,
+        desc: 'MLB reads the run and fills quickly — no gain'
+      },
+      {
+        name: 'Deep Post',
+        type: 'Pass · Vertical',
+        concept: '',
+        result: 'wrong',
+        buildSvg: buildDeepPostCard,
+        desc: 'Safety sitting in the deep middle — prime interception territory'
+      }
+    ]
+  },
+  {
+    down: '2ND & 8',
+    sub: 'Red Zone Approaching — Watch the Blitz',
+    coverage: '4-3 Man — OLB Blitz',
+    coverageColor: '#e74c3c',
+    fieldSvg: buildBlitzField,
+    options: [
+      {
+        name: 'Slant-Flat',
+        type: 'Pass · Hot Route',
+        concept: 'Hot Route vs Blitz',
+        result: 'correct',
+        buildSvg: buildSlantFlatCard2,
+        desc: 'Quick slant beats man coverage before blitzers arrive'
+      },
+      {
+        name: 'Comeback',
+        type: 'Pass · Outside',
+        concept: '',
+        result: 'neutral',
+        buildSvg: buildComebackCard,
+        desc: 'Too slow developing — blitz collapses the pocket first'
+      },
+      {
+        name: 'HB Iso',
+        type: 'Run · Power',
+        concept: '',
+        result: 'wrong',
+        buildSvg: buildHBIsoCard,
+        desc: 'HB runs directly into the blitzing OLB — fumble'
+      }
+    ]
+  },
+  {
+    down: '3RD & 5',
+    sub: 'Opp 20 Yard Line — Must Convert',
+    coverage: 'Nickel Cover 2 Zone',
+    coverageColor: '#9b59b6',
+    fieldSvg: buildCover2Field,
+    options: [
+      {
+        name: 'HB Dive',
+        type: 'Run · Inside',
+        concept: 'Attack Soft Zone Interior',
+        result: 'correct',
+        buildSvg: buildHBDiveCorrectCard,
+        desc: 'CBs playing deep halves — interior opens up for the run'
+      },
+      {
+        name: 'Slant',
+        type: 'Pass · Inside',
+        concept: '',
+        result: 'neutral',
+        buildSvg: buildSlantZoneCard,
+        desc: 'MLB sitting in the hook zone reads the slant — incomplete'
+      },
+      {
+        name: 'Deep In Route',
+        type: 'Pass · Crossing',
+        concept: '',
+        result: 'wrong',
+        buildSvg: buildDeepInCard,
+        desc: 'Drops right into the LB zone — intercepted'
+      }
+    ]
+  },
+  {
+    down: '4TH & GOAL',
+    sub: 'Red Zone · Win or Go Home',
+    coverage: 'Cover 3 Zone',
+    coverageColor: '#16a085',
+    fieldSvg: buildCover3Field,
+    options: [
+      {
+        name: 'TE Seam',
+        type: 'Pass · Seam',
+        concept: 'Seam Attack vs Cover 3',
+        result: 'correct',
+        buildSvg: buildTESeamCard,
+        desc: 'TE splits the hook and deep zones — touchdown'
+      },
+      {
+        name: 'Goal Line Fade',
+        type: 'Pass · Fade',
+        concept: '',
+        result: 'wrong',
+        buildSvg: buildFadeCard,
+        desc: 'CB has deep third responsibility — perfect position for the pick'
+      },
+      {
+        name: 'HB Stretch',
+        type: 'Run · Outside',
+        concept: '',
+        result: 'neutral',
+        buildSvg: buildHBStretchCard,
+        desc: 'Cornerbacks squeeze down — stuffed at the line'
+      }
+    ]
+  }
+];
+
+// ═══════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════
+
+let currentPlay = 0;
+let score = 0;
+let timerInterval = null;
+let timeLeft = 3.5;
+let playStartTime = 0;
+let playHistory = [];
+let decisionTimes = [];
+let flashTimeout = null;
+
+// ═══════════════════════════════════════
+// FIELD SVG BUILDERS
+// ═══════════════════════════════════════
+
+function fieldBase() {
+  return `
+    <rect width="640" height="230" fill="#0a1a0a" rx="8"/>
+    <line x1="0" y1="58" x2="640" y2="58" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+    <line x1="0" y1="116" x2="640" y2="116" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+    <line x1="0" y1="174" x2="640" y2="174" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+    <line x1="0" y1="192" x2="640" y2="192" stroke="rgba(76,175,80,0.2)" stroke-width="2"/>
+    <text x="616" y="188" fill="rgba(76,175,80,0.35)" font-family="sans-serif" font-size="10" font-weight="700" text-anchor="end">LOS</text>
+  `;
+}
+
+function offensiveLine() {
+  return `
+    <rect x="227" y="198" width="16" height="16" rx="2" fill="none" stroke="white" stroke-width="1.5"/>
+    <rect x="266" y="198" width="16" height="16" rx="2" fill="none" stroke="white" stroke-width="1.5"/>
+    <circle cx="320" cy="206" r="5" fill="white"/>
+    <rect x="348" y="198" width="16" height="16" rx="2" fill="none" stroke="white" stroke-width="1.5"/>
+    <rect x="387" y="198" width="16" height="16" rx="2" fill="none" stroke="white" stroke-width="1.5"/>
+    <circle cx="320" cy="222" r="8" fill="white"/>
+    <circle cx="60" cy="205" r="7" fill="white"/>
+    <circle cx="580" cy="205" r="7" fill="white"/>
+  `;
+}
+
+function defenderX(cx, cy) {
+  return `<line x1="${cx-8}" y1="${cy-8}" x2="${cx+8}" y2="${cy+8}" stroke="white" stroke-width="1.8"/>
+          <line x1="${cx+8}" y1="${cy-8}" x2="${cx-8}" y2="${cy+8}" stroke="white" stroke-width="1.8"/>`;
+}
+
+function defLabel(cx, cy, lbl, color) {
+  return `<text x="${cx}" y="${cy+14}" text-anchor="middle" fill="${color}" font-family="sans-serif" font-size="9" font-weight="700">${lbl}</text>`;
+}
+
+function buildCover1Field(svg) {
+  svg.setAttribute('viewBox','0 0 640 230');
+  svg.innerHTML = fieldBase() + `
+    <!-- Safety deep middle -->
+    <ellipse cx="320" cy="38" rx="60" ry="24" fill="rgba(52,152,219,0.14)" stroke="rgba(52,152,219,0.45)" stroke-width="1.5"/>
+    <line x1="320" y1="38" x2="320" y2="62" stroke="rgba(52,152,219,0.65)" stroke-width="2.5" stroke-linecap="round"/>
+    ${defenderX(320,38)}
+    ${defLabel(320,38,'FS','rgba(52,152,219,0.8)')}
+
+    <!-- CBs man on WRs -->
+    <ellipse cx="60" cy="152" rx="38" ry="20" fill="rgba(26,188,156,0.12)" stroke="rgba(26,188,156,0.4)" stroke-width="1.5"/>
+    <line x1="60" y1="152" x2="60" y2="125" stroke="rgba(26,188,156,0.6)" stroke-width="2" stroke-linecap="round"/>
+    ${defenderX(60,152)}${defLabel(60,152,'CB','rgba(26,188,156,0.8)')}
+
+    <ellipse cx="580" cy="152" rx="38" ry="20" fill="rgba(26,188,156,0.12)" stroke="rgba(26,188,156,0.4)" stroke-width="1.5"/>
+    <line x1="580" y1="152" x2="580" y2="125" stroke="rgba(26,188,156,0.6)" stroke-width="2" stroke-linecap="round"/>
+    ${defenderX(580,152)}${defLabel(580,152,'CB','rgba(26,188,156,0.8)')}
+
+    <!-- LBs man coverage -->
+    <ellipse cx="210" cy="140" rx="40" ry="20" fill="rgba(46,204,113,0.1)" stroke="rgba(46,204,113,0.35)" stroke-width="1.5"/>
+    <line x1="210" y1="140" x2="210" y2="115" stroke="rgba(46,204,113,0.6)" stroke-width="2" stroke-linecap="round"/>
+    ${defenderX(210,140)}${defLabel(210,140,'LB','rgba(46,204,113,0.7)')}
+
+    <ellipse cx="320" cy="135" rx="40" ry="20" fill="rgba(46,204,113,0.1)" stroke="rgba(46,204,113,0.35)" stroke-width="1.5"/>
+    <line x1="320" y1="135" x2="320" y2="110" stroke="rgba(46,204,113,0.6)" stroke-width="2" stroke-linecap="round"/>
+    ${defenderX(320,135)}${defLabel(320,135,'MLB','rgba(46,204,113,0.7)')}
+
+    <ellipse cx="430" cy="140" rx="40" ry="20" fill="rgba(46,204,113,0.1)" stroke="rgba(46,204,113,0.35)" stroke-width="1.5"/>
+    <line x1="430" y1="140" x2="430" y2="115" stroke="rgba(46,204,113,0.6)" stroke-width="2" stroke-linecap="round"/>
+    ${defenderX(430,140)}${defLabel(430,140,'LB','rgba(46,204,113,0.7)')}
+
+    <!-- D-Line rush -->
+    ${dlineRush([152,248,356,460])}
+    ${offensiveLine()}
+  `;
+}
+
+function buildBlitzField(svg) {
+  svg.setAttribute('viewBox','0 0 640 230');
+  svg.innerHTML = fieldBase() + `
+    <!-- Single high safety -->
+    <ellipse cx="320" cy="38" rx="60" ry="24" fill="rgba(52,152,219,0.14)" stroke="rgba(52,152,219,0.45)" stroke-width="1.5"/>
+    <line x1="320" y1="38" x2="320" y2="62" stroke="rgba(52,152,219,0.65)" stroke-width="2.5" stroke-linecap="round"/>
+    ${defenderX(320,38)}${defLabel(320,38,'FS','rgba(52,152,219,0.8)')}
+
+    <!-- CBs tight man -->
+    <ellipse cx="60" cy="148" rx="36" ry="18" fill="rgba(26,188,156,0.12)" stroke="rgba(26,188,156,0.4)" stroke-width="1.5"/>
+    ${defenderX(60,148)}${defLabel(60,148,'CB','rgba(26,188,156,0.8)')}
+    <ellipse cx="580" cy="148" rx="36" ry="18" fill="rgba(26,188,156,0.12)" stroke="rgba(26,188,156,0.4)" stroke-width="1.5"/>
+    ${defenderX(580,148)}${defLabel(580,148,'CB','rgba(26,188,156,0.8)')}
+
+    <!-- MLB stays -->
+    <ellipse cx="320" cy="138" rx="40" ry="18" fill="rgba(46,204,113,0.1)" stroke="rgba(46,204,113,0.35)" stroke-width="1.5"/>
+    ${defenderX(320,138)}${defLabel(320,138,'MLB','rgba(46,204,113,0.7)')}
+
+    <!-- OLBs blitzing — red rush arrows -->
+    <line x1="170" y1="155" x2="200" y2="185" stroke="#e74c3c" stroke-width="2.5" stroke-linecap="round"/>
+    <polygon points="205,188 195,178 208,178" fill="#e74c3c"/>
+    ${defenderX(170,148)}
+    <text x="162" y="143" fill="rgba(231,76,60,0.9)" font-family="sans-serif" font-size="9" font-weight="700">OLB</text>
+    <text x="145" y="155" fill="rgba(231,76,60,0.7)" font-family="sans-serif" font-size="8">BLITZ</text>
+
+    <line x1="470" y1="155" x2="440" y2="185" stroke="#e74c3c" stroke-width="2.5" stroke-linecap="round"/>
+    <polygon points="435,188 445,178 432,178" fill="#e74c3c"/>
+    ${defenderX(470,148)}
+    <text x="462" y="143" fill="rgba(231,76,60,0.9)" font-family="sans-serif" font-size="9" font-weight="700">OLB</text>
+    <text x="460" y="155" fill="rgba(231,76,60,0.7)" font-family="sans-serif" font-size="8">BLITZ</text>
+
+    ${dlineRush([152,248,356,460])}
+    ${offensiveLine()}
+  `;
+}
+
+function buildCover2Field(svg) {
+  svg.setAttribute('viewBox','0 0 640 230');
+  svg.innerHTML = fieldBase() + `
+    <!-- Two deep safeties -->
+    <ellipse cx="185" cy="40" rx="100" ry="32" fill="rgba(52,152,219,0.14)" stroke="rgba(52,152,219,0.45)" stroke-width="1.5"/>
+    <line x1="185" y1="40" x2="220" y2="65" stroke="rgba(52,152,219,0.65)" stroke-width="2.5" stroke-linecap="round"/>
+    ${defenderX(185,40)}${defLabel(185,40,'SS','rgba(52,152,219,0.8)')}
+
+    <ellipse cx="455" cy="40" rx="100" ry="32" fill="rgba(52,152,219,0.14)" stroke="rgba(52,152,219,0.45)" stroke-width="1.5"/>
+    <line x1="455" y1="40" x2="420" y2="65" stroke="rgba(52,152,219,0.65)" stroke-width="2.5" stroke-linecap="round"/>
+    ${defenderX(455,40)}${defLabel(455,40,'FS','rgba(52,152,219,0.8)')}
+
+    <!-- CBs flat zones -->
+    <ellipse cx="60" cy="145" rx="50" ry="24" fill="rgba(26,188,156,0.14)" stroke="rgba(26,188,156,0.42)" stroke-width="1.5"/>
+    <line x1="60" y1="145" x2="60" y2="118" stroke="rgba(26,188,156,0.6)" stroke-width="2" stroke-linecap="round"/>
+    ${defenderX(60,145)}${defLabel(60,145,'CB','rgba(26,188,156,0.8)')}
+
+    <ellipse cx="580" cy="145" rx="50" ry="24" fill="rgba(26,188,156,0.14)" stroke="rgba(26,188,156,0.42)" stroke-width="1.5"/>
+    <line x1="580" y1="145" x2="580" y2="118" stroke="rgba(26,188,156,0.6)" stroke-width="2" stroke-linecap="round"/>
+    ${defenderX(580,145)}${defLabel(580,145,'CB','rgba(26,188,156,0.8)')}
+
+    <!-- LBs hook zones -->
+    <ellipse cx="215" cy="140" rx="44" ry="22" fill="rgba(46,204,113,0.1)" stroke="rgba(46,204,113,0.35)" stroke-width="1.5"/>
+    ${defenderX(215,140)}${defLabel(215,140,'LB','rgba(46,204,113,0.7)')}
+
+    <ellipse cx="320" cy="135" rx="44" ry="22" fill="rgba(46,204,113,0.1)" stroke="rgba(46,204,113,0.35)" stroke-width="1.5"/>
+    ${defenderX(320,135)}${defLabel(320,135,'MLB','rgba(46,204,113,0.7)')}
+
+    <ellipse cx="425" cy="140" rx="44" ry="22" fill="rgba(46,204,113,0.1)" stroke="rgba(46,204,113,0.35)" stroke-width="1.5"/>
+    ${defenderX(425,140)}${defLabel(425,140,'LB','rgba(46,204,113,0.7)')}
+
+    <!-- Nickel DB -->
+    ${defenderX(320,168)}${defLabel(320,168,'NB','rgba(26,188,156,0.7)')}
+
+    ${dlineRush([152,248,368,468])}
+    ${offensiveLine()}
+  `;
+}
+
+function buildCover3Field(svg) {
+  svg.setAttribute('viewBox','0 0 640 230');
+  svg.innerHTML = fieldBase() + `
+    <!-- 3 deep zones -->
+    <ellipse cx="100" cy="38" rx="90" ry="28" fill="rgba(52,152,219,0.12)" stroke="rgba(52,152,219,0.38)" stroke-width="1.5"/>
+    ${defenderX(100,38)}${defLabel(100,38,'CB','rgba(52,152,219,0.75)')}
+    <text x="100" y="28" text-anchor="middle" fill="rgba(52,152,219,0.3)" font-family="sans-serif" font-size="8">Deep 1/3</text>
+
+    <ellipse cx="320" cy="32" rx="100" ry="26" fill="rgba(52,152,219,0.12)" stroke="rgba(52,152,219,0.38)" stroke-width="1.5"/>
+    ${defenderX(320,32)}${defLabel(320,32,'FS','rgba(52,152,219,0.75)')}
+    <text x="320" y="22" text-anchor="middle" fill="rgba(52,152,219,0.3)" font-family="sans-serif" font-size="8">Deep Middle 1/3</text>
+
+    <ellipse cx="540" cy="38" rx="90" ry="28" fill="rgba(52,152,219,0.12)" stroke="rgba(52,152,219,0.38)" stroke-width="1.5"/>
+    ${defenderX(540,38)}${defLabel(540,38,'CB','rgba(52,152,219,0.75)')}
+    <text x="540" y="28" text-anchor="middle" fill="rgba(52,152,219,0.3)" font-family="sans-serif" font-size="8">Deep 1/3</text>
+
+    <!-- SS rotated to hook zone -->
+    <ellipse cx="180" cy="130" rx="50" ry="22" fill="rgba(26,188,156,0.12)" stroke="rgba(26,188,156,0.38)" stroke-width="1.5"/>
+    ${defenderX(180,130)}${defLabel(180,130,'SS','rgba(26,188,156,0.75)')}
+
+    <!-- LBs flat/hook -->
+    <ellipse cx="320" cy="135" rx="44" ry="20" fill="rgba(46,204,113,0.1)" stroke="rgba(46,204,113,0.35)" stroke-width="1.5"/>
+    ${defenderX(320,135)}${defLabel(320,135,'MLB','rgba(46,204,113,0.7)')}
+
+    <ellipse cx="460" cy="130" rx="50" ry="22" fill="rgba(46,204,113,0.1)" stroke="rgba(46,204,113,0.35)" stroke-width="1.5"/>
+    ${defenderX(460,130)}${defLabel(460,130,'LB','rgba(46,204,113,0.7)')}
+
+    <!-- TE position indicator -->
+    <circle cx="160" cy="205" r="7" fill="white"/>
+    <text x="160" y="222" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-family="sans-serif" font-size="8">TE</text>
+
+    ${dlineRush([152,248,368,468])}
+    ${offensiveLine()}
+  `;
+}
+
+function dlineRush(xs) {
+  return xs.map(x => `
+    <line x1="${x}" y1="177" x2="${x}" y2="193" stroke="#e74c3c" stroke-width="2.2" stroke-linecap="round"/>
+    <polygon points="${x},197 ${x-5},188 ${x+5},188" fill="#e74c3c"/>
+    <line x1="${x-8}" y1="170" x2="${x+8}" y2="184" stroke="white" stroke-width="1.5"/>
+    <line x1="${x+8}" y1="170" x2="${x-8}" y2="184" stroke="white" stroke-width="1.5"/>
+  `).join('');
+}
+
+// ═══════════════════════════════════════
+// PLAY CARD SVG BUILDERS
+// ═══════════════════════════════════════
+
+function cardBase() {
+  return `<rect width="180" height="115" fill="#060f06" rx="6"/>
+  <line x1="0" y1="78" x2="180" y2="78" stroke="rgba(76,175,80,0.1)" stroke-width="1"/>`;
+}
+
+function cardOL() {
+  return `
+    <rect x="70" y="82" width="10" height="10" rx="1" fill="none" stroke="white" stroke-width="1"/>
+    <rect x="83" y="82" width="10" height="10" rx="1" fill="none" stroke="white" stroke-width="1"/>
+    <circle cx="90" cy="93" r="3.5" fill="white"/>
+    <rect x="97" y="82" width="10" height="10" rx="1" fill="none" stroke="white" stroke-width="1"/>
+    <rect x="110" y="82" width="10" height="10" rx="1" fill="none" stroke="white" stroke-width="1"/>
+    <circle cx="90" cy="104" r="5" fill="white"/>
+  `;
+}
+
+function buildSlantFlatCard(svg) {
+  svg.setAttribute('viewBox','0 0 180 115');
+  svg.innerHTML = cardBase() + `
+    <!-- Single safety deep -->
+    <ellipse cx="90" cy="18" rx="42" ry="14" fill="rgba(52,152,219,0.12)" stroke="rgba(52,152,219,0.3)" stroke-width="1"/>
+    <line x1="82" y1="11" x2="98" y2="25" stroke="rgba(255,255,255,0.4)" stroke-width="1.2"/>
+    <line x1="98" y1="11" x2="82" y2="25" stroke="rgba(255,255,255,0.4)" stroke-width="1.2"/>
+    <!-- CB man on WR -->
+    <line x1="18" y1="60" x2="28" y2="72" stroke="rgba(26,188,156,0.5)" stroke-width="1.2"/>
+    <line x1="28" y1="60" x2="18" y2="72" stroke="rgba(26,188,156,0.5)" stroke-width="1.2"/>
+    <!-- LB man in middle -->
+    <line x1="68" y1="50" x2="78" y2="62" stroke="rgba(46,204,113,0.4)" stroke-width="1.2"/>
+    <line x1="78" y1="50" x2="68" y2="62" stroke="rgba(46,204,113,0.4)" stroke-width="1.2"/>
+    <!-- D-Line -->
+    <line x1="62" y1="70" x2="70" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="70" y1="70" x2="62" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="108" y1="70" x2="116" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="116" y1="70" x2="108" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    ${cardOL()}
+    <!-- WR left -->
+    <circle cx="16" cy="83" r="5" fill="white"/>
+    <!-- Slant route -->
+    <line x1="16" y1="78" x2="16" y2="66" stroke="#e8a020" stroke-width="2"/>
+    <line x1="16" y1="66" x2="46" y2="52" stroke="#e8a020" stroke-width="2"/>
+    <polygon points="50,50 40,49 44,58" fill="#e8a020"/>
+    <!-- RB flat route -->
+    <circle cx="90" cy="110" r="4" fill="rgba(255,255,255,0.6)"/>
+    <line x1="84" y1="110" x2="36" y2="110" stroke="#4caf50" stroke-width="2"/>
+    <polygon points="30,110 40,106 40,114" fill="#4caf50"/>
+    <!-- Concept bracket -->
+    <text x="90" y="112" text-anchor="middle" fill="rgba(232,160,32,0.0)" font-family="sans-serif" font-size="7">slant</text>
+    <!-- High-low label -->
+    <line x1="48" y1="52" x2="34" y2="110" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="3,3"/>
+  `;
+}
+
+function buildHBDiveCard(svg) {
+  svg.setAttribute('viewBox','0 0 180 115');
+  svg.innerHTML = cardBase() + `
+    <!-- MLB zone -->
+    <ellipse cx="90" cy="44" rx="36" ry="16" fill="rgba(46,204,113,0.1)" stroke="rgba(46,204,113,0.25)" stroke-width="1"/>
+    <line x1="82" y1="36" x2="98" y2="52" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>
+    <line x1="98" y1="36" x2="82" y2="52" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>
+    <!-- D-Line -->
+    <line x1="60" y1="70" x2="68" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="68" y1="70" x2="60" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="82" y1="70" x2="90" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="90" y1="70" x2="82" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="100" y1="70" x2="108" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="108" y1="70" x2="100" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="120" y1="70" x2="128" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="128" y1="70" x2="120" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    ${cardOL()}
+    <circle cx="90" cy="111" r="4" fill="rgba(255,255,255,0.6)"/>
+    <line x1="90" y1="107" x2="90" y2="92" stroke="#e8a020" stroke-width="2"/>
+    <polygon points="90,84 85,94 95,94" fill="#e8a020"/>
+  `;
+}
+
+function buildDeepPostCard(svg) {
+  svg.setAttribute('viewBox','0 0 180 115');
+  svg.innerHTML = cardBase() + `
+    <!-- Safety deep middle — prime intercept zone -->
+    <ellipse cx="90" cy="16" rx="55" ry="18" fill="rgba(52,152,219,0.15)" stroke="rgba(52,152,219,0.4)" stroke-width="1.5"/>
+    <line x1="82" y1="8" x2="98" y2="24" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+    <line x1="98" y1="8" x2="82" y2="24" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+    <!-- LBs -->
+    <line x1="60" y1="48" x2="70" y2="58" stroke="rgba(46,204,113,0.4)" stroke-width="1.2"/>
+    <line x1="70" y1="48" x2="60" y2="58" stroke="rgba(46,204,113,0.4)" stroke-width="1.2"/>
+    <line x1="108" y1="48" x2="118" y2="58" stroke="rgba(46,204,113,0.4)" stroke-width="1.2"/>
+    <line x1="118" y1="48" x2="108" y2="58" stroke="rgba(46,204,113,0.4)" stroke-width="1.2"/>
+    ${cardOL()}
+    <circle cx="16" cy="83" r="5" fill="white"/>
+    <!-- Post route — up then angle to middle into safety -->
+    <line x1="16" y1="78" x2="16" y2="55" stroke="#e8a020" stroke-width="2"/>
+    <line x1="16" y1="55" x2="72" y2="22" stroke="#e8a020" stroke-width="2"/>
+    <polygon points="77,19 66,20 70,29" fill="#e8a020"/>
+    <line x1="90" y1="100" x2="74" y2="24" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="3,3"/>
+  `;
+}
+
+function buildSlantFlatCard2(svg) {
+  svg.setAttribute('viewBox','0 0 180 115');
+  svg.innerHTML = cardBase() + `
+    <!-- Blitzing OLBs -->
+    <line x1="44" y1="55" x2="60" y2="72" stroke="rgba(231,76,60,0.7)" stroke-width="1.8"/>
+    <polygon points="63,75 54,67 63,66" fill="#e74c3c"/>
+    <line x1="36" y1="48" x2="46" y2="58" stroke="rgba(255,255,255,0.4)" stroke-width="1.2"/>
+    <line x1="46" y1="48" x2="36" y2="58" stroke="rgba(255,255,255,0.4)" stroke-width="1.2"/>
+    <text x="30" y="44" fill="rgba(231,76,60,0.6)" font-family="sans-serif" font-size="8" font-weight="700">BLITZ</text>
+
+    <line x1="136" y1="55" x2="120" y2="72" stroke="rgba(231,76,60,0.7)" stroke-width="1.8"/>
+    <polygon points="117,75 126,67 117,66" fill="#e74c3c"/>
+    <line x1="128" y1="48" x2="142" y2="58" stroke="rgba(255,255,255,0.4)" stroke-width="1.2"/>
+    <line x1="142" y1="48" x2="128" y2="58" stroke="rgba(255,255,255,0.4)" stroke-width="1.2"/>
+    <text x="128" y="44" fill="rgba(231,76,60,0.6)" font-family="sans-serif" font-size="8" font-weight="700">BLITZ</text>
+
+    <!-- MLB man -->
+    <line x1="82" y1="48" x2="92" y2="58" stroke="rgba(46,204,113,0.4)" stroke-width="1.2"/>
+    <line x1="92" y1="48" x2="82" y2="58" stroke="rgba(46,204,113,0.4)" stroke-width="1.2"/>
+    <!-- D-Line -->
+    <line x1="62" y1="70" x2="70" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="70" y1="70" x2="62" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="108" y1="70" x2="116" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="116" y1="70" x2="108" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    ${cardOL()}
+    <circle cx="16" cy="83" r="5" fill="white"/>
+    <!-- Quick slant -->
+    <line x1="16" y1="78" x2="16" y2="68" stroke="#e8a020" stroke-width="2"/>
+    <line x1="16" y1="68" x2="44" y2="54" stroke="#e8a020" stroke-width="2"/>
+    <polygon points="49,51 38,51 42,60" fill="#e8a020"/>
+    <!-- Flat -->
+    <circle cx="90" cy="110" r="4" fill="rgba(255,255,255,0.6)"/>
+    <line x1="84" y1="110" x2="38" y2="110" stroke="#4caf50" stroke-width="2"/>
+    <polygon points="32,110 42,106 42,114" fill="#4caf50"/>
+  `;
+}
+
+function buildComebackCard(svg) {
+  svg.setAttribute('viewBox','0 0 180 115');
+  svg.innerHTML = cardBase() + `
+    <!-- Blitz indicators small -->
+    <line x1="36" y1="50" x2="46" y2="60" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="46" y1="50" x2="36" y2="60" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="128" y1="50" x2="138" y2="60" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="138" y1="50" x2="128" y2="60" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="62" y1="70" x2="70" y2="78" stroke="rgba(231,76,60,0.4)" stroke-width="1.2"/>
+    <line x1="70" y1="70" x2="62" y2="78" stroke="rgba(231,76,60,0.4)" stroke-width="1.2"/>
+    <line x1="108" y1="70" x2="116" y2="78" stroke="rgba(231,76,60,0.4)" stroke-width="1.2"/>
+    <line x1="116" y1="70" x2="108" y2="78" stroke="rgba(231,76,60,0.4)" stroke-width="1.2"/>
+    ${cardOL()}
+    <circle cx="16" cy="83" r="5" fill="white"/>
+    <!-- Comeback — stem deep then back -->
+    <line x1="16" y1="78" x2="16" y2="42" stroke="#e8a020" stroke-width="2"/>
+    <line x1="16" y1="42" x2="24" y2="56" stroke="#e8a020" stroke-width="2"/>
+    <polygon points="27,62 20,53 30,50" fill="#e8a020"/>
+  `;
+}
+
+function buildHBIsoCard(svg) {
+  svg.setAttribute('viewBox','0 0 180 115');
+  svg.innerHTML = cardBase() + `
+    <!-- OLB blitz path right into gap -->
+    <line x1="44" y1="55" x2="82" y2="82" stroke="rgba(231,76,60,0.8)" stroke-width="2"/>
+    <polygon points="85,85 75,77 84,76" fill="#e74c3c"/>
+    <line x1="36" y1="48" x2="46" y2="58" stroke="rgba(255,255,255,0.4)" stroke-width="1.2"/>
+    <line x1="46" y1="48" x2="36" y2="58" stroke="rgba(255,255,255,0.4)" stroke-width="1.2"/>
+    <text x="24" y="44" fill="rgba(231,76,60,0.6)" font-family="sans-serif" font-size="7" font-weight="700">BLITZ</text>
+    <line x1="82" y1="50" x2="92" y2="58" stroke="rgba(46,204,113,0.4)" stroke-width="1.2"/>
+    <line x1="92" y1="50" x2="82" y2="58" stroke="rgba(46,204,113,0.4)" stroke-width="1.2"/>
+    <line x1="62" y1="70" x2="70" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="70" y1="70" x2="62" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="108" y1="70" x2="116" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="116" y1="70" x2="108" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    ${cardOL()}
+    <circle cx="90" cy="111" r="4" fill="rgba(255,255,255,0.6)"/>
+    <!-- HB runs into blitz lane -->
+    <line x1="90" y1="107" x2="82" y2="90" stroke="#e8a020" stroke-width="2"/>
+    <polygon points="80,84 76,94 86,92" fill="#e8a020"/>
+  `;
+}
+
+function buildHBDiveCorrectCard(svg) {
+  svg.setAttribute('viewBox','0 0 180 115');
+  svg.innerHTML = cardBase() + `
+    <!-- Two safeties deep — soft interior -->
+    <ellipse cx="45" cy="18" rx="38" ry="14" fill="rgba(52,152,219,0.1)" stroke="rgba(52,152,219,0.28)" stroke-width="1"/>
+    <line x1="37" y1="11" x2="53" y2="25" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+    <line x1="53" y1="11" x2="37" y2="25" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+    <ellipse cx="135" cy="18" rx="38" ry="14" fill="rgba(52,152,219,0.1)" stroke="rgba(52,152,219,0.28)" stroke-width="1"/>
+    <line x1="127" y1="11" x2="143" y2="25" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+    <line x1="143" y1="11" x2="127" y2="25" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+    <!-- LBs wide in zone -->
+    <line x1="55" y1="46" x2="65" y2="56" stroke="rgba(46,204,113,0.38)" stroke-width="1.2"/>
+    <line x1="65" y1="46" x2="55" y2="56" stroke="rgba(46,204,113,0.38)" stroke-width="1.2"/>
+    <line x1="88" y1="44" x2="98" y2="54" stroke="rgba(46,204,113,0.38)" stroke-width="1.2"/>
+    <line x1="98" y1="44" x2="88" y2="54" stroke="rgba(46,204,113,0.38)" stroke-width="1.2"/>
+    <line x1="115" y1="46" x2="125" y2="56" stroke="rgba(46,204,113,0.38)" stroke-width="1.2"/>
+    <line x1="125" y1="46" x2="115" y2="56" stroke="rgba(46,204,113,0.38)" stroke-width="1.2"/>
+    <line x1="62" y1="70" x2="70" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="70" y1="70" x2="62" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="88" y1="70" x2="96" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="96" y1="70" x2="88" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="104" y1="70" x2="112" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="112" y1="70" x2="104" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="118" y1="70" x2="126" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="126" y1="70" x2="118" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    ${cardOL()}
+    <circle cx="90" cy="111" r="4" fill="rgba(255,255,255,0.6)"/>
+    <line x1="90" y1="107" x2="90" y2="92" stroke="#e8a020" stroke-width="2"/>
+    <polygon points="90,84 85,94 95,94" fill="#e8a020"/>
+  `;
+}
+
+function buildSlantZoneCard(svg) {
+  svg.setAttribute('viewBox','0 0 180 115');
+  svg.innerHTML = cardBase() + `
+    <!-- MLB in hook zone, reads slant -->
+    <ellipse cx="90" cy="44" rx="40" ry="18" fill="rgba(46,204,113,0.12)" stroke="rgba(46,204,113,0.32)" stroke-width="1.5"/>
+    <line x1="82" y1="36" x2="98" y2="52" stroke="rgba(255,255,255,0.4)" stroke-width="1.2"/>
+    <line x1="98" y1="36" x2="82" y2="52" stroke="rgba(255,255,255,0.4)" stroke-width="1.2"/>
+    <!-- Safeties deep -->
+    <line x1="42" y1="11" x2="52" y2="21" stroke="rgba(52,152,219,0.3)" stroke-width="1.2"/>
+    <line x1="52" y1="11" x2="42" y2="21" stroke="rgba(52,152,219,0.3)" stroke-width="1.2"/>
+    <line x1="128" y1="11" x2="138" y2="21" stroke="rgba(52,152,219,0.3)" stroke-width="1.2"/>
+    <line x1="138" y1="11" x2="128" y2="21" stroke="rgba(52,152,219,0.3)" stroke-width="1.2"/>
+    <line x1="62" y1="70" x2="70" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="70" y1="70" x2="62" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="108" y1="70" x2="116" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    <line x1="116" y1="70" x2="108" y2="78" stroke="rgba(231,76,60,0.5)" stroke-width="1.2"/>
+    ${cardOL()}
+    <circle cx="16" cy="83" r="5" fill="white"/>
+    <line x1="16" y1="78" x2="16" y2="66" stroke="#e8a020" stroke-width="2"/>
+    <line x1="16" y1="66" x2="46" y2="48" stroke="#e8a020" stroke-width="2"/>
+    <polygon points="51,45 40,45 44,54" fill="#e8a020"/>
+  `;
+}
+
+function buildDeepInCard(svg) {
+  svg.setAttribute('viewBox','0 0 180 115');
+  svg.innerHTML = cardBase() + `
+    <!-- LB sitting in zone cross path -->
+    <ellipse cx="90" cy="38" rx="44" ry="18" fill="rgba(46,204,113,0.12)" stroke="rgba(46,204,113,0.38)" stroke-width="1.5"/>
+    <line x1="82" y1="30" x2="98" y2="46" stroke="rgba(255,255,255,0.45)" stroke-width="1.2"/>
+    <line x1="98" y1="30" x2="82" y2="46" stroke="rgba(255,255,255,0.45)" stroke-width="1.2"/>
+    <!-- Safeties -->
+    <line x1="40" y1="14" x2="50" y2="24" stroke="rgba(52,152,219,0.32)" stroke-width="1.2"/>
+    <line x1="50" y1="14" x2="40" y2="24" stroke="rgba(52,152,219,0.32)" stroke-width="1.2"/>
+    <line x1="130" y1="14" x2="140" y2="24" stroke="rgba(52,152,219,0.32)" stroke-width="1.2"/>
+    <line x1="140" y1="14" x2="130" y2="24" stroke="rgba(52,152,219,0.32)" stroke-width="1.2"/>
+    <!-- Nickel -->
+    <line x1="88" y1="60" x2="98" y2="70" stroke="rgba(26,188,156,0.35)" stroke-width="1.2"/>
+    <line x1="98" y1="60" x2="88" y2="70" stroke="rgba(26,188,156,0.35)" stroke-width="1.2"/>
+    <line x1="62" y1="70" x2="70" y2="78" stroke="rgba(231,76,60,0.45)" stroke-width="1.2"/>
+    <line x1="70" y1="70" x2="62" y2="78" stroke="rgba(231,76,60,0.45)" stroke-width="1.2"/>
+    <line x1="108" y1="70" x2="116" y2="78" stroke="rgba(231,76,60,0.45)" stroke-width="1.2"/>
+    <line x1="116" y1="70" x2="108" y2="78" stroke="rgba(231,76,60,0.45)" stroke-width="1.2"/>
+    ${cardOL()}
+    <circle cx="164" cy="83" r="5" fill="white"/>
+    <!-- Deep in route: stem vertical, break across middle into zone -->
+    <line x1="164" y1="78" x2="164" y2="50" stroke="#e8a020" stroke-width="2"/>
+    <line x1="164" y1="50" x2="96" y2="38" stroke="#e8a020" stroke-width="2"/>
+    <polygon points="90,36 100,35 98,44" fill="#e8a020"/>
+    <line x1="90" y1="100" x2="92" y2="40" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="3,3"/>
+  `;
+}
+
+function buildTESeamCard(svg) {
+  svg.setAttribute('viewBox','0 0 180 115');
+  svg.innerHTML = cardBase() + `
+    <!-- 3 deep zones -->
+    <ellipse cx="28" cy="18" rx="25" ry="12" fill="rgba(52,152,219,0.1)" stroke="rgba(52,152,219,0.28)" stroke-width="1"/>
+    <line x1="20" y1="11" x2="36" y2="25" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+    <line x1="36" y1="11" x2="20" y2="25" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+    <ellipse cx="90" cy="14" rx="30" ry="12" fill="rgba(52,152,219,0.1)" stroke="rgba(52,152,219,0.28)" stroke-width="1"/>
+    <line x1="82" y1="7" x2="98" y2="21" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+    <line x1="98" y1="7" x2="82" y2="21" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+    <ellipse cx="152" cy="18" rx="25" ry="12" fill="rgba(52,152,219,0.1)" stroke="rgba(52,152,219,0.28)" stroke-width="1"/>
+    <line x1="144" y1="11" x2="160" y2="25" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+    <line x1="160" y1="11" x2="144" y2="25" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+    <!-- Hook/curl zones underneath -->
+    <line x1="55" y1="44" x2="65" y2="54" stroke="rgba(46,204,113,0.38)" stroke-width="1.2"/>
+    <line x1="65" y1="44" x2="55" y2="54" stroke="rgba(46,204,113,0.38)" stroke-width="1.2"/>
+    <line x1="115" y1="44" x2="125" y2="54" stroke="rgba(46,204,113,0.38)" stroke-width="1.2"/>
+    <line x1="125" y1="44" x2="115" y2="54" stroke="rgba(46,204,113,0.38)" stroke-width="1.2"/>
+    <line x1="62" y1="70" x2="70" y2="78" stroke="rgba(231,76,60,0.45)" stroke-width="1.2"/>
+    <line x1="70" y1="70" x2="62" y2="78" stroke="rgba(231,76,60,0.45)" stroke-width="1.2"/>
+    <line x1="108" y1="70" x2="116" y2="78" stroke="rgba(231,76,60,0.45)" stroke-width="1.2"/>
+    <line x1="116" y1="70" x2="108" y2="78" stroke="rgba(231,76,60,0.45)" stroke-width="1.2"/>
+    ${cardOL()}
+    <!-- TE position -->
+    <circle cx="148" cy="83" r="5" fill="white"/>
+    <text x="148" y="97" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-family="sans-serif" font-size="7">TE</text>
+    <!-- TE seam — straight up between zones -->
+    <line x1="148" y1="78" x2="148" y2="56" stroke="#e8a020" stroke-width="2"/>
+    <line x1="148" y1="56" x2="118" y2="28" stroke="#e8a020" stroke-width="2"/>
+    <polygon points="115,23 114,33 123,30" fill="#e8a020"/>
+    <line x1="90" y1="100" x2="116" y2="30" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="3,3"/>
+  `;
+}
+
+function buildFadeCard(svg) {
+  svg.setAttribute('viewBox','0 0 180 115');
+  svg.innerHTML = cardBase() + `
+    <!-- CB deep 1/3 perfectly in fade lane -->
+    <ellipse cx="22" cy="20" rx="22" ry="14" fill="rgba(52,152,219,0.14)" stroke="rgba(52,152,219,0.4)" stroke-width="1.5"/>
+    <line x1="14" y1="12" x2="30" y2="28" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+    <line x1="30" y1="12" x2="14" y2="28" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+    <!-- FS deep middle -->
+    <ellipse cx="90" cy="14" rx="32" ry="12" fill="rgba(52,152,219,0.1)" stroke="rgba(52,152,219,0.28)" stroke-width="1"/>
+    <line x1="82" y1="7" x2="98" y2="21" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+    <line x1="98" y1="7" x2="82" y2="21" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+    <!-- Zone underneath -->
+    <line x1="62" y1="44" x2="72" y2="54" stroke="rgba(46,204,113,0.35)" stroke-width="1.2"/>
+    <line x1="72" y1="44" x2="62" y2="54" stroke="rgba(46,204,113,0.35)" stroke-width="1.2"/>
+    <line x1="62" y1="70" x2="70" y2="78" stroke="rgba(231,76,60,0.45)" stroke-width="1.2"/>
+    <line x1="70" y1="70" x2="62" y2="78" stroke="rgba(231,76,60,0.45)" stroke-width="1.2"/>
+    <line x1="108" y1="70" x2="116" y2="78" stroke="rgba(231,76,60,0.45)" stroke-width="1.2"/>
+    <line x1="116" y1="70" x2="108" y2="78" stroke="rgba(231,76,60,0.45)" stroke-width="1.2"/>
+    ${cardOL()}
+    <circle cx="16" cy="83" r="5" fill="white"/>
+    <!-- Fade — up and to the corner -->
+    <line x1="16" y1="78" x2="16" y2="58" stroke="#e8a020" stroke-width="2"/>
+    <line x1="16" y1="58" x2="10" y2="30" stroke="#e8a020" stroke-width="2"/>
+    <polygon points="9,22 6,33 14,31" fill="#e8a020"/>
+    <line x1="90" y1="100" x2="12" y2="28" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="3,3"/>
+  `;
+}
+
+function buildHBStretchCard(svg) {
+  svg.setAttribute('viewBox','0 0 180 115');
+  svg.innerHTML = cardBase() + `
+    <!-- CBs squeezing down in cover 3 -->
+    <line x1="14" y1="55" x2="24" y2="65" stroke="rgba(52,152,219,0.5)" stroke-width="1.5"/>
+    <line x1="24" y1="55" x2="14" y2="65" stroke="rgba(52,152,219,0.5)" stroke-width="1.5"/>
+    <!-- Arrow showing CB coming down -->
+    <line x1="18" y1="65" x2="28" y2="78" stroke="rgba(52,152,219,0.4)" stroke-width="1.5"/>
+    <polygon points="31,81 23,74 31,72" fill="rgba(52,152,219,0.5)"/>
+    <!-- LBs -->
+    <line x1="62" y1="48" x2="72" y2="58" stroke="rgba(46,204,113,0.38)" stroke-width="1.2"/>
+    <line x1="72" y1="48" x2="62" y2="58" stroke="rgba(46,204,113,0.38)" stroke-width="1.2"/>
+    <line x1="88" y1="44" x2="98" y2="54" stroke="rgba(46,204,113,0.38)" stroke-width="1.2"/>
+    <line x1="98" y1="44" x2="88" y2="54" stroke="rgba(46,204,113,0.38)" stroke-width="1.2"/>
+    <line x1="62" y1="70" x2="70" y2="78" stroke="rgba(231,76,60,0.45)" stroke-width="1.2"/>
+    <line x1="70" y1="70" x2="62" y2="78" stroke="rgba(231,76,60,0.45)" stroke-width="1.2"/>
+    <line x1="108" y1="70" x2="116" y2="78" stroke="rgba(231,76,60,0.45)" stroke-width="1.2"/>
+    <line x1="116" y1="70" x2="108" y2="78" stroke="rgba(231,76,60,0.45)" stroke-width="1.2"/>
+    ${cardOL()}
+    <circle cx="90" cy="111" r="4" fill="rgba(255,255,255,0.6)"/>
+    <!-- HB stretch — outside run -->
+    <line x1="90" y1="107" x2="56" y2="96" stroke="#e8a020" stroke-width="2"/>
+    <line x1="56" y1="96" x2="28" y2="88" stroke="#e8a020" stroke-width="2"/>
+    <polygon points="22,86 32,84 30,93" fill="#e8a020"/>
+  `;
+}
+
+// ═══════════════════════════════════════
+// GAME LOGIC
+// ═══════════════════════════════════════
+
+const POINT_TABLE = [1000, 800, 600, 400];
+const TD_BONUS = 1500;
+const TIMER_DURATION = 3.5;
+
+function calcPoints(playIdx, decisionTime) {
+  const max = POINT_TABLE[playIdx];
+  const ratio = Math.max(0, (TIMER_DURATION - decisionTime) / TIMER_DURATION);
+  return Math.round(max * ratio);
+}
+
+function startGame() {
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('gameScreen').classList.add('active');
+  currentPlay = 0;
+  score = 0;
+  playHistory = [];
+  decisionTimes = [];
+  updateScore();
+  loadPlay(0);
+}
+
+function loadPlay(idx) {
+  const play = PLAYS[idx];
+  document.getElementById('downText').textContent = play.down;
+  document.getElementById('downSub').textContent = play.sub;
+  document.getElementById('coveragePill').textContent = play.coverage;
+  document.getElementById('coveragePill').style.color = play.coverageColor;
+  document.getElementById('coveragePill').style.borderColor = play.coverageColor + '55';
+  document.getElementById('coveragePill').style.background = play.coverageColor + '18';
+
+  updateDots();
+
+  // Build field
+  const fieldSvg = document.getElementById('fieldSvg');
+  play.fieldSvg(fieldSvg);
+
+  // Shuffle play order
+  const shuffled = [...play.options].sort(() => Math.random() - 0.5);
+
+  // Build play cards
+  const grid = document.getElementById('playsGrid');
+  grid.innerHTML = '';
+  shuffled.forEach(option => {
+    const card = document.createElement('div');
+    card.className = 'play-card';
+    card.innerHTML = `
+      <div class="play-name">${option.name}</div>
+      <div class="play-type">${option.type}</div>
+      ${option.concept ? `<div class="play-concept">${option.concept}</div>` : ''}
+      <svg class="play-svg" viewBox="0 0 180 115" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="play-desc">${option.desc}</div>
+    `;
+    const svg = card.querySelector('svg');
+    option.buildSvg(svg);
+    card.addEventListener('click', () => handlePick(option, idx));
+    grid.appendChild(card);
+  });
+
+  startTimer(idx);
+}
+
+function updateDots() {
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById('dot' + i);
+    dot.className = 'drive-dot';
+    if (i < currentPlay) {
+      const h = playHistory[i];
+      if (h === 'correct') dot.classList.add('done');
+      else if (h === 'neutral') dot.classList.add('neutral');
+      else dot.classList.add('wrong');
+    } else if (i === currentPlay) {
+      dot.classList.add('active');
+    }
+  }
+}
+
+function startTimer(playIdx) {
+  timeLeft = TIMER_DURATION;
+  playStartTime = Date.now();
+  clearInterval(timerInterval);
+  updateTimerDisplay();
+
+  timerInterval = setInterval(() => {
+    timeLeft = Math.max(0, TIMER_DURATION - (Date.now() - playStartTime) / 1000);
+    updateTimerDisplay();
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      handleDelay();
+    }
+  }, 100);
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timerDisplay');
+  const secs = Math.ceil(timeLeft);
+  el.textContent = secs;
+  if (timeLeft <= 1) el.classList.add('urgent');
+  else el.classList.remove('urgent');
+}
+
+function handlePick(option, playIdx) {
+  clearInterval(timerInterval);
+  const decisionTime = (Date.now() - playStartTime) / 1000;
+  decisionTimes.push(decisionTime);
+
+  const result = option.result;
+  const isLastPlay = playIdx === 3;
+
+  if (result === 'correct') {
+    const pts = calcPoints(playIdx, decisionTime);
+    score += pts;
+    updateScore();
+    playHistory.push('correct');
+
+    if (isLastPlay) {
+      score += TD_BONUS;
+      updateScore();
+      showFlash('correct', 'COMPLETED!', `+${pts} pts — Touchdown!`, () => showTouchdown());
+    } else {
+      showFlash('correct', 'COMPLETED!', `+${pts} pts`, () => {
+        currentPlay++;
+        loadPlay(currentPlay);
+      });
+    }
+  } else if (result === 'neutral') {
+    const isRunPlay = option.type.includes('Run');
+    playHistory.push('neutral');
+
+    if (isLastPlay) {
+      showFlash('neutral-run', 'TURNOVER ON DOWNS', 'Drive ended — no score', () => showLoss('TURNOVER ON DOWNS', "So close — you stalled on 4th down. Lace up your cleats tomorrow.", 'Stalled on 4th down'));
+    } else {
+      if (isRunPlay) {
+        showFlash('neutral-run', 'STONEWALLED!', 'No gain — try again', () => {
+          currentPlay++;
+          loadPlay(currentPlay);
+        });
+      } else {
+        showFlash('neutral-pass', 'INCOMPLETE!', 'Incomplete pass — drive continues', () => {
+          currentPlay++;
+          loadPlay(currentPlay);
+        });
+      }
+    }
+  } else {
+    // wrong
+    playHistory.push('wrong');
+    markAttemptedLocally('snap-decision-v1');
+    const isRunPlay = option.type.includes('Run');
+    if (isRunPlay) {
+      showFlash('wrong', 'FUMBLE!', 'Turnover — game over', () => showLoss('FUMBLE!', "Tough break — you fumbled it. Lace up your cleats tomorrow.", 'Ball hit the turf'));
+    } else {
+      showFlash('wrong', 'INTERCEPTED!', 'Misread the coverage', () => showLoss('INTERCEPTED!', "You threw right into the coverage. Lace up your cleats tomorrow.", 'Misread the coverage'));
+    }
+  }
+}
+
+function handleDelay() {
+  playHistory.push('delay');
+  showFlash('delay', 'DELAY OF GAME', 'Coach pulled you — clock ran out', () => showLoss('DELAY OF GAME', "The clock ran out — coach pulled you from the game. Lace up your cleats tomorrow.", 'Clock ran out'));
+}
+
+function showFlash(type, main, sub, callback) {
+  const flash = document.createElement('div');
+  flash.className = `result-flash ${type}`;
+  flash.innerHTML = `
+    <div class="flash-main">${main}</div>
+    <div class="flash-sub">${sub}</div>
+  `;
+  document.body.appendChild(flash);
+  if (flashTimeout) clearTimeout(flashTimeout);
+  flashTimeout = setTimeout(() => {
+    flash.remove();
+    callback();
+  }, 1100);
+}
+
+function updateScore() {
+  document.getElementById('scoreDisplay').textContent = score.toLocaleString();
+}
+
+function showTouchdown() {
+  document.getElementById('gameScreen').classList.remove('active');
+  const tdScreen = document.getElementById('tdScreen');
+  tdScreen.style.display = 'block';
+
+  document.getElementById('tdScore').textContent = score.toLocaleString();
+  document.getElementById('tdCorrect').textContent = playHistory.filter(h => h === 'correct').length + '/4';
+  document.getElementById('tdNeutral').textContent = playHistory.filter(h => h === 'neutral').length;
+  const avgTime = decisionTimes.length ? (decisionTimes.reduce((a,b) => a+b,0) / decisionTimes.length).toFixed(1) + 's' : 'N/A';
+  document.getElementById('tdAvgTime').textContent = avgTime;
+  document.getElementById('tdPlaySummary').innerHTML = buildPlaySummary('td');
+}
+
+function showLoss(headline, desc, badge) {
+  document.getElementById('gameScreen').classList.remove('active');
+  const lossScreen = document.getElementById('lossScreen');
+  lossScreen.style.display = 'block';
+
+  document.getElementById('lossMain').textContent = headline;
+  document.getElementById('lossBadge').textContent = badge;
+  document.getElementById('lossDesc').textContent = desc;
+  document.getElementById('lossScore').textContent = score.toLocaleString();
+  document.getElementById('lossCorrect').textContent = playHistory.filter(h => h === 'correct').length;
+  document.getElementById('lossDown').textContent = currentPlay + 1;
+  document.getElementById('lossNeeded').textContent = 4;
+  document.getElementById('lossPlaySummary').innerHTML = buildPlaySummary('loss');
+}
+
+function buildPlaySummary(type) {
+  const downs = ['1st Down', '2nd Down', '3rd Down', '4th Down'];
+  const plays = ['Slant-Flat', 'Slant-Flat', 'HB Dive', 'TE Seam'];
+  const colorMap = {
+    correct: { dot: '#4caf50', bg: 'rgba(76,175,80,0.08)', result: 'CORRECT', pts: '' },
+    neutral: { dot: '#e8c020', bg: 'rgba(232,192,32,0.08)', result: 'NEUTRAL', pts: '+0' },
+    wrong: { dot: '#c0392b', bg: 'rgba(192,57,43,0.08)', result: 'WRONG', pts: '' },
+    delay: { dot: '#e8a020', bg: 'rgba(232,160,32,0.08)', result: 'DELAY OF GAME', pts: '' }
+  };
+
+  const title = type === 'td'
+    ? `<div class="play-summary-title" style="color:#1a3a1a;">Drive Summary</div>`
+    : `<div class="play-summary-title" style="color:#3a1a1a;">Drive Summary</div>`;
+
+  const rows = playHistory.map((h, i) => {
+    const c = colorMap[h] || colorMap.neutral;
+    const ptsEarned = h === 'correct' && decisionTimes[i] !== undefined
+      ? `+${calcPoints(i, decisionTimes[i]).toLocaleString()}`
+      : h === 'correct' ? '+pts' : h === 'neutral' ? '+0' : '';
+    return `
+      <div class="play-row" style="background:${c.bg};">
+        <div class="play-row-dot" style="background:${c.dot};"></div>
+        <div class="play-row-name" style="color:rgba(245,242,238,0.7);font-size:11px;">${downs[i]}</div>
+        <div class="play-row-result" style="color:${c.dot};">${c.result}</div>
+        <div class="play-row-pts" style="color:${c.dot};">${ptsEarned}</div>
+      </div>
+    `;
+  }).join('');
+
+  return title + rows;
+}
+
+function resetGame() {
+  // already marked on game end
+  document.getElementById('tdScreen').style.display = 'none';
+  document.getElementById('lossScreen').style.display = 'none';
+  document.getElementById('startScreen').style.display = 'block';
+  currentPlay = 0;
+  score = 0;
+  playHistory = [];
+  decisionTimes = [];
+  clearInterval(timerInterval);
+}
+</script>
+</body>
+</html>
+<script>
+// Mark snap decision as played when touchdown or loss screen shows
+const _origShowTD = showTouchdown;
+const _origShowLoss = showLoss;
+</script>

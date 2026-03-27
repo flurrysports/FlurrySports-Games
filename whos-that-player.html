@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Who's That, Player? — FlurrySports Games</title>
+  <link rel="icon" type="image/png" href="/images/logo-crown.png">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-config.js"></script>
+  <script>var supabase = (window.supabase || window.Supabase).createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
+  <style>
+    .wtp-shell { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; position: relative; z-index: 1; }
+    .wtp-hero {
+      background: linear-gradient(135deg, #020d1a 0%, #041428 50%, #020d1a 100%);
+      border: 1px solid rgba(52,152,219,0.2);
+      border-radius: 20px; overflow: hidden; margin-bottom: 1.5rem;
+    }
+    .wtp-hero-top {
+      background: linear-gradient(90deg, rgba(52,152,219,0.08), transparent);
+      border-bottom: 1px solid rgba(52,152,219,0.15);
+      padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
+    }
+    .wtp-brand { display: flex; align-items: center; gap: 0.75rem; }
+    .wtp-brand-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: rgba(52,152,219,0.2); border: 1px solid rgba(52,152,219,0.4);
+      display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+    }
+    .wtp-brand-name { font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; color: #3498db; }
+    .wtp-brand-sub { font-family: 'Barlow Condensed',sans-serif; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(52,152,219,0.5); }
+    .wtp-league-badge {
+      font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 0.75rem;
+      letter-spacing: 0.15em; text-transform: uppercase; padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+    }
+    .wtp-body { display: grid; grid-template-columns: 240px 1fr; gap: 0; }
+    .wtp-silhouette-panel {
+      background: linear-gradient(180deg, #010810 0%, #020d1a 100%);
+      border-right: 1px solid rgba(52,152,219,0.1);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem 1.5rem; min-height: 280px; position: relative;
+    }
+    .wtp-who-label {
+      font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.7rem;
+      letter-spacing: 0.25em; text-transform: uppercase; color: rgba(52,152,219,0.3);
+      margin-bottom: 1rem; text-align: center;
+    }
+    .wtp-silhouette-wrap { position: relative; width: 140px; height: 185px; margin-bottom: 1rem; }
+    .wtp-player-img {
+      width: 100%; height: 100%; object-fit: cover; object-position: top;
+      filter: brightness(0) saturate(100%);
+    }
+    .wtp-glow {
+      position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
+      width: 100px; height: 30px;
+      background: radial-gradient(ellipse, rgba(52,152,219,0.2) 0%, transparent 70%);
+    }
+    .wtp-qmarks {
+      font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 1.5rem;
+      color: rgba(52,152,219,0.4); letter-spacing: 0.4em; text-align: center;
+    }
+    .wtp-clues-panel { padding: 1.5rem; }
+    .wtp-clues-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .wtp-clues-title { font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.3); }
+    .wtp-clue-count { font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.8rem; color: #3498db; }
+    .wtp-clue {
+      display: flex; align-items: flex-start; gap: 0.875rem;
+      padding: 0.875rem 1rem; margin-bottom: 0.625rem;
+      background: rgba(52,152,219,0.05); border: 1px solid rgba(52,152,219,0.1);
+      border-radius: 10px; transition: all 0.3s ease;
+    }
+    .wtp-clue.locked { opacity: 0.25; background: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.04); }
+    .wtp-clue.revealed { animation: clueReveal 0.4s ease; }
+    @keyframes clueReveal { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+    .wtp-clue-num { font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 1.3rem; color: #3498db; line-height: 1; min-width: 16px; }
+    .wtp-clue.locked .wtp-clue-num { color: rgba(255,255,255,0.1); }
+    .wtp-clue-content { flex: 1; }
+    .wtp-clue-label { font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.25); margin-bottom: 2px; }
+    .wtp-clue-text { font-size: 0.9rem; font-weight: 600; color: var(--white); line-height: 1.3; }
+    .wtp-clue.locked .wtp-clue-text { color: rgba(255,255,255,0.08); }
+    .wtp-pts-badge { font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.7rem; letter-spacing: 0.08em; padding: 3px 8px; border-radius: 4px; white-space: nowrap; background: rgba(52,152,219,0.1); color: #3498db; border: 1px solid rgba(52,152,219,0.2); }
+    .wtp-clue.locked .wtp-pts-badge { background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.04); }
+    .wtp-guess-section { padding: 1rem 1.5rem 1.5rem; border-top: 1px solid rgba(52,152,219,0.1); }
+    .wtp-guess-label { font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 0.625rem; }
+    .wtp-guess-row { display: flex; gap: 0.625rem; }
+    .wtp-guess-input {
+      flex: 1; background: rgba(52,152,219,0.06); border: 1px solid rgba(52,152,219,0.2);
+      border-radius: 8px; padding: 0.75rem 1rem; color: var(--white);
+      font-family: 'Barlow',sans-serif; font-size: 0.95rem; outline: none;
+    }
+    .wtp-guess-input:focus { border-color: rgba(52,152,219,0.5); background: rgba(52,152,219,0.08); }
+    .wtp-guess-input::placeholder { color: rgba(255,255,255,0.2); }
+    .wtp-guess-btn {
+      background: #1a4a6a; border: 1px solid #1a5a8a; border-radius: 8px;
+      padding: 0.75rem 1.25rem; color: #3498db; font-family: 'Barlow Condensed',sans-serif;
+      font-weight: 700; font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase;
+      cursor: pointer; transition: background 0.2s; white-space: nowrap;
+    }
+    .wtp-guess-btn:hover { background: #1a5a8a; }
+    .wtp-reveal-btn {
+      width: 100%; margin-top: 0.625rem; background: transparent;
+      border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;
+      padding: 0.625rem; color: rgba(255,255,255,0.3);
+      font-family: 'Barlow Condensed',sans-serif; font-weight: 700;
+      font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .wtp-reveal-btn:hover { border-color: rgba(255,255,255,0.15); color: rgba(255,255,255,0.5); }
+    .wtp-score-strip {
+      background: rgba(2,13,26,0.8); border-top: 1px solid rgba(52,152,219,0.1);
+      padding: 0.875rem 1.5rem; display: flex; align-items: center;
+      justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+    }
+    .wtp-score-item { text-align: center; }
+    .wtp-score-val { font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 1.4rem; color: #3498db; line-height: 1; }
+    .wtp-score-lbl { font-family: 'Barlow Condensed',sans-serif; font-weight: 600; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(52,152,219,0.4); margin-top: 2px; }
+    .wtp-divider { width: 1px; height: 28px; background: rgba(52,152,219,0.1); }
+    .wtp-result { border-radius: 20px; padding: 2.5rem; text-align: center; }
+    .wtp-result.correct { background: linear-gradient(135deg, #021a02, #020d1a); border: 1px solid rgba(0,214,143,0.3); }
+    .wtp-result.wrong { background: linear-gradient(135deg, #1a0202, #020d1a); border: 1px solid rgba(255,77,109,0.3); }
+    .wtp-result-main { font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 3.5rem; text-transform: uppercase; line-height: 1; margin: 0.75rem 0; }
+    .wtp-result.correct .wtp-result-main { color: var(--success); }
+    .wtp-result.wrong .wtp-result-main { color: var(--error); }
+    .wtp-player-reveal {
+      display: flex; align-items: center; gap: 1.5rem;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; padding: 1.25rem 1.5rem; margin: 1.5rem 0;
+      text-align: left;
+    }
+    .wtp-player-img-reveal { width: 80px; height: 80px; object-fit: cover; object-position: top; border-radius: 10px; }
+    .wtp-player-name { font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 1.75rem; text-transform: uppercase; color: var(--white); line-height: 1; }
+    .wtp-player-details { font-size: 0.85rem; color: var(--gray); margin-top: 0.35rem; }
+    .guess-feedback { text-align: center; padding: 0.5rem; font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.9rem; letter-spacing: 0.08em; text-transform: uppercase; min-height: 2rem; }
+    .guess-feedback.wrong-guess { color: var(--error); }
+    .guess-feedback.close-guess { color: var(--gold); }
+    @media (max-width: 600px) {
+      .wtp-body { grid-template-columns: 1fr; }
+      .wtp-silhouette-panel { border-right: none; border-bottom: 1px solid rgba(52,152,219,0.1); min-height: 200px; }
+    }
+  </style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="/"><img src="/images/logo-yeti-orange.png" alt="FlurrySports" style="height:48px;width:auto;"></a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="/quizzes.html">Quizzes</a></li>
+    <li><a href="/leaderboard.html">Leaderboard</a></li>
+  </ul>
+  <div class="nav-actions" id="nav-actions">
+    <button class="btn btn-ghost btn-sm" onclick="openModal('login')">Log In</button>
+    <button class="btn btn-primary btn-sm" onclick="openModal('signup')">Sign Up</button>
+  </div>
+</nav>
+
+<div class="wtp-shell">
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;">
+    <a href="/" style="color:var(--gray);text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.9rem;letter-spacing:0.08em;text-transform:uppercase;">← Back to Games</a>
+  </div>
+  <div id="wtp-container"><div class="spinner"></div></div>
+</div>
+
+<script src="/js/auth.js"></script>
+<script>
+  function dateSeed() { return parseInt(new Date().toISOString().slice(0,10).replace(/-/g,'')); }
+  function seededRandom(seed) {
+    let s = seed;
+    return function() { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+  }
+
+  const NFL_PLAYERS = [
+    { name:"Patrick Mahomes", pos:"QB", team:"Kansas City Chiefs", college:"Texas Tech", drafted:"2017 · 1st Round · 10th Pick", espnId:"3139477", clues:[{label:"Position & League",text:"Quarterback · NFL"},{label:"Draft Info",text:"Selected 10th overall in the 2017 NFL Draft"},{label:"Career Achievement",text:"Led the NFL in passing touchdowns with 50 in his first year as starter"},{label:"Personal Note",text:"His father played professional baseball for 11 years in the MLB"},{label:"Signature Move",text:"Known for his no-look passes, off-platform throws, and ability to improvise under pressure"}] },
+    { name:"Josh Allen", pos:"QB", team:"Buffalo Bills", college:"Wyoming", drafted:"2018 · 1st Round · 7th Pick", espnId:"3918298", clues:[{label:"Position & League",text:"Quarterback · NFL"},{label:"Draft Info",text:"Selected 7th overall in the 2018 NFL Draft out of Wyoming"},{label:"Career Achievement",text:"Led the Bills to multiple AFC Championship appearances"},{label:"Unique Skill",text:"One of the few QBs in NFL history to rush for 500+ yards multiple seasons"},{label:"Season Highlight",text:"Threw for 49 touchdowns in a single season"}] },
+    { name:"Justin Jefferson", pos:"WR", team:"Minnesota Vikings", college:"LSU", drafted:"2020 · 1st Round · 22nd Pick", espnId:"4241464", clues:[{label:"Position & League",text:"Wide Receiver · NFL"},{label:"Draft Info",text:"22nd overall pick in the 2020 NFL Draft"},{label:"Record Breaker",text:"Set the record for most receiving yards in the first 4 NFL seasons"},{label:"College",text:"Won a national championship at LSU in the 2019 season"},{label:"Celebration",text:"Known for his signature 'Griddy' touchdown celebration"}] },
+    { name:"Ja'Marr Chase", pos:"WR", team:"Cincinnati Bengals", college:"LSU", drafted:"2021 · 1st Round · 5th Pick", espnId:"4362628", clues:[{label:"Position & League",text:"Wide Receiver · NFL"},{label:"Draft Info",text:"5th overall pick in the 2021 NFL Draft"},{label:"College Connection",text:"Played alongside his current NFL QB at LSU"},{label:"Rookie Season",text:"Set the NFL record for most receiving yards by a rookie"},{label:"College Decision",text:"Opted out of the 2020 college season to prepare for the draft"}] },
+    { name:"Lamar Jackson", pos:"QB", team:"Baltimore Ravens", college:"Louisville", drafted:"2018 · 1st Round · 32nd Pick", espnId:"3916387", clues:[{label:"Position & League",text:"Quarterback · NFL"},{label:"College Award",text:"Won the Heisman Trophy in 2016 at the University of Louisville"},{label:"Draft Fact",text:"Was the very last pick of the first round in his draft class"},{label:"Record Holder",text:"Holds the NFL record for most rushing yards by a QB in a single season"},{label:"Awards",text:"Has won multiple NFL MVP awards during his career"}] },
+    { name:"CeeDee Lamb", pos:"WR", team:"Dallas Cowboys", college:"Oklahoma", drafted:"2020 · 1st Round · 17th Pick", espnId:"4241389", clues:[{label:"Position & League",text:"Wide Receiver · NFL"},{label:"Draft Info",text:"17th overall pick in the 2020 NFL Draft out of Oklahoma"},{label:"Team Role",text:"Became the Cowboys' undisputed #1 receiver after a major roster change"},{label:"Season Achievement",text:"Led the entire NFL in receiving yards in the 2024 season"},{label:"Draft Class",text:"Part of arguably the greatest WR class in NFL Draft history"}] },
+    { name:"Tyreek Hill", pos:"WR", team:"Miami Dolphins", college:"West Alabama", drafted:"2016 · 5th Round · 165th Pick", espnId:"3054211", clues:[{label:"Position & League",text:"Wide Receiver · NFL"},{label:"Background",text:"Was a competitive track athlete in college before the NFL"},{label:"Trade",text:"Was traded from one of the NFL's top franchises to Miami in 2022"},{label:"Nickname",text:"Nicknamed 'Cheetah' for having elite speed among all NFL players"},{label:"Record",text:"Set the NFL record for most receiving yards in a single game with 215 yards"}] },
+    { name:"Travis Kelce", pos:"TE", team:"Kansas City Chiefs", college:"Cincinnati", drafted:"2013 · 3rd Round · 63rd Pick", espnId:"2576336", clues:[{label:"Position & League",text:"Tight End · NFL"},{label:"Family",text:"His brother Jason played as a center in the NFL for his entire career"},{label:"Record",text:"Has accumulated the most career receiving yards of any tight end in NFL history"},{label:"Championships",text:"Has won multiple Super Bowl rings with his current team"},{label:"Cultural Note",text:"Became a major pop culture figure through a high-profile public relationship"}] },
+  ];
+
+  const NBA_PLAYERS = [
+    { name:"Stephen Curry", pos:"PG", team:"Golden State Warriors", college:"Davidson", drafted:"2009 · 1st Round · 7th Pick", espnId:"3975", clues:[{label:"Position & League",text:"Point Guard · NBA"},{label:"Draft Info",text:"7th overall pick in the 2009 NBA Draft from Davidson College"},{label:"Revolution",text:"Transformed the game with his historic three-point shooting ability"},{label:"Family",text:"His father Dell played in the NBA and his brother Seth also plays"},{label:"Championships",text:"Has won 4 NBA championships, all with the same franchise"}] },
+    { name:"Nikola Jokic", pos:"C", team:"Denver Nuggets", college:"International", drafted:"2014 · 2nd Round · 41st Pick", espnId:"3112335", clues:[{label:"Position & League",text:"Center · NBA"},{label:"Draft Fact",text:"Was the 41st pick, announced during a Taco Bell commercial break at the 2014 Draft"},{label:"Awards",text:"Won 3 NBA MVP awards in just 4 seasons — one of the fastest accumulations in history"},{label:"Historic Achievement",text:"Led his team to their first-ever NBA Championship in 2023"},{label:"Unique Skill",text:"Widely considered the greatest passing center in basketball history"}] },
+    { name:"Giannis Antetokounmpo", pos:"PF", team:"Milwaukee Bucks", college:"International", drafted:"2013 · 1st Round · 15th Pick", espnId:"3032977", clues:[{label:"Position & League",text:"Power Forward · NBA"},{label:"Origin",text:"Grew up in Greece with an extremely difficult childhood in poverty"},{label:"Nickname",text:"Known as 'The Greek Freak' for his extraordinary combination of size, speed, and skill"},{label:"Championship",text:"Led his franchise to their first NBA title in 50 years"},{label:"Awards",text:"Won back-to-back MVP awards in the 2018-19 and 2019-20 seasons"}] },
+    { name:"Luka Doncic", pos:"PG", team:"Dallas Mavericks", college:"International", drafted:"2018 · 1st Round · 3rd Pick", espnId:"3945274", clues:[{label:"Position & League",text:"Point Guard · NBA"},{label:"Pre-NBA",text:"Won the EuroLeague MVP award before coming to the NBA from Slovenia"},{label:"Draft Fact",text:"Was originally drafted by the Atlanta Hawks before being traded on draft night"},{label:"International",text:"Led his national team to historic achievements on the international stage"},{label:"Signature Play",text:"Known for his step-back three-pointer and elite court vision and passing"}] },
+    { name:"Jayson Tatum", pos:"SF", team:"Boston Celtics", college:"Duke", drafted:"2017 · 1st Round · 3rd Pick", espnId:"4065648", clues:[{label:"Position & League",text:"Small Forward · NBA"},{label:"Draft Info",text:"3rd overall pick in the 2017 NBA Draft from Duke University"},{label:"Achievement",text:"Led his team to back-to-back NBA Finals appearances in 2022 and 2024"},{label:"Idol",text:"Grew up idolizing Kobe Bryant and has spoken about his influence frequently"},{label:"Championship",text:"Won the 2024 NBA Championship and was named Finals MVP"}] },
+    { name:"Joel Embiid", pos:"C", team:"Philadelphia 76ers", college:"Kansas", drafted:"2014 · 1st Round · 3rd Pick", espnId:"3059318", clues:[{label:"Position & League",text:"Center · NBA"},{label:"Origin",text:"Grew up in Cameroon, Africa, and didn't pick up basketball until his teenage years"},{label:"Award",text:"Won the NBA Most Valuable Player award for the 2022-23 season"},{label:"Team History",text:"Has been the cornerstone of a franchise rebuild known as 'The Process'"},{label:"College",text:"Played only one season of college basketball at Kansas before entering the draft"}] },
+    { name:"Ja Morant", pos:"PG", team:"Memphis Grizzlies", college:"Murray State", drafted:"2019 · 1st Round · 2nd Pick", espnId:"4279888", clues:[{label:"Position & League",text:"Point Guard · NBA"},{label:"College",text:"Came from Murray State, a small mid-major school that few scouts initially noticed"},{label:"Award",text:"Won the NBA Rookie of the Year award in his first season"},{label:"Athleticism",text:"Known for some of the most explosive dunks and plays in NBA history"},{label:"Production",text:"Averaged more than 25 points per game during his peak seasons"}] },
+    { name:"Anthony Edwards", pos:"SG", team:"Minnesota Timberwolves", college:"Georgia", drafted:"2020 · 1st Round · 1st Pick", espnId:"4432174", clues:[{label:"Position & League",text:"Shooting Guard · NBA"},{label:"Draft Info",text:"Selected #1 overall in the 2020 NBA Draft from the University of Georgia"},{label:"Nickname",text:"Known as 'Ant-Man' for his explosive athleticism despite being shorter than typical stars"},{label:"Team Achievement",text:"Led his team to the Western Conference Finals in 2024"},{label:"Personality",text:"Known for his infectious personality, humor, and charisma both on and off the court"}] },
+    { name:"Shai Gilgeous-Alexander", pos:"PG", team:"Oklahoma City Thunder", college:"Kentucky", drafted:"2018 · 1st Round · 11th Pick", espnId:"4278073", clues:[{label:"Position & League",text:"Point Guard · NBA"},{label:"Trade History",text:"Drafted by Charlotte, then traded through LA Clippers before landing in Oklahoma City"},{label:"Award",text:"Won the NBA MVP award for the 2024-25 season"},{label:"Team Achievement",text:"Led OKC to the best record in the entire NBA"},{label:"Identity",text:"From Canada — one of the game's premier scorers, known by his initials 'SGA'"}] },
+  ];
+
+  const POINT_VALUES = [1000, 800, 600, 400, 200];
+
+  function getDailyPlayer() {
+    const seed = dateSeed();
+    const rng = seededRandom(seed + 7);
+    const useNFL = rng() > 0.5;
+    const pool = useNFL ? NFL_PLAYERS : NBA_PLAYERS;
+    const idx = Math.floor(rng() * pool.length);
+    return { ...pool[idx], league: useNFL ? 'NFL' : 'NBA', id: `wtp-${seed}` };
+  }
+
+  const player = getDailyPlayer();
+  const espnImg = `https://a.espncdn.com/combiner/i?img=/i/headshots/${player.league === 'NFL' ? 'nfl' : 'nba'}/players/full/${player.espnId}.png&w=350&h=254`;
+
+  let revealedClues = 1;
+  let guessesUsed = 0;
+  let gameOver = false;
+  let pointsAvailable = POINT_VALUES[0];
+  let won = false;
+
+  function leagueColor() { return player.league === 'NFL' ? '#e8a020' : '#3498db'; }
+  function leagueBg() { return player.league === 'NFL' ? 'rgba(232,160,32,0.15)' : 'rgba(52,152,219,0.15)'; }
+
+  function renderGame() {
+    const container = document.getElementById('wtp-container');
+    container.innerHTML = `
+      <div class="wtp-hero">
+        <div class="wtp-hero-top">
+          <div class="wtp-brand">
+            <div class="wtp-brand-icon">❓</div>
+            <div>
+              <div class="wtp-brand-name">Who's That, Player?</div>
+              <div class="wtp-brand-sub">by FlurrySports · Daily Challenge</div>
+            </div>
+          </div>
+          <span class="wtp-league-badge" style="background:${leagueBg()};color:${leagueColor()};border:1px solid ${leagueColor()}33;">${player.league} · Active Player</span>
+        </div>
+
+        <div class="wtp-body">
+          <div class="wtp-silhouette-panel">
+            <div class="wtp-who-label">Who's That, Player?</div>
+            <div class="wtp-silhouette-wrap">
+              <img class="wtp-player-img" id="silhouette-img"
+                src="${espnImg}"
+                alt="mystery player"
+                onerror="this.style.display='none';document.getElementById('fallback-svg').style.display='block';"
+              />
+              <svg id="fallback-svg" style="display:none;width:100%;height:100%;" viewBox="0 0 140 185" xmlns="http://www.w3.org/2000/svg">
+                <ellipse cx="70" cy="28" rx="22" ry="24" fill="#0a1520"/>
+                <path d="M48 50 Q38 65 35 90 L43 92 Q46 74 52 65 L52 130 L42 130 L36 185 L50 185 L58 138 L70 138 L82 138 L90 185 L104 185 L98 130 L88 130 L88 65 Q94 74 97 92 L105 90 Q102 65 92 50 Z" fill="#0a1520"/>
+                <ellipse cx="70" cy="50" rx="22" ry="6" fill="#0a1520"/>
+                <path d="M35 90 Q28 115 30 140 L42 138 Q40 116 43 92 Z" fill="#08111a"/>
+                <path d="M105 90 Q112 115 110 140 L98 138 Q100 116 97 92 Z" fill="#08111a"/>
+              </svg>
+              <div class="wtp-glow"></div>
+            </div>
+            <div class="wtp-qmarks" id="qmarks">? ? ?</div>
+          </div>
+
+          <div class="wtp-clues-panel">
+            <div class="wtp-clues-header">
+              <span class="wtp-clues-title">Clues Revealed</span>
+              <span class="wtp-clue-count" id="clue-count-display">${revealedClues} of 5</span>
+            </div>
+            <div id="clues-list"></div>
+          </div>
+        </div>
+
+        <div class="wtp-guess-section">
+          <div class="wtp-guess-label">Your Guess</div>
+          <div class="wtp-guess-row">
+            <input class="wtp-guess-input" id="guess-input" type="text" placeholder="Type a player name..." autocomplete="off" />
+            <button class="wtp-guess-btn" onclick="submitGuess()">Guess</button>
+          </div>
+          <button class="wtp-reveal-btn" id="reveal-btn" onclick="revealNextClue()">
+            Reveal Next Clue (−${POINT_VALUES[0] - POINT_VALUES[Math.min(revealedClues, 4)]} pts available after)
+          </button>
+          <div class="guess-feedback" id="guess-feedback"></div>
+        </div>
+
+        <div class="wtp-score-strip">
+          <div class="wtp-score-item">
+            <div class="wtp-score-val" id="pts-available" style="color:${leagueColor()};">${POINT_VALUES[0].toLocaleString()}</div>
+            <div class="wtp-score-lbl">Points Available</div>
+          </div>
+          <div class="wtp-divider"></div>
+          <div class="wtp-score-item">
+            <div class="wtp-score-val" id="guesses-left" style="color:${leagueColor()};">∞</div>
+            <div class="wtp-score-lbl">Guesses Used</div>
+          </div>
+          <div class="wtp-divider"></div>
+          <div class="wtp-score-item">
+            <div class="wtp-score-val" style="color:${leagueColor()};">${player.league}</div>
+            <div class="wtp-score-lbl">League</div>
+          </div>
+          <div class="wtp-divider"></div>
+          <div class="wtp-score-item">
+            <div class="wtp-score-val" style="color:${leagueColor()};">${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
+            <div class="wtp-score-lbl">Today's Puzzle</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    renderClues();
+    updateRevealBtn();
+
+    // Enter key submits
+    document.getElementById('guess-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') submitGuess();
+    });
+  }
+
+  function renderClues() {
+    const list = document.getElementById('clues-list');
+    if (!list) return;
+    list.innerHTML = player.clues.map((clue, i) => {
+      const isRevealed = i < revealedClues;
+      return `
+        <div class="wtp-clue ${isRevealed ? 'revealed' : 'locked'}" id="clue-${i}">
+          <div class="wtp-clue-num">${i + 1}</div>
+          <div class="wtp-clue-content">
+            <div class="wtp-clue-label">${clue.label}</div>
+            <div class="wtp-clue-text">${isRevealed ? clue.text : '? ? ? ? ?'}</div>
+          </div>
+          <div class="wtp-pts-badge">${POINT_VALUES[i].toLocaleString()} pts</div>
+        </div>
+      `;
+    }).join('');
+    const countEl = document.getElementById('clue-count-display');
+    if (countEl) countEl.textContent = `${revealedClues} of 5`;
+  }
+
+  function updateRevealBtn() {
+    const btn = document.getElementById('reveal-btn');
+    if (!btn) return;
+    if (revealedClues >= 5) {
+      btn.style.display = 'none';
+    } else {
+      const nextPts = POINT_VALUES[revealedClues];
+      btn.textContent = `Reveal Next Clue (max ${nextPts.toLocaleString()} pts after)`;
+    }
+    const ptsEl = document.getElementById('pts-available');
+    if (ptsEl) ptsEl.textContent = POINT_VALUES[Math.min(revealedClues - 1, 4)].toLocaleString();
+  }
+
+  function revealNextClue() {
+    if (revealedClues >= 5 || gameOver) return;
+    revealedClues++;
+    pointsAvailable = POINT_VALUES[revealedClues - 1];
+    renderClues();
+    updateRevealBtn();
+  }
+
+  function submitGuess() {
+    if (gameOver) return;
+    const input = document.getElementById('guess-input');
+    const feedback = document.getElementById('guess-feedback');
+    const guess = (input.value || '').trim().toLowerCase();
+    if (!guess) return;
+
+    guessesUsed++;
+    document.getElementById('guesses-left').textContent = guessesUsed;
+
+    const correctName = player.name.toLowerCase();
+    const lastName = correctName.split(' ').slice(-1)[0];
+
+    if (guess === correctName || guess === lastName || correctName.includes(guess) && guess.length > 3) {
+      gameOver = true;
+      won = true;
+      markAttemptedLocally(player.id);
+      showResult(true, pointsAvailable);
+    } else {
+      // Check for partial last name
+      if (lastName.startsWith(guess) && guess.length >= 3) {
+        feedback.textContent = "Getting warmer — try the full name!";
+        feedback.className = 'guess-feedback close-guess';
+      } else {
+        feedback.textContent = `Not quite — try again!`;
+        feedback.className = 'guess-feedback wrong-guess';
+      }
+      input.value = '';
+      setTimeout(() => { if (feedback) feedback.textContent = ''; }, 2500);
+    }
+  }
+
+  function showResult(correct, pts) {
+    const container = document.getElementById('wtp-container');
+    const emojiResult = correct ? '🎉' : '😔';
+    const headline = correct ? 'Correct!' : 'Nice Try!';
+
+    container.innerHTML = `
+      <div class="wtp-result ${correct ? 'correct' : 'wrong'}">
+        <div style="font-size:3rem;margin-bottom:0.5rem;">${emojiResult}</div>
+        <div class="wtp-result-main">${headline}</div>
+        ${correct ? `<div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.1rem;color:var(--success);margin-bottom:1.5rem;">+${pts.toLocaleString()} pts earned</div>` : `<div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1rem;color:var(--gray);margin-bottom:1.5rem;">Better luck tomorrow!</div>`}
+
+        <div class="wtp-player-reveal">
+          <img class="wtp-player-img-reveal" src="${espnImg}" alt="${player.name}" onerror="this.style.opacity=0.3;"/>
+          <div>
+            <div class="wtp-player-name">${player.name}</div>
+            <div class="wtp-player-details">
+              ${player.pos} · ${player.team}<br>
+              ${player.college}<br>
+              Draft: ${player.drafted}
+            </div>
+          </div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;text-align:left;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:0.75rem;">All Clues</div>
+          ${player.clues.map((c, i) => `
+            <div style="padding:0.4rem 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.85rem;">
+              <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.75rem;color:${leagueColor()};margin-right:0.5rem;">${c.label}:</span>
+              <span style="color:var(--gray-light);">${c.text}</span>
+            </div>
+          `).join('')}
+        </div>
+
+        <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+          <a href="/" class="btn btn-outline">Back to Games</a>
+        </div>
+      </div>
+    `;
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    updateNavAuth();
+    if (hasAttemptedLocally(player.id)) {
+      document.getElementById('wtp-container').innerHTML = `
+        <div class="wtp-result correct" style="text-align:center;">
+          <div style="font-size:2rem;margin-bottom:1rem;">✅</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;text-transform:uppercase;">Already Played!</div>
+          <p style="color:var(--gray);margin:1rem 0;">You've already played today's Who's That, Player? Come back tomorrow for a new mystery player!</p>
+          <a href="/" class="btn btn-primary">Back to Games</a>
+        </div>
+      `;
+      return;
+    }
+    renderGame();
+  });
+</script>
+</body>
+</html>

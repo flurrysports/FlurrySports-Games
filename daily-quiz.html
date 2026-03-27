@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Quiz — FlurrySports Games</title>
+  <link rel="icon" type="image/png" href="/images/logo-crown.png">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-config.js"></script>
+  <script>var supabase = (window.supabase || window.Supabase).createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
+  <style>
+    .quiz-shell { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; position: relative; z-index: 1; }
+    .quiz-top { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .quiz-back { color: var(--gray); text-decoration: none; font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.9rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    .quiz-back:hover { color: var(--gold); }
+    .q-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: 2rem; margin-bottom: 1.5rem; }
+    .q-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+    .q-number { font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 0.85rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gray); }
+    .q-timer-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-bottom: 1.5rem; overflow: hidden; }
+    .q-timer-fill { height: 100%; background: var(--gold); border-radius: 4px; transition: width 0.1s linear; }
+    .q-timer-fill.urgent { background: var(--error); }
+    .q-text { font-family: 'Barlow Condensed',sans-serif; font-weight: 800; font-size: 1.5rem; text-transform: uppercase; line-height: 1.2; margin-bottom: 1.5rem; }
+    .q-options { display: grid; gap: 0.75rem; }
+    .q-option {
+      width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; padding: 0.875rem 1.25rem;
+      font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 1rem;
+      letter-spacing: 0.04em; text-align: left; color: var(--white); cursor: pointer;
+      transition: var(--transition); display: flex; align-items: center; gap: 0.75rem;
+    }
+    .q-option:hover:not(:disabled) { background: rgba(245,197,24,0.1); border-color: rgba(245,197,24,0.4); }
+    .q-option.correct { background: rgba(0,214,143,0.12); border-color: rgba(0,214,143,0.5); color: var(--success); }
+    .q-option.wrong { background: rgba(255,77,109,0.12); border-color: rgba(255,77,109,0.4); color: var(--error); }
+    .q-option:disabled { cursor: default; }
+    .q-letter { width: 28px; height: 28px; border-radius: 6px; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; }
+    .q-option.correct .q-letter { background: var(--success); color: #000; }
+    .q-option.wrong .q-letter { background: var(--error); color: #fff; }
+    .q-pts-flash { text-align: center; font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 1.75rem; color: var(--gold); margin-top: 1rem; min-height: 2.5rem; letter-spacing: 0.1em; }
+    .results-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: 2.5rem; text-align: center; }
+    .results-score { font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 5rem; color: var(--gold); line-height: 1; margin: 1rem 0; }
+    .results-label { font-size: 0.9rem; color: var(--gray); margin-bottom: 0.5rem; }
+    .share-text { background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); border-radius: 10px; padding: 1rem; font-family: monospace; font-size: 0.85rem; color: var(--gray-light); text-align: left; margin: 1.5rem 0; white-space: pre-wrap; }
+    .progress-dots { display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 1.5rem; }
+    .progress-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.1); transition: background 0.3s; }
+    .progress-dot.done-correct { background: var(--success); }
+    .progress-dot.done-wrong { background: var(--error); }
+    .progress-dot.active { background: var(--gold); }
+  </style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="/"><img src="/images/logo-yeti-orange.png" alt="FlurrySports" style="height:48px;width:auto;"></a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="/quizzes.html">Quizzes</a></li>
+    <li><a href="/leaderboard.html">Leaderboard</a></li>
+  </ul>
+  <div class="nav-actions" id="nav-actions">
+    <button class="btn btn-ghost btn-sm" onclick="openModal('login')">Log In</button>
+    <button class="btn btn-primary btn-sm" onclick="openModal('signup')">Sign Up</button>
+  </div>
+</nav>
+
+<div class="quiz-shell">
+  <div class="quiz-top">
+    <a href="/" class="quiz-back">← Back to Games</a>
+  </div>
+  <div id="quiz-container"><div class="spinner"></div></div>
+</div>
+
+<script src="/js/auth.js"></script>
+<script>
+  function dateSeed() {
+    return parseInt(new Date().toISOString().slice(0,10).replace(/-/g,''));
+  }
+  function seededRandom(seed) {
+    let s = seed;
+    return function() { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+  }
+
+  const QUIZ_THEMES = [
+    { theme:'NFL Legends', emoji:'🏈', questions: nflLegendsQuiz },
+    { theme:'NBA History', emoji:'🏀', questions: nbaHistoryQuiz },
+    { theme:'Super Bowl Trivia', emoji:'🏆', questions: superBowlQuiz },
+    { theme:'NFL Rookies & Draft', emoji:'📋', questions: nflDraftQuiz },
+    { theme:'NBA Awards', emoji:'⭐', questions: nbaAwardsQuiz },
+    { theme:'Sports Records', emoji:'📊', questions: sportsRecordsQuiz },
+    { theme:'Fantasy Football', emoji:'🎯', questions: fantasyFootballQuiz },
+  ];
+
+  function nflLegendsQuiz(rng) { return [
+    { q:"How many Super Bowl titles did Tom Brady win in his career?", options:["5","6","7","8"], correct:2 },
+    { q:"Which team did Jerry Rice win most of his Super Bowls with?", options:["Dallas Cowboys","San Francisco 49ers","Oakland Raiders","Green Bay Packers"], correct:1 },
+    { q:"Who holds the NFL record for most career rushing yards?", options:["Emmitt Smith","Barry Sanders","Walter Payton","Adrian Peterson"], correct:0 },
+    { q:"What year did the New Orleans Saints win their only Super Bowl?", options:["2008","2009","2010","2011"], correct:2 },
+    { q:"Which QB threw for 5 touchdowns in Super Bowl LV?", options:["Patrick Mahomes","Aaron Rodgers","Tom Brady","Josh Allen"], correct:2 },
+  ]; }
+  function nbaHistoryQuiz(rng) { return [
+    { q:"How many NBA championships did Michael Jordan win with the Bulls?", options:["4","5","6","7"], correct:2 },
+    { q:"Who was the first overall pick in the 2003 NBA Draft?", options:["Carmelo Anthony","Dwyane Wade","Chris Bosh","LeBron James"], correct:3 },
+    { q:"Which team won the 2016 NBA championship after being down 3-1?", options:["Golden State Warriors","Cleveland Cavaliers","Oklahoma City Thunder","Boston Celtics"], correct:1 },
+    { q:"Kobe Bryant played his entire career with which team?", options:["Chicago Bulls","Boston Celtics","Los Angeles Lakers","Orlando Magic"], correct:2 },
+    { q:"Which player has won the most NBA MVP awards?", options:["LeBron James","Kareem Abdul-Jabbar","Michael Jordan","Bill Russell"], correct:1 },
+  ]; }
+  function superBowlQuiz(rng) { return [
+    { q:"Which team has appeared in the most Super Bowls?", options:["Dallas Cowboys","New England Patriots","Pittsburgh Steelers","San Francisco 49ers"], correct:1 },
+    { q:"What was the score of the largest Super Bowl blowout (Super Bowl XLVIII)?", options:["43-8","55-10","48-7","52-14"], correct:0 },
+    { q:"Who caught the famous 'Helmet Catch' in Super Bowl XLII?", options:["Plaxico Burress","Amani Toomer","David Tyree","Steve Smith"], correct:2 },
+    { q:"Which team completed the largest comeback in Super Bowl history, down 28-3?", options:["New England Patriots","Los Angeles Rams","Seattle Seahawks","Kansas City Chiefs"], correct:0 },
+    { q:"How many Super Bowls have the Pittsburgh Steelers won?", options:["4","5","6","7"], correct:2 },
+  ]; }
+  function nflDraftQuiz(rng) { return [
+    { q:"Patrick Mahomes was drafted in which round of the 2017 NFL Draft?", options:["1st","2nd","3rd","4th"], correct:0 },
+    { q:"Which team drafted Josh Allen in 2018?", options:["Kansas City Chiefs","Buffalo Bills","Cleveland Browns","Arizona Cardinals"], correct:1 },
+    { q:"What pick was Tom Brady taken in the 2000 NFL Draft?", options:["6th round, 199th overall","4th round, 137th overall","7th round, 254th overall","5th round, 163rd overall"], correct:0 },
+    { q:"Which position did the Chicago Bears take #1 overall in 2024?", options:["Wide Receiver","Quarterback","Offensive Tackle","Defensive End"], correct:1 },
+    { q:"Who was the #1 overall pick in the 2021 NFL Draft?", options:["Zach Wilson","Mac Jones","Trevor Lawrence","Justin Fields"], correct:2 },
+  ]; }
+  function nbaAwardsQuiz(rng) { return [
+    { q:"Who won the 2023-24 NBA MVP award?", options:["Luka Doncic","Nikola Jokic","Giannis Antetokounmpo","Shai Gilgeous-Alexander"], correct:1 },
+    { q:"Who won the 2016 NBA Defensive Player of the Year?", options:["Rudy Gobert","Draymond Green","Kawhi Leonard","Avery Bradley"], correct:1 },
+    { q:"Which player has won the most NBA Scoring titles?", options:["Michael Jordan","LeBron James","Kobe Bryant","Kevin Durant"], correct:0 },
+    { q:"Who was the 2019 NBA Finals MVP?", options:["Kevin Durant","Klay Thompson","Kawhi Leonard","Steph Curry"], correct:2 },
+    { q:"Giannis won back-to-back MVPs in which two seasons?", options:["2017-18, 2018-19","2018-19, 2019-20","2019-20, 2020-21","2016-17, 2017-18"], correct:1 },
+  ]; }
+  function sportsRecordsQuiz(rng) { return [
+    { q:"What is the NFL record for most receiving yards in a single season?", options:["1,964","1,848","2,105","1,911"], correct:0 },
+    { q:"Which player holds the NBA record for most points in a single game?", options:["Michael Jordan","Wilt Chamberlain","Kobe Bryant","LeBron James"], correct:1 },
+    { q:"How many consecutive games did Cal Ripken Jr. play in MLB?", options:["2,130","2,632","2,428","2,015"], correct:1 },
+    { q:"Who holds the NFL record for most career passing touchdowns?", options:["Peyton Manning","Brett Favre","Tom Brady","Drew Brees"], correct:2 },
+    { q:"What is the NBA record for most 3-pointers made in a single game?", options:["11","12","13","14"], correct:2 },
+  ]; }
+  function fantasyFootballQuiz(rng) { return [
+    { q:"In a standard PPR league, how many points is a reception worth?", options:["0","0.5","1","1.5"], correct:2 },
+    { q:"Which stat line earns a QB a 'bonus' in most fantasy formats?", options:["200 passing yards","300 passing yards","400 passing yards","100 passing yards"], correct:1 },
+    { q:"Which position typically has the highest average fantasy points per game?", options:["Wide Receiver","Running Back","Quarterback","Tight End"], correct:2 },
+    { q:"A defensive TD typically scores how many fantasy points?", options:["4","6","8","10"], correct:1 },
+    { q:"What does 'FAAB' stand for in fantasy football?", options:["Free Agent Auction Budget","Fantasy All Around Base","Free Agency Allowance Bid","Fantasy All Access Bonus"], correct:0 },
+  ]; }
+
+  const seed = dateSeed();
+  const rng = seededRandom(seed);
+  const themeIdx = Math.floor(rng() * QUIZ_THEMES.length);
+  const theme = QUIZ_THEMES[themeIdx];
+  const questions = theme.questions(rng);
+  const quizId = `daily-quiz-${seed}`;
+
+  const TIMER_PER_Q = 15;
+  const MAX_PTS_PER_Q = 200;
+  const letters = ['A','B','C','D'];
+  let currentQ = 0, totalScore = 0, timerInt = null, timeLeft = TIMER_PER_Q;
+  let qStartTime = 0, results = [];
+
+  function renderQuizHeader() {
+    return `
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+        <span style="font-size:1.5rem;">${theme.emoji}</span>
+        <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.4rem;text-transform:uppercase;line-height:1;">Daily Quiz</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;color:var(--gray);letter-spacing:0.08em;text-transform:uppercase;">${theme.theme}</div>
+        </div>
+      </div>
+      <div class="progress-dots" id="progress-dots">
+        ${questions.map((_, i) => `<div class="progress-dot ${i === 0 ? 'active' : ''}" id="dot-${i}"></div>`).join('')}
+      </div>
+    `;
+  }
+
+  function renderQuestion(idx) {
+    const q = questions[idx];
+    document.getElementById('quiz-container').innerHTML = `
+      ${renderQuizHeader()}
+      <div class="q-card">
+        <div class="q-header">
+          <span class="q-number">Question ${idx + 1} of ${questions.length}</span>
+          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;color:var(--gold);" id="timer-text">${TIMER_PER_Q}s</span>
+        </div>
+        <div class="q-timer-bar"><div class="q-timer-fill" id="timer-fill" style="width:100%;"></div></div>
+        <div class="q-text">${q.q}</div>
+        <div class="q-options" id="options-grid">
+          ${q.options.map((opt, i) => `
+            <button class="q-option" onclick="pickAnswer(${i})" id="opt-${i}">
+              <span class="q-letter">${letters[i]}</span>
+              ${opt}
+            </button>
+          `).join('')}
+        </div>
+        <div class="q-pts-flash" id="pts-flash"></div>
+      </div>
+    `;
+    startTimer();
+  }
+
+  function startTimer() {
+    timeLeft = TIMER_PER_Q;
+    qStartTime = Date.now();
+    clearInterval(timerInt);
+    timerInt = setInterval(() => {
+      timeLeft = Math.max(0, TIMER_PER_Q - (Date.now() - qStartTime) / 1000);
+      const fill = document.getElementById('timer-fill');
+      const txt = document.getElementById('timer-text');
+      if (fill) { fill.style.width = (timeLeft / TIMER_PER_Q * 100) + '%'; if (timeLeft <= 4) fill.classList.add('urgent'); }
+      if (txt) txt.textContent = Math.ceil(timeLeft) + 's';
+      if (timeLeft <= 0) { clearInterval(timerInt); pickAnswer(-1); }
+    }, 100);
+  }
+
+  function pickAnswer(chosen) {
+    clearInterval(timerInt);
+    const decisionTime = (Date.now() - qStartTime) / 1000;
+    const q = questions[currentQ];
+    const isCorrect = chosen === q.correct;
+    const pts = isCorrect ? Math.round(MAX_PTS_PER_Q * Math.max(0, (TIMER_PER_Q - decisionTime) / TIMER_PER_Q)) : 0;
+    if (isCorrect) totalScore += pts;
+    results.push({ chosen, correct: q.correct, pts, isCorrect });
+
+    // Update dot
+    const dot = document.getElementById(`dot-${currentQ}`);
+    if (dot) { dot.classList.remove('active'); dot.classList.add(isCorrect ? 'done-correct' : 'done-wrong'); }
+
+    // Highlight options
+    q.options.forEach((_, i) => {
+      const btn = document.getElementById(`opt-${i}`);
+      if (!btn) return;
+      btn.disabled = true;
+      if (i === q.correct) btn.classList.add('correct');
+      else if (i === chosen) btn.classList.add('wrong');
+    });
+
+    const flash = document.getElementById('pts-flash');
+    if (flash) flash.textContent = isCorrect ? `+${pts} pts` : chosen === -1 ? 'Time\'s Up!' : 'No points';
+
+    setTimeout(() => {
+      currentQ++;
+      if (currentQ < questions.length) {
+        const nextDot = document.getElementById(`dot-${currentQ}`);
+        if (nextDot) nextDot.classList.add('active');
+        renderQuestion(currentQ);
+      } else {
+        showResults();
+      }
+    }, 1200);
+  }
+
+  function showResults() {
+    markAttemptedLocally(quizId);
+    const correct = results.filter(r => r.isCorrect).length;
+    const emojiRow = results.map(r => r.isCorrect ? '✅' : '❌').join('');
+    const shareText = `FlurrySports Daily Quiz — ${theme.theme}\n${emojiRow}\nScore: ${totalScore} pts\nPlay at flurrysportsgames.pages.dev`;
+
+    document.getElementById('quiz-container').innerHTML = `
+      <div class="results-card">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">${theme.emoji}</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.1rem;text-transform:uppercase;color:var(--gold);">Quiz Complete!</div>
+        <div class="results-score">${totalScore.toLocaleString()}</div>
+        <div class="results-label">${correct} of ${questions.length} correct</div>
+        <div style="margin:1.25rem 0;font-size:1.5rem;letter-spacing:0.25rem;">${emojiRow}</div>
+        <div class="share-text" id="share-text">${shareText}</div>
+        <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="copyShare()">📋 Copy Result</button>
+          <a href="/" class="btn btn-outline">Back to Games</a>
+        </div>
+      </div>
+    `;
+  }
+
+  function copyShare() {
+    const txt = document.getElementById('share-text').textContent;
+    navigator.clipboard.writeText(txt).then(() => alert('Copied to clipboard!'));
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    updateNavAuth();
+    if (hasAttemptedLocally(quizId)) {
+      document.getElementById('quiz-container').innerHTML = `
+        <div class="results-card">
+          <div style="font-size:2rem;margin-bottom:1rem;">✅</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.5rem;text-transform:uppercase;">Already Completed!</div>
+          <p style="color:var(--gray);margin:1rem 0;">You've already played today's quiz. Come back tomorrow for a new one!</p>
+          <a href="/" class="btn btn-primary">Back to Games</a>
+        </div>
+      `;
+      return;
+    }
+    renderQuestion(0);
+  });
+</script>
+</body>
+</html>

@@ -39,14 +39,22 @@
     <p style="color:var(--gray);margin-top:1rem;">Loading quiz...</p>
   </div>
 
-  <!-- ALREADY ATTEMPTED -->
+  <!-- ALREADY ATTEMPTED (fallback for old attempts without stored data) -->
   <div id="already-attempted" class="hidden" style="text-align:center;padding:4rem 2rem;">
     <img src="/images/logo-icon-gold.png" style="height:100px;margin-bottom:1.5rem;opacity:0.5;">
     <h2 style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;text-transform:uppercase;margin-bottom:0.75rem;">Already Completed</h2>
-    <p style="color:var(--gray);margin-bottom:2rem;">You've already taken this quiz. Each quiz allows only one attempt.</p>
-    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+    <p style="color:var(--gray);margin-bottom:2rem;">You've already taken this quiz. Detailed score replay is available for quizzes completed from now on.</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:2rem;">
       <a href="/quizzes.html" class="btn btn-primary">Find Another Quiz</a>
       <a href="/leaderboard.html" class="btn btn-outline">View Leaderboard</a>
+    </div>
+    <div style="border-top:1px solid var(--card-border);padding-top:1.5rem;max-width:500px;margin:0 auto;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray);margin-bottom:0.75rem;">Try Today's Daily Games</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;">
+        <a href="/daily-quiz.html" style="background:rgba(255,255,255,0.04);border:1px solid var(--card-border);border-radius:10px;padding:0.75rem;text-decoration:none;color:var(--white);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;text-align:center;">🎯 Daily Quiz</a>
+        <a href="/snap-decision.html" style="background:rgba(255,255,255,0.04);border:1px solid var(--card-border);border-radius:10px;padding:0.75rem;text-decoration:none;color:var(--white);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;text-align:center;">🏈 Snap Decision</a>
+        <a href="/whos-that-player.html" style="background:rgba(255,255,255,0.04);border:1px solid var(--card-border);border-radius:10px;padding:0.75rem;text-decoration:none;color:var(--white);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.06em;text-align:center;">❓ Who's That Player?</a>
+      </div>
     </div>
   </div>
 
@@ -197,6 +205,15 @@
   let rankTimerInterval = null;
   let quizStartTime = null;
 
+
+  // ─── LOCAL RESULT STORAGE (for replay) ────────────────
+  function storeQuizResult(qid, data) {
+    try { localStorage.setItem('fs_qresult_' + qid, JSON.stringify(data)); } catch(e) {}
+  }
+  function getStoredQuizResult(qid) {
+    try { return JSON.parse(localStorage.getItem('fs_qresult_' + qid)); } catch(e) { return null; }
+  }
+
   // MC per-question timing
   let questionStartTime = null;
   const BASE_POINTS = 100;
@@ -209,11 +226,18 @@
     const quizId = params.get('id');
     if (!quizId) { window.location.href = '/quizzes.html'; return; }
 
-    // Check if already attempted
-    const already = await hasAttemptedQuiz(quizId);
+    // Check if already attempted — show result screen if we have stored data
+    const storedResult = getStoredQuizResult(quizId);
+    const already = storedResult ? true : await hasAttemptedQuiz(quizId);
     if (already) {
       document.getElementById('quiz-loading').classList.add('hidden');
-      document.getElementById('already-attempted').classList.remove('hidden');
+      if (storedResult) {
+        // Show full result replay
+        await showStoredResult(quizId, storedResult);
+      } else {
+        // Played before this update — show fallback with other games links
+        document.getElementById('already-attempted').classList.remove('hidden');
+      }
       return;
     }
 
@@ -620,6 +644,84 @@
     setTimeout(() => endQuiz(), 800);
   }
 
+
+  // ─── SHOW STORED RESULT (replay) ──────────────────────
+  async function showStoredResult(qid, stored) {
+    quiz = { id: qid, title: stored.title, type: 'multiple_choice' };
+    score = stored.score;
+    questions = Array(stored.questionCount || 5).fill({});
+    userAnswers = stored.answers || [];
+
+    document.getElementById('quiz-loading').classList.add('hidden');
+    document.getElementById('quiz-page').classList.add('hidden');
+    const resultsPage = document.getElementById('results-page');
+    resultsPage.classList.remove('hidden');
+    document.title = 'Results — ' + stored.title;
+    document.getElementById('results-badge').textContent = stored.title;
+
+    if (stored.fireActive) {
+      const fireBanner = document.createElement('div');
+      fireBanner.style.cssText = 'background:rgba(255,100,0,0.15);border:1px solid rgba(255,100,0,0.4);border-radius:10px;padding:0.65rem 1rem;margin-bottom:1.25rem;color:#ff6400;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:1rem;text-transform:uppercase;letter-spacing:0.05em;';
+      fireBanner.textContent = '🔥 On Fire Bonus was active when you played!';
+      resultsPage.insertBefore(fireBanner, resultsPage.querySelector('.results-score-ring'));
+    }
+
+    document.getElementById('result-score').textContent = stored.score.toLocaleString();
+
+    const maxPossible = (stored.questionCount || 5) * (BASE_POINTS + SPEED_BONUS_MAX);
+    const pct = Math.min(1, stored.score / maxPossible);
+    setTimeout(() => {
+      const ringEl = document.getElementById('ring-fill-el');
+      if (ringEl) ringEl.style.strokeDashoffset = 427 - (pct * 427);
+    }, 200);
+
+    const grades = [
+      { min: 0.9, label: '🔥 Legendary Performance!', sub: 'You absolutely dominated that quiz!' },
+      { min: 0.7, label: '⭐ Excellent Work!', sub: 'You really know your sports!' },
+      { min: 0.5, label: '💪 Solid Effort!', sub: 'Not bad — keep practicing!' },
+      { min: 0,   label: '📚 Keep Learning!', sub: "Tough quiz — you'll do better next time!" }
+    ];
+    const grade = grades.find(g => pct >= g.min);
+    document.getElementById('results-title').textContent = grade.label;
+
+    try {
+      const percentile = await getPercentile(qid, stored.score);
+      const percentEl = document.getElementById('results-percentile');
+      if (percentile !== null) {
+        percentEl.innerHTML = grade.sub + '<br>You scored better than <strong>' + percentile + '%</strong> of players!';
+      } else {
+        percentEl.textContent = grade.sub;
+      }
+    } catch(e) {
+      document.getElementById('results-percentile').textContent = grade.sub;
+    }
+
+    window._shareLinks = shareScore(stored.title, stored.score, window.location.href);
+
+    const breakdown = document.getElementById('results-breakdown');
+    if (stored.answers && stored.answers.length > 0) {
+      breakdown.innerHTML = stored.answers.map(function(a, i) {
+        var border = a.isCorrect ? 'rgba(0,214,143,0.2)' : 'rgba(255,77,109,0.15)';
+        var pts = a.isCorrect ? '<span style="color:var(--success)">+' + (a.points||0) + ' pts ✓</span>' : '<span style="color:var(--error)">0 pts ✗</span>';
+        var correct = !a.isCorrect ? '<div style="font-size:0.85rem;color:var(--success)">Correct: ' + a.correct + '</div>' : '';
+        return '<div style="background:var(--card-bg);border:1px solid ' + border + ';border-radius:10px;padding:1rem;margin-bottom:0.65rem;">' +
+          '<div style="font-size:0.8rem;color:var(--gray);margin-bottom:0.3rem;font-family:Barlow Condensed,sans-serif;text-transform:uppercase;letter-spacing:0.08em;">Q' + (i+1) + ' · ' + pts + '</div>' +
+          '<div style="font-weight:600;font-size:0.95rem;margin-bottom:' + (a.isCorrect ? 0 : '0.3rem') + '">' + a.question + '</div>' +
+          correct + '</div>';
+      }).join('');
+    }
+
+    var otherGames = document.createElement('div');
+    otherGames.style.cssText = 'border-top:1px solid var(--card-border);padding-top:1.5rem;margin-top:1rem;text-align:center;';
+    otherGames.innerHTML = '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray);margin-bottom:0.75rem;">Try Today's Daily Games</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;">' +
+      '<a href="/daily-quiz.html" style="background:rgba(255,255,255,0.04);border:1px solid var(--card-border);border-radius:10px;padding:0.75rem;text-decoration:none;color:var(--white);font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.8rem;text-transform:uppercase;text-align:center;">🎯 Daily Quiz</a>' +
+      '<a href="/snap-decision.html" style="background:rgba(255,255,255,0.04);border:1px solid var(--card-border);border-radius:10px;padding:0.75rem;text-decoration:none;color:var(--white);font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.8rem;text-transform:uppercase;text-align:center;">🏈 Snap Decision</a>' +
+      '<a href="/whos-that-player.html" style="background:rgba(255,255,255,0.04);border:1px solid var(--card-border);border-radius:10px;padding:0.75rem;text-decoration:none;color:var(--white);font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.8rem;text-transform:uppercase;text-align:center;">❓ Who's That Player?</a>' +
+      '</div>';
+    if (breakdown) breakdown.after(otherGames);
+  }
+
   // ─── END QUIZ ───────────────────────────────────────────
   async function endQuiz() {
     clearInterval(mcTimerInterval);
@@ -631,6 +733,15 @@
     const fireActive = isOnFire();
     if (fireActive) score = applyFireBonus(score);
 
+    // Store locally FIRST so replay always works
+    storeQuizResult(quiz.id, {
+      score,
+      title: quiz.title,
+      questionCount: questions.length,
+      correct: userAnswers.filter(a => a.isCorrect).length,
+      answers: userAnswers,
+      fireActive
+    });
     // Save attempt
     await saveAttempt(quiz.id, score, timeTaken, userAnswers);
 

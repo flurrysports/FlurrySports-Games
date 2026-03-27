@@ -75,7 +75,8 @@
   function dateSeed() {
     const d = new Date();
     const pac = new Date(d.getTime() + getPacificOffsetMinutes(d)*60000);
-    return parseInt(pac.toISOString().slice(0,10).replace(/-/g,''));
+    const seed = parseInt(pac.toISOString().slice(0,10).replace(/-/g,''));
+    return seed + 166; // content version salt — keeps same daily rotation, fresh content
   }
   function seededRandom(seed) {
     let s = seed; return () => { s=(s*9301+49297)%233280; return s/233280; };
@@ -90,6 +91,9 @@
     { theme:'NBA Awards', emoji:'⭐', questions: nbaAwardsQuiz },
     { theme:'Sports Records', emoji:'📊', questions: sportsRecordsQuiz },
     { theme:'Fantasy Football', emoji:'🎯', questions: fantasyFootballQuiz },
+    { theme:'MLB History', emoji:'⚾', questions: mlbHistoryQuiz },
+    { theme:'NHL History', emoji:'🏒', questions: nhlHistoryQuiz },
+    { theme:'College Football', emoji:'🎓', questions: collegeFootballQuiz },
   ];
   function nflLegendsQuiz() { return [
     {q:"How many Super Bowl titles did Tom Brady win?",options:["5","6","7","8"],correct:2},
@@ -115,7 +119,7 @@
   function nflDraftQuiz() { return [
     {q:"Patrick Mahomes was drafted in which round in 2017?",options:["1st","2nd","3rd","4th"],correct:0},
     {q:"Which team drafted Josh Allen in 2018?",options:["Kansas City Chiefs","Buffalo Bills","Cleveland Browns","Arizona Cardinals"],correct:1},
-    {q:"What pick was Tom Brady in the 2000 Draft?",options:["6th round, 199th overall","4th round, 137th","7th round, 254th","5th round, 163rd"],correct:0},
+    {q:"Tom Brady was selected in which round of the 2000 Draft?",options:["4th","5th","6th","7th"],correct:2},
     {q:"Which position did the Bears take #1 overall in 2024?",options:["Wide Receiver","Quarterback","Offensive Tackle","Defensive End"],correct:1},
     {q:"Who was the #1 overall pick in the 2021 NFL Draft?",options:["Zach Wilson","Mac Jones","Trevor Lawrence","Justin Fields"],correct:2},
   ]; }
@@ -127,11 +131,11 @@
     {q:"Giannis won back-to-back MVPs in which two seasons?",options:["2017-18 & 2018-19","2018-19 & 2019-20","2019-20 & 2020-21","2016-17 & 2017-18"],correct:1},
   ]; }
   function sportsRecordsQuiz() { return [
-    {q:"NFL record for most receiving yards in a single season?",options:["1,964","1,848","2,105","1,911"],correct:0},
-    {q:"Who holds the NBA record for most points in a single game?",options:["Michael Jordan","Wilt Chamberlain","Kobe Bryant","LeBron James"],correct:1},
-    {q:"How many consecutive games did Cal Ripken Jr. play?",options:["2,130","2,632","2,428","2,015"],correct:1},
     {q:"Who holds the NFL record for most career passing touchdowns?",options:["Peyton Manning","Brett Favre","Tom Brady","Drew Brees"],correct:2},
-    {q:"NBA record for most 3-pointers made in a single game?",options:["11","12","13","14"],correct:2},
+    {q:"Who holds the NBA record for most points in a single game?",options:["Michael Jordan","Wilt Chamberlain","Kobe Bryant","LeBron James"],correct:1},
+    {q:"How many consecutive games did Cal Ripken Jr. play in MLB?",options:["2,130","2,632","2,428","2,015"],correct:1},
+    {q:"What is the NFL record for most receiving yards in a season?",options:["1,964","1,848","2,105","1,911"],correct:0},
+    {q:"Who scored the most goals in a single NHL season?",options:["Mario Lemieux","Brett Hull","Wayne Gretzky","Jari Kurri"],correct:2},
   ]; }
   function fantasyFootballQuiz() { return [
     {q:"In standard PPR, how many points is a reception worth?",options:["0","0.5","1","1.5"],correct:2},
@@ -140,8 +144,30 @@
     {q:"A defensive TD typically scores how many fantasy points?",options:["4","6","8","10"],correct:1},
     {q:"What does 'FAAB' stand for in fantasy football?",options:["Free Agent Auction Budget","Fantasy All Around Base","Free Agency Allowance Bid","Fantasy All Access Bonus"],correct:0},
   ]; }
+  function mlbHistoryQuiz() { return [
+    {q:"Who holds the all-time MLB record for career home runs?",options:["Babe Ruth","Hank Aaron","Barry Bonds","Alex Rodriguez"],correct:2},
+    {q:"Which team has won the most World Series championships?",options:["Boston Red Sox","Los Angeles Dodgers","New York Yankees","St. Louis Cardinals"],correct:2},
+    {q:"What is the record for most strikeouts by a pitcher in a single game?",options:["18","19","20","21"],correct:2},
+    {q:"Who was the last player to hit .400 in a single MLB season?",options:["Joe DiMaggio","Ted Williams","Mickey Mantle","Stan Musial"],correct:1},
+    {q:"Which city's team broke an 86-year World Series drought in 2004?",options:["Chicago","Boston","Cleveland","Detroit"],correct:1},
+  ]; }
+  function nhlHistoryQuiz() { return [
+    {q:"Who is the NHL's all-time leading scorer?",options:["Mario Lemieux","Gordie Howe","Wayne Gretzky","Jaromir Jagr"],correct:2},
+    {q:"How many Stanley Cup championships did the Montreal Canadiens win?",options:["19","21","24","27"],correct:2},
+    {q:"Which team did Wayne Gretzky play most of his career with?",options:["Edmonton Oilers","Los Angeles Kings","New York Rangers","St. Louis Blues"],correct:0},
+    {q:"What is the maximum number of players on the ice per team (excluding goalie)?",options:["4","5","6","7"],correct:1},
+    {q:"Which country won the first Olympic men's hockey gold medal in 1920?",options:["Canada","United States","Russia","Sweden"],correct:0},
+  ]; }
+  function collegeFootballQuiz() { return [
+    {q:"Which school has the most Heisman Trophy winners?",options:["Ohio State","USC","Notre Dame","Alabama"],correct:1},
+    {q:"Which coach has the most wins in college football history?",options:["Bear Bryant","Nick Saban","Bobby Bowden","Joe Paterno"],correct:3},
+    {q:"What conference is known as the 'SEC'?",options:["South Eastern Conference","Southern Elite Conference","Southeastern Conference","Southern Excellence Conference"],correct:2},
+    {q:"Which team won the first College Football Playoff National Championship in 2015?",options:["Alabama","Florida State","Oregon","Ohio State"],correct:3},
+    {q:"The Rose Bowl is located in which California city?",options:["Los Angeles","Pasadena","Anaheim","San Diego"],correct:1},
+  ]; }
 
   // ── Build today's quiz ─────────────────────────────────────────
+ ─────────────────────────────────────────
   const seed = dateSeed();
   const rng = seededRandom(seed);
   const themeIdx = Math.floor(rng() * QUIZ_THEMES.length);
@@ -252,88 +278,102 @@
     }, 1200);
   }
 
-  // ── Results screen (used both after play AND for replay) ───────
-  async function showResults(isReplay, storedData) {
-    const correct   = isReplay ? storedData.correct   : results.filter(r=>r.isCorrect).length;
-    const emojiRow  = isReplay ? storedData.emojiRow  : results.map(r=>r.isCorrect?'✅':'❌').join('');
-    const finalScore= isReplay ? storedData.finalScore : (() => {
-      const { fire } = getStreakDisplay();
-      return fire ? Math.round(totalScore*1.10) : totalScore;
-    })();
-    const noData = isReplay && storedData.noData;
+  // ── Store/retrieve result for replay ─────────────────────────
+  function storeResult(data) {
+    try { localStorage.setItem('fs_result_' + quizId, JSON.stringify(data)); } catch(e) {}
+  }
+  function getStoredResult() {
+    try { return JSON.parse(localStorage.getItem('fs_result_' + quizId)); } catch(e) { return null; }
+  }
+
+  // ── Results screen ──────────────────────────────────────────────
+  async function showResults(stored) {
+    const isReplay = !!stored;
+    const correct    = isReplay ? stored.correct    : results.filter(r => r.isCorrect).length;
+    const emojiRow   = isReplay ? stored.emojiRow   : results.map(r => r.isCorrect ? '✅' : '❌').join('');
+    const finalScore = isReplay ? stored.finalScore : (isOnFire() ? Math.round(totalScore * 1.10) : totalScore);
 
     if (!isReplay) {
-      // Store locally FIRST so replay always works even if DB fails
+      // Store locally FIRST — before any async calls
       storeResult({ correct, emojiRow, finalScore, quizId });
+      markAttemptedLocally(quizId);
       await saveAttempt(quizId, totalScore, 0, results, 'trivia');
     }
 
-    // Percentile
     let percentileHtml = '';
     try {
       const pct = await getPercentile(quizId, finalScore);
-      if (pct !== null) {
-        percentileHtml = `<div class="percentile-badge">Better than ${pct}% of players today</div>`;
-      }
+      if (pct !== null) percentileHtml = '<div class="percentile-badge">Better than ' + pct + '% of players today</div>';
     } catch(e) {}
 
-    const { fire } = getStreakDisplay();
-
-    // Store shareText in a global so onclick can reference it safely
     window._lastShareText = buildShareText(
-      `Daily Quiz — ${theme.theme}`, finalScore, emojiRow, `${correct}/${questions.length} correct`
+      'Daily Quiz — ' + theme.theme, finalScore, emojiRow, correct + '/' + questions.length + ' correct'
     );
 
-    document.getElementById('quiz-container').innerHTML = `
-      <div class="results-card">
-        <div style="font-size:2rem;margin-bottom:0.5rem;">${theme.emoji}</div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.1rem;text-transform:uppercase;color:var(--gold);">Quiz Complete!</div>
-        ${fire && !isReplay ? `<div style="font-size:0.8rem;color:#ff6400;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.25rem;">🔥 On Fire! +10% bonus applied</div>` : ''}
-        ${noData
-          ? `<div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.5rem;text-transform:uppercase;color:var(--gold);margin:1rem 0;">Already Completed ✓</div>
-             <p style="color:var(--gray);font-size:0.9rem;margin-bottom:1.25rem;">Score data is only stored from this session — come back tomorrow for a fresh game!</p>`
-          : `<div class="results-score">${finalScore.toLocaleString()}</div>
-             <div class="results-label">${correct} of ${questions.length} correct</div>
-             <div style="margin:1rem 0;font-size:1.5rem;letter-spacing:0.2rem;">${emojiRow}</div>
-             ${percentileHtml}`
-        }
-        <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin:1.25rem 0;">
-          <button class="btn btn-primary" onclick="showShareModal(window._lastShareText)">📣 Share Result</button>
-          <a href="/" class="btn btn-outline">Back to Games</a>
-        </div>
-        <div style="border-top:1px solid var(--card-border);padding-top:1.25rem;margin-top:0.5rem;">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray);margin-bottom:0.75rem;">Try Today's Other Games</div>
-          <div class="other-games">
-            <a href="/snap-decision.html" class="other-game-btn">🏈 Snap Decision</a>
-            <a href="/whos-that-player.html" class="other-game-btn">❓ Who's That, Player?</a>
-          </div>
-        </div>
-      </div>
-    `;
+    document.getElementById('quiz-container').innerHTML =
+      '<div class="results-card">' +
+        '<div style="font-size:2rem;margin-bottom:0.5rem;">' + theme.emoji + '</div>' +
+        '<div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:1.1rem;text-transform:uppercase;color:var(--gold);">Quiz Complete!</div>' +
+        (isOnFire() && !isReplay ? '<div style="font-size:0.8rem;color:#ff6400;font-family:Barlow Condensed,sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.25rem;">🔥 On Fire! +10% bonus applied</div>' : '') +
+        '<div class="results-score">' + finalScore.toLocaleString() + '</div>' +
+        '<div class="results-label">' + correct + ' of ' + questions.length + ' correct</div>' +
+        '<div style="margin:1rem 0;font-size:1.5rem;letter-spacing:0.2rem;">' + emojiRow + '</div>' +
+        percentileHtml +
+        '<div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin:1.25rem 0;">' +
+          '<button class="btn btn-primary" onclick="showShareModal(window._lastShareText)">📣 Share Result</button>' +
+          '<a href="/" class="btn btn-outline">Back to Games</a>' +
+        '</div>' +
+        '<div style="border-top:1px solid var(--card-border);padding-top:1.25rem;margin-top:0.5rem;">' +
+          '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray);margin-bottom:0.75rem;">Try Today's Other Games</div>' +
+          '<div class="other-games">' +
+            '<a href="/snap-decision.html" class="other-game-btn">🏈 Snap Decision</a>' +
+            '<a href="/whos-that-player.html" class="other-game-btn">❓ Who's That, Player?</a>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
 
     if (!isReplay) {
       const user = await getCurrentUser();
       if (!user) {
-        setTimeout(() => {
-          showPostGameAuthPrompt(quizId, finalScore, 'trivia', `Daily Quiz — ${theme.theme}`);
+        setTimeout(function() {
+          showPostGameAuthPrompt(quizId, finalScore, 'trivia', 'Daily Quiz — ' + theme.theme);
         }, 600);
       }
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', function() {
     updateNavAuth();
-    const stored = getStoredResult();
+    // Check for stored result first — this always works even after page reload
+    var stored = getStoredResult();
     if (stored) {
-      // Already played today — show their result screen
-      showResults(true, stored);
-    } else if (hasAttemptedLocally(quizId)) {
-      // Played but no stored result — show partial result with what we know
-      showResults(true, { correct: '?', emojiRow: '—', finalScore: 0, quizId, noData: true });
-    } else {
-      showCountdown(() => renderQuestion(0));
+      showResults(stored);
+      return;
     }
+    // No stored result — check if attempted via localStorage flag
+    if (hasAttemptedLocally(quizId)) {
+      // Played before this update existed — no data to show
+      document.getElementById('quiz-container').innerHTML =
+        '<div class="results-card">' +
+          '<div style="font-size:2rem;margin-bottom:1rem;">✅</div>' +
+          '<div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:1.5rem;text-transform:uppercase;">Already Completed!</div>' +
+          '<p style="color:var(--gray);margin:1rem 0;">Come back tomorrow for a new quiz!</p>' +
+          '<div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin:1rem 0;">' +
+            '<a href="/" class="btn btn-primary">Back to Games</a>' +
+          '</div>' +
+          '<div style="border-top:1px solid var(--card-border);padding-top:1.25rem;margin-top:0.5rem;">' +
+            '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray);margin-bottom:0.75rem;">Try Today's Other Games</div>' +
+            '<div class="other-games">' +
+              '<a href="/snap-decision.html" class="other-game-btn">🏈 Snap Decision</a>' +
+              '<a href="/whos-that-player.html" class="other-game-btn">❓ Who's That, Player?</a>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      return;
+    }
+    showCountdown(function() { renderQuestion(0); });
   });
+
 </script>
 </body>
 </html>

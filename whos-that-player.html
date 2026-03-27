@@ -182,27 +182,33 @@ function getPacificOffsetMinutes(d) {
   }
 
   const NFL_PLAYERS = [
-    { name:"Patrick Mahomes", pos:"QB", team:"Kansas City Chiefs", college:"Texas Tech", drafted:"2017 · 1st Round · 10th Pick", espnId:"3139477", clues:[{label:"Position & League",text:"Quarterback · NFL"},{label:"Draft Info",text:"Selected 10th overall in the 2017 NFL Draft"},{label:"Career Achievement",text:"Led the NFL in passing touchdowns with 50 in his first year as starter"},{label:"Personal Note",text:"His father played professional baseball for 11 years in the MLB"},{label:"Signature Move",text:"Known for his no-look passes, off-platform throws, and ability to improvise under pressure"}] },
-    { name:"Josh Allen", pos:"QB", team:"Buffalo Bills", college:"Wyoming", drafted:"2018 · 1st Round · 7th Pick", espnId:"3918298", clues:[{label:"Position & League",text:"Quarterback · NFL"},{label:"Draft Info",text:"Selected 7th overall in the 2018 NFL Draft out of Wyoming"},{label:"Career Achievement",text:"Led the Bills to multiple AFC Championship appearances"},{label:"Unique Skill",text:"One of the few QBs in NFL history to rush for 500+ yards multiple seasons"},{label:"Season Highlight",text:"Threw for 49 touchdowns in a single season"}] },
-    { name:"Justin Jefferson", pos:"WR", team:"Minnesota Vikings", college:"LSU", drafted:"2020 · 1st Round · 22nd Pick", espnId:"4241464", clues:[{label:"Position & League",text:"Wide Receiver · NFL"},{label:"Draft Info",text:"22nd overall pick in the 2020 NFL Draft"},{label:"Record Breaker",text:"Set the record for most receiving yards in the first 4 NFL seasons"},{label:"College",text:"Won a national championship at LSU in the 2019 season"},{label:"Celebration",text:"Known for his signature 'Griddy' touchdown celebration"}] },
-    { name:"Ja'Marr Chase", pos:"WR", team:"Cincinnati Bengals", college:"LSU", drafted:"2021 · 1st Round · 5th Pick", espnId:"4362628", clues:[{label:"Position & League",text:"Wide Receiver · NFL"},{label:"Draft Info",text:"5th overall pick in the 2021 NFL Draft"},{label:"College Connection",text:"Played alongside his current NFL QB at LSU"},{label:"Rookie Season",text:"Set the NFL record for most receiving yards by a rookie"},{label:"College Decision",text:"Opted out of the 2020 college season to prepare for the draft"}] },
-    { name:"Lamar Jackson", pos:"QB", team:"Baltimore Ravens", college:"Louisville", drafted:"2018 · 1st Round · 32nd Pick", espnId:"3916387", clues:[{label:"Position & League",text:"Quarterback · NFL"},{label:"College Award",text:"Won the Heisman Trophy in 2016 at the University of Louisville"},{label:"Draft Fact",text:"Was the very last pick of the first round in his draft class"},{label:"Record Holder",text:"Holds the NFL record for most rushing yards by a QB in a single season"},{label:"Awards",text:"Has won multiple NFL MVP awards during his career"}] },
-    { name:"CeeDee Lamb", pos:"WR", team:"Dallas Cowboys", college:"Oklahoma", drafted:"2020 · 1st Round · 17th Pick", espnId:"4241389", clues:[{label:"Position & League",text:"Wide Receiver · NFL"},{label:"Draft Info",text:"17th overall pick in the 2020 NFL Draft out of Oklahoma"},{label:"Team Role",text:"Became the Cowboys' undisputed #1 receiver after a major roster change"},{label:"Season Achievement",text:"Led the entire NFL in receiving yards in the 2024 season"},{label:"Draft Class",text:"Part of arguably the greatest WR class in NFL Draft history"}] },
-    { name:"Tyreek Hill", pos:"WR", team:"Miami Dolphins", college:"West Alabama", drafted:"2016 · 5th Round · 165th Pick", espnId:"3054211", clues:[{label:"Position & League",text:"Wide Receiver · NFL"},{label:"Background",text:"Was a competitive track athlete in college before the NFL"},{label:"Trade",text:"Was traded from one of the NFL's top franchises to Miami in 2022"},{label:"Nickname",text:"Nicknamed 'Cheetah' for having elite speed among all NFL players"},{label:"Record",text:"Set the NFL record for most receiving yards in a single game with 215 yards"}] },
-    { name:"Travis Kelce", pos:"TE", team:"Kansas City Chiefs", college:"Cincinnati", drafted:"2013 · 3rd Round · 63rd Pick", espnId:"2576336", clues:[{label:"Position & League",text:"Tight End · NFL"},{label:"Family",text:"His brother Jason played as a center in the NFL for his entire career"},{label:"Record",text:"Has accumulated the most career receiving yards of any tight end in NFL history"},{label:"Championships",text:"Has won multiple Super Bowl rings with his current team"},{label:"Cultural Note",text:"Became a major pop culture figure through a high-profile public relationship"}] },
+    { name:"Patrick Mahomes", pos:"QB", team:"Kansas City Chiefs", college:"Texas Tech", drafted:"2017 · 1st · Pick 10", espnId:"3139477", clues:[{label:"Position",text:"Quarterback · NFL"},{label:"Draft",text:"10th overall pick, 2017 NFL Draft"},{label:"Achievement",text:"Led the NFL with 50 passing TDs in his first year as starter"},{label:"Family",text:"His father played professional baseball for 11 seasons"},{label:"Signature",text:"Famous for no-look passes and improvising under pressure"}] },
+    { name:"Josh Allen", pos:"QB", team:"Buffalo Bills", college:"Wyoming", drafted:"2018 · 1st · Pick 7", espnId:"3918298", clues:[{label:"Position",text:"Quarterback · NFL"},{label:"Draft",text:"7th overall pick out of Wyoming, 2018"},{label:"Achievement",text:"Led the Bills to multiple AFC Championship appearances"},{label:"Rushing",text:"One of the few QBs to rush for 500+ yards in multiple seasons"},{label:"Stats",text:"Threw for 49 touchdowns in his breakout 2020 season"}] },
+    { name:"Justin Jefferson", pos:"WR", team:"Minnesota Vikings", college:"LSU", drafted:"2020 · 1st · Pick 22", espnId:"4241464", clues:[{label:"Position",text:"Wide Receiver · NFL"},{label:"Draft",text:"22nd overall pick in the 2020 NFL Draft"},{label:"Record",text:"Most receiving yards through a player's first 4 NFL seasons"},{label:"College",text:"Won a national championship at LSU in 2019"},{label:"Celebration",text:"Known for the signature 'Griddy' touchdown celebration"}] },
+    { name:"Ja'Marr Chase", pos:"WR", team:"Cincinnati Bengals", college:"LSU", drafted:"2021 · 1st · Pick 5", espnId:"4362628", clues:[{label:"Position",text:"Wide Receiver · NFL"},{label:"Draft",text:"5th overall pick in the 2021 NFL Draft"},{label:"Connection",text:"Played college football alongside his current NFL QB"},{label:"Record",text:"Set the NFL record for most receiving yards by a rookie"},{label:"Decision",text:"Opted out of the 2020 college season to prepare for the draft"}] },
+    { name:"Lamar Jackson", pos:"QB", team:"Baltimore Ravens", college:"Louisville", drafted:"2018 · 1st · Pick 32", espnId:"3916387", clues:[{label:"Position",text:"Quarterback · NFL"},{label:"Award",text:"Won the Heisman Trophy in 2016 at Louisville"},{label:"Draft",text:"Last pick of the first round in his draft class"},{label:"Record",text:"Holds the NFL record for most rushing yards by a QB in a single season"},{label:"Awards",text:"Multiple-time NFL MVP award winner"}] },
+    { name:"CeeDee Lamb", pos:"WR", team:"Dallas Cowboys", college:"Oklahoma", drafted:"2020 · 1st · Pick 17", espnId:"4241389", clues:[{label:"Position",text:"Wide Receiver · NFL"},{label:"Draft",text:"17th overall pick out of Oklahoma in 2020"},{label:"Role",text:"Became Dallas's undisputed #1 receiver after a major trade"},{label:"Season",text:"Led the entire NFL in receiving yards in 2024"},{label:"Class",text:"Part of arguably the greatest WR draft class in NFL history"}] },
+    { name:"Travis Kelce", pos:"TE", team:"Kansas City Chiefs", college:"Cincinnati", drafted:"2013 · 3rd · Pick 63", espnId:"2576336", clues:[{label:"Position",text:"Tight End · NFL"},{label:"Family",text:"His brother Jason also played in the NFL as a center"},{label:"Record",text:"Most career receiving yards ever by a tight end"},{label:"Championships",text:"Multiple Super Bowl rings with Kansas City"},{label:"Culture",text:"Became a major pop culture figure through a high-profile relationship"}] },
+    { name:"Jalen Hurts", pos:"QB", team:"Philadelphia Eagles", college:"Oklahoma / Alabama", drafted:"2020 · 2nd · Pick 53", espnId:"4040715", clues:[{label:"Position",text:"Quarterback · NFL"},{label:"College",text:"Transferred from Alabama to Oklahoma after losing his starting job"},{label:"Draft",text:"Selected in the 2nd round, 53rd overall in 2020"},{label:"Season",text:"Led the Eagles to Super Bowl LVII in his second season as starter"},{label:"Dual Threat",text:"One of the most effective rushing QBs in the modern NFL"}] },
+    { name:"Brock Purdy", pos:"QB", team:"San Francisco 49ers", college:"Iowa State", drafted:"2022 · 7th · Pick 262", espnId:"4432577", clues:[{label:"Position",text:"Quarterback · NFL"},{label:"Draft",text:"The very last pick of the 2022 NFL Draft — 'Mr. Irrelevant'"},{label:"Rise",text:"Became a full-time starter after two QBs ahead of him got injured"},{label:"Success",text:"Led San Francisco to the NFC Championship Game in his first full season"},{label:"Stats",text:"Posted one of the highest passer ratings in NFL history in his breakout year"}] },
+    { name:"Tyreek Hill", pos:"WR", team:"Miami Dolphins", college:"West Alabama", drafted:"2016 · 5th · Pick 165", espnId:"3054211", clues:[{label:"Position",text:"Wide Receiver · NFL"},{label:"Background",text:"Was a competitive track athlete in college"},{label:"Trade",text:"Traded from a top franchise to Miami in 2022"},{label:"Nickname",text:"Called 'Cheetah' for his elite speed"},{label:"Record",text:"Set the NFL record for most receiving yards in a single game with 215"}] },
   ];
 
   const NBA_PLAYERS = [
-    { name:"Stephen Curry", pos:"PG", team:"Golden State Warriors", college:"Davidson", drafted:"2009 · 1st Round · 7th Pick", espnId:"3975", clues:[{label:"Position & League",text:"Point Guard · NBA"},{label:"Draft Info",text:"7th overall pick in the 2009 NBA Draft from Davidson College"},{label:"Revolution",text:"Transformed the game with his historic three-point shooting ability"},{label:"Family",text:"His father Dell played in the NBA and his brother Seth also plays"},{label:"Championships",text:"Has won 4 NBA championships, all with the same franchise"}] },
-    { name:"Nikola Jokic", pos:"C", team:"Denver Nuggets", college:"International", drafted:"2014 · 2nd Round · 41st Pick", espnId:"3112335", clues:[{label:"Position & League",text:"Center · NBA"},{label:"Draft Fact",text:"Was the 41st pick, announced during a Taco Bell commercial break at the 2014 Draft"},{label:"Awards",text:"Won 3 NBA MVP awards in just 4 seasons — one of the fastest accumulations in history"},{label:"Historic Achievement",text:"Led his team to their first-ever NBA Championship in 2023"},{label:"Unique Skill",text:"Widely considered the greatest passing center in basketball history"}] },
-    { name:"Giannis Antetokounmpo", pos:"PF", team:"Milwaukee Bucks", college:"International", drafted:"2013 · 1st Round · 15th Pick", espnId:"3032977", clues:[{label:"Position & League",text:"Power Forward · NBA"},{label:"Origin",text:"Grew up in Greece with an extremely difficult childhood in poverty"},{label:"Nickname",text:"Known as 'The Greek Freak' for his extraordinary combination of size, speed, and skill"},{label:"Championship",text:"Led his franchise to their first NBA title in 50 years"},{label:"Awards",text:"Won back-to-back MVP awards in the 2018-19 and 2019-20 seasons"}] },
-    { name:"Luka Doncic", pos:"PG", team:"Dallas Mavericks", college:"International", drafted:"2018 · 1st Round · 3rd Pick", espnId:"3945274", clues:[{label:"Position & League",text:"Point Guard · NBA"},{label:"Pre-NBA",text:"Won the EuroLeague MVP award before coming to the NBA from Slovenia"},{label:"Draft Fact",text:"Was originally drafted by the Atlanta Hawks before being traded on draft night"},{label:"International",text:"Led his national team to historic achievements on the international stage"},{label:"Signature Play",text:"Known for his step-back three-pointer and elite court vision and passing"}] },
-    { name:"Jayson Tatum", pos:"SF", team:"Boston Celtics", college:"Duke", drafted:"2017 · 1st Round · 3rd Pick", espnId:"4065648", clues:[{label:"Position & League",text:"Small Forward · NBA"},{label:"Draft Info",text:"3rd overall pick in the 2017 NBA Draft from Duke University"},{label:"Achievement",text:"Led his team to back-to-back NBA Finals appearances in 2022 and 2024"},{label:"Idol",text:"Grew up idolizing Kobe Bryant and has spoken about his influence frequently"},{label:"Championship",text:"Won the 2024 NBA Championship and was named Finals MVP"}] },
-    { name:"Joel Embiid", pos:"C", team:"Philadelphia 76ers", college:"Kansas", drafted:"2014 · 1st Round · 3rd Pick", espnId:"3059318", clues:[{label:"Position & League",text:"Center · NBA"},{label:"Origin",text:"Grew up in Cameroon, Africa, and didn't pick up basketball until his teenage years"},{label:"Award",text:"Won the NBA Most Valuable Player award for the 2022-23 season"},{label:"Team History",text:"Has been the cornerstone of a franchise rebuild known as 'The Process'"},{label:"College",text:"Played only one season of college basketball at Kansas before entering the draft"}] },
-    { name:"Ja Morant", pos:"PG", team:"Memphis Grizzlies", college:"Murray State", drafted:"2019 · 1st Round · 2nd Pick", espnId:"4279888", clues:[{label:"Position & League",text:"Point Guard · NBA"},{label:"College",text:"Came from Murray State, a small mid-major school that few scouts initially noticed"},{label:"Award",text:"Won the NBA Rookie of the Year award in his first season"},{label:"Athleticism",text:"Known for some of the most explosive dunks and plays in NBA history"},{label:"Production",text:"Averaged more than 25 points per game during his peak seasons"}] },
-    { name:"Anthony Edwards", pos:"SG", team:"Minnesota Timberwolves", college:"Georgia", drafted:"2020 · 1st Round · 1st Pick", espnId:"4432174", clues:[{label:"Position & League",text:"Shooting Guard · NBA"},{label:"Draft Info",text:"Selected #1 overall in the 2020 NBA Draft from the University of Georgia"},{label:"Nickname",text:"Known as 'Ant-Man' for his explosive athleticism despite being shorter than typical stars"},{label:"Team Achievement",text:"Led his team to the Western Conference Finals in 2024"},{label:"Personality",text:"Known for his infectious personality, humor, and charisma both on and off the court"}] },
-    { name:"Shai Gilgeous-Alexander", pos:"PG", team:"Oklahoma City Thunder", college:"Kentucky", drafted:"2018 · 1st Round · 11th Pick", espnId:"4278073", clues:[{label:"Position & League",text:"Point Guard · NBA"},{label:"Trade History",text:"Drafted by Charlotte, then traded through LA Clippers before landing in Oklahoma City"},{label:"Award",text:"Won the NBA MVP award for the 2024-25 season"},{label:"Team Achievement",text:"Led OKC to the best record in the entire NBA"},{label:"Identity",text:"From Canada — one of the game's premier scorers, known by his initials 'SGA'"}] },
+    { name:"Stephen Curry", pos:"PG", team:"Golden State Warriors", college:"Davidson", drafted:"2009 · 1st · Pick 7", espnId:"3975", clues:[{label:"Position",text:"Point Guard · NBA"},{label:"Draft",text:"7th overall pick from Davidson College in 2009"},{label:"Impact",text:"Transformed the game with his historic three-point shooting"},{label:"Family",text:"His father Dell and brother Seth also played in the NBA"},{label:"Championships",text:"4 NBA titles, all with the Golden State Warriors"}] },
+    { name:"Nikola Jokic", pos:"C", team:"Denver Nuggets", college:"International", drafted:"2014 · 2nd · Pick 41", espnId:"3112335", clues:[{label:"Position",text:"Center · NBA"},{label:"Draft",text:"41st pick — announced during a Taco Bell commercial at the 2014 Draft"},{label:"Awards",text:"3 MVP awards in 4 seasons"},{label:"Championship",text:"Led Denver to their first-ever NBA title in 2023"},{label:"Skill",text:"Widely considered the greatest passing center in NBA history"}] },
+    { name:"Giannis Antetokounmpo", pos:"PF", team:"Milwaukee Bucks", college:"International", drafted:"2013 · 1st · Pick 15", espnId:"3032977", clues:[{label:"Position",text:"Power Forward · NBA"},{label:"Origin",text:"Grew up in Greece with a difficult childhood in poverty"},{label:"Nickname",text:"Known as 'The Greek Freak'"},{label:"Championship",text:"Led Milwaukee to their first title in 50 years"},{label:"Awards",text:"Back-to-back MVP in 2018-19 and 2019-20"}] },
+    { name:"Luka Doncic", pos:"PG", team:"Dallas Mavericks", college:"International", drafted:"2018 · 1st · Pick 3", espnId:"3945274", clues:[{label:"Position",text:"Point Guard · NBA"},{label:"Pre-NBA",text:"Won EuroLeague MVP before coming to the NBA from Slovenia"},{label:"Draft",text:"Originally drafted by Atlanta, traded to Dallas on draft night"},{label:"International",text:"Led Slovenia to historic international achievements"},{label:"Signature",text:"Known for his step-back three and elite court vision"}] },
+    { name:"Jayson Tatum", pos:"SF", team:"Boston Celtics", college:"Duke", drafted:"2017 · 1st · Pick 3", espnId:"4065648", clues:[{label:"Position",text:"Small Forward · NBA"},{label:"Draft",text:"3rd overall pick from Duke in 2017"},{label:"Finals",text:"Led Boston to back-to-back Finals appearances in 2022 and 2024"},{label:"Idol",text:"Grew up idolizing Kobe Bryant"},{label:"Championship",text:"Won the 2024 NBA title and was named Finals MVP"}] },
+    { name:"Joel Embiid", pos:"C", team:"Philadelphia 76ers", college:"Kansas", drafted:"2014 · 1st · Pick 3", espnId:"3059318", clues:[{label:"Position",text:"Center · NBA"},{label:"Origin",text:"Grew up in Cameroon, didn't play basketball until his teens"},{label:"Award",text:"Won the 2022-23 NBA MVP"},{label:"Era",text:"Cornerstone of Philadelphia's 'Process' rebuild"},{label:"College",text:"Played one season at Kansas before the draft"}] },
+    { name:"Ja Morant", pos:"PG", team:"Memphis Grizzlies", college:"Murray State", drafted:"2019 · 1st · Pick 2", espnId:"4279888", clues:[{label:"Position",text:"Point Guard · NBA"},{label:"College",text:"Came from Murray State, a small mid-major school"},{label:"Award",text:"Won Rookie of the Year in 2019-20"},{label:"Athleticism",text:"Known for some of the most explosive dunks in NBA history"},{label:"Stats",text:"Averaged 25+ points per game during his peak seasons"}] },
+    { name:"Anthony Edwards", pos:"SG", team:"Minnesota Timberwolves", college:"Georgia", drafted:"2020 · 1st · Pick 1", espnId:"4432174", clues:[{label:"Position",text:"Shooting Guard · NBA"},{label:"Draft",text:"#1 overall pick from University of Georgia in 2020"},{label:"Nickname",text:"Known as 'Ant-Man'"},{label:"Team",text:"Led Minnesota to the Western Conference Finals in 2024"},{label:"Personality",text:"Known for infectious humor and charisma on and off the court"}] },
+    { name:"Shai Gilgeous-Alexander", pos:"PG", team:"Oklahoma City Thunder", college:"Kentucky", drafted:"2018 · 1st · Pick 11", espnId:"4278073", clues:[{label:"Position",text:"Point Guard · NBA"},{label:"Trade",text:"Drafted by Charlotte, traded through LA Clippers to OKC"},{label:"Award",text:"Won the 2024-25 NBA MVP"},{label:"Team",text:"Led OKC to the best record in the NBA"},{label:"Identity",text:"From Canada — known by his initials 'SGA'"}] },
+    { name:"LeBron James", pos:"SF", team:"Los Angeles Lakers", college:"None (HS Draft)", drafted:"2003 · 1st · Pick 1", espnId:"1966", clues:[{label:"Position",text:"Small Forward · NBA"},{label:"Draft",text:"#1 overall pick straight out of high school in Akron, Ohio"},{label:"Record",text:"NBA all-time scoring leader"},{label:"Championships",text:"4 NBA titles with 3 different franchises"},{label:"Nickname",text:"Known as 'The King' and 'LBJ'"}] },
+    { name:"Kevin Durant", pos:"SF", team:"Phoenix Suns", college:"Texas", drafted:"2007 · 1st · Pick 2", espnId:"3202", clues:[{label:"Position",text:"Small Forward / Power Forward · NBA"},{label:"Draft",text:"2nd overall pick from the University of Texas in 2007"},{label:"Awards",text:"Multiple scoring titles and an NBA MVP award"},{label:"Championships",text:"Won 2 NBA titles with the Golden State Warriors"},{label:"Skill",text:"Considered one of the purest scorers in basketball history"}] },
+    { name:"Devin Booker", pos:"SG", team:"Phoenix Suns", college:"Kentucky", drafted:"2015 · 1st · Pick 13", espnId:"3136195", clues:[{label:"Position",text:"Shooting Guard · NBA"},{label:"Draft",text:"13th overall pick from Kentucky in 2015"},{label:"Record",text:"Scored 70 points in a single game at age 20"},{label:"Olympics",text:"Won a gold medal with Team USA at the 2020 Tokyo Olympics"},{label:"Relationship",text:"Has been publicly linked to a prominent sports family"}] },
   ];
+
 
   const POINT_VALUES = [1000, 800, 600, 400, 200];
 
@@ -398,103 +404,115 @@ function getPacificOffsetMinutes(d) {
   }
 
   async function showResult(correct, pts, isReplay, storedData) {
-    if (isReplay) { correct = storedData.correct; pts = storedData.finalPts; }
+    if (isReplay && storedData) { correct = storedData.correct; pts = storedData.finalPts || 0; }
     const noData = isReplay && storedData && storedData.noData;
-    markAttemptedLocally(player.id);
-    const { fire } = getStreakDisplay();
-    const finalPts = correct ? (fire ? Math.round(pts * 1.10) : pts) : 0;
+    const fire = isOnFire();
+    const finalPts = correct ? (fire && !isReplay ? Math.round(pts * 1.10) : pts) : 0;
+    const cluesUsed = isReplay ? (storedData.cluesUsed || 5) : revealedClues;
+    const guessesUsedVal = isReplay ? (storedData.guessesUsed || 0) : guessesUsed;
     const emojiResult = correct ? '🎉' : '😔';
     const headline = correct ? 'Correct!' : 'Nice Try!';
-    const cluesUsed = revealedClues;
-    const shareEmoji = correct ? `✅ Guessed in ${cluesUsed} clue${cluesUsed!==1?'s':''}!` : '❌ Couldn\'t get it today';
-    const shareText = buildShareText(`Who's That, Player? (${player.league})`, finalPts, shareEmoji, correct ? `Identified in ${cluesUsed}/5 clues` : 'Better luck tomorrow!');
+    const shareEmoji = correct
+      ? ('✅ Guessed in ' + cluesUsed + ' clue' + (cluesUsed !== 1 ? 's' : '') + '!')
+      : "❌ Couldn't get it today";
+    const shareText = buildShareText(
+      "Who's That, Player? (" + player.league + ")",
+      finalPts,
+      shareEmoji,
+      correct ? ('Identified in ' + cluesUsed + '/5 clues') : 'Better luck tomorrow!'
+    );
     window._lastShareText = shareText;
 
-    // Store locally FIRST
-    if (!isReplay) storeResult({ correct, finalPts, cluesUsed, guessesUsed });
-    // Save attempt
-    await saveAttempt(player.id, correct ? pts : 0, 0, { cluesUsed, guessesUsed, correct }, 'whos_that_player');
+    if (!isReplay) {
+      // Store FIRST before any async
+      storeResult({ correct, finalPts, cluesUsed, guessesUsed: guessesUsedVal });
+      markAttemptedLocally(player.id);
+      await saveAttempt(player.id, correct ? pts : 0, 0, { cluesUsed, guessesUsed: guessesUsedVal, correct }, 'whos_that_player');
+    }
 
-    const container = document.getElementById('wtp-container');
-    container.innerHTML = `
-      <div class="wtp-result ${correct ? 'correct' : 'wrong'}">
-        <div style="font-size:3rem;margin-bottom:0.5rem;">${emojiResult}</div>
-        <div class="wtp-result-main">${noData ? 'Already Played!' : headline}</div>
-        ${noData ? `<div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.9rem;color:var(--gray);margin-bottom:1rem;">Score data only persists during the same session.</div>` :
-        correct ? `
-          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.1rem;color:var(--success);margin-bottom:0.5rem;">+${finalPts.toLocaleString()} pts earned</div>`
-          ${fire ? `<div style="font-size:0.8rem;color:#ff6400;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1rem;">🔥 On Fire bonus applied!</div>` : ''}
-        ` : !noData ? `<div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1rem;color:var(--gray);margin-bottom:1.5rem;">Better luck tomorrow!</div>` : ``}
+    var cluesHtml = player.clues.map(function(cl) {
+      return '<div style="padding:0.4rem 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.85rem;">' +
+        '<span style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.75rem;color:' + leagueColor() + ';margin-right:0.5rem;">' + cl.label + ':</span>' +
+        '<span style="color:var(--gray-light);">' + cl.text + '</span>' +
+        '</div>';
+    }).join('');
 
-        <div id="wtp-percentile" style="margin-bottom:1rem;"></div>
-        <div class="wtp-player-reveal">
-          <img class="wtp-player-img-reveal" src="${espnImg}" alt="${player.name}" onerror="this.style.opacity=0.3;"/>
-          <div>
-            <div class="wtp-player-name">${player.name}</div>
-            <div class="wtp-player-details">
-              ${player.pos} · ${player.team}<br>
-              ${player.college}<br>
-              Draft: ${player.drafted}
-            </div>
-          </div>
-        </div>
+    var ptsLine = '';
+    if (noData) {
+      ptsLine = '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.9rem;color:var(--gray);margin-bottom:1rem;">Come back tomorrow for a new player!</div>';
+    } else if (correct) {
+      ptsLine = '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:1.1rem;color:var(--success);margin-bottom:0.5rem;">+' + finalPts.toLocaleString() + ' pts earned</div>' +
+        (fire && !isReplay ? '<div style="font-size:0.8rem;color:#ff6400;font-family:Barlow Condensed,sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1rem;">🔥 On Fire bonus applied!</div>' : '');
+    } else {
+      ptsLine = '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:1rem;color:var(--gray);margin-bottom:1.5rem;">Better luck tomorrow!</div>';
+    }
 
-        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;text-align:left;width:100%;max-width:500px;">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:0.75rem;">All Clues</div>
-          ${player.clues.map((c, i) => `
-            <div style="padding:0.4rem 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.85rem;">
-              <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.75rem;color:${leagueColor()};margin-right:0.5rem;">${c.label}:</span>
-              <span style="color:var(--gray-light);">${c.text}</span>
-            </div>
-          `).join('')}
-        </div>
+    var container = document.getElementById('wtp-container');
+    container.innerHTML =
+      '<div class="wtp-result ' + (correct ? 'correct' : 'wrong') + '">' +
+        '<div style="font-size:3rem;margin-bottom:0.5rem;">' + emojiResult + '</div>' +
+        '<div class="wtp-result-main">' + (noData ? 'Already Played!' : headline) + '</div>' +
+        ptsLine +
+        '<div id="wtp-percentile" style="margin-bottom:1rem;"></div>' +
+        '<div class="wtp-player-reveal">' +
+          '<img class="wtp-player-img-reveal" src="' + espnImg + '" alt="' + player.name + '" onerror="this.style.opacity=0.3;"/>' +
+          '<div>' +
+            '<div class="wtp-player-name">' + player.name + '</div>' +
+            '<div class="wtp-player-details">' + player.pos + ' · ' + player.team + '<br>' + player.college + '<br>Draft: ' + player.drafted + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;text-align:left;width:100%;max-width:500px;">' +
+          '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:0.75rem;">All Clues</div>' +
+          cluesHtml +
+        '</div>' +
+        '<div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin-bottom:1rem;">' +
+          '<button class="btn btn-primary" onclick="showShareModal(window._lastShareText)">📣 Share Result</button>' +
+          '<a href="/" class="btn btn-outline">Back to Games</a>' +
+        '</div>' +
+        '<div style="border-top:1px solid rgba(52,152,219,0.15);padding-top:1.25rem;">' +
+          '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:0.75rem;">Try Today's Other Games</div>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">' +
+            '<a href="/daily-quiz.html" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:0.875rem;text-decoration:none;color:var(--white);font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;text-align:center;">🎯 Daily Quiz</a>' +
+            '<a href="/snap-decision.html" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:0.875rem;text-decoration:none;color:var(--white);font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;text-align:center;">🏈 Snap Decision</a>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
 
-        <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin-bottom:1rem;">
-          <button class="btn btn-primary" onclick="showShareModal(window._lastShareText)">📣 Share Result</button>
-          <a href="/" class="btn btn-outline">Back to Games</a>
-        </div>
-        <div style="border-top:1px solid rgba(52,152,219,0.15);padding-top:1.25rem;">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:0.75rem;">Try Today's Other Games</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
-            <a href="/daily-quiz.html" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:0.875rem;text-decoration:none;color:var(--white);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;text-align:center;">🎯 Daily Quiz</a>
-            <a href="/snap-decision.html" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:0.875rem;text-decoration:none;color:var(--white);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;text-align:center;">🏈 Snap Decision</a>
-          </div>
-        </div>
-      </div>
-    `;
-
-    // Fetch percentile
+    // Percentile
     try {
-      const pct = await getPercentile(player.id, correct ? pts : 0);
-      const pEl = document.getElementById('wtp-percentile');
+      var pct = await getPercentile(player.id, correct ? finalPts : 0);
+      var pEl = document.getElementById('wtp-percentile');
       if (pEl && pct !== null && correct) {
-        pEl.innerHTML = `<div style="display:inline-block;background:rgba(52,152,219,0.1);border:1px solid rgba(52,152,219,0.3);border-radius:8px;padding:0.5rem 1.25rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.9rem;letter-spacing:0.08em;text-transform:uppercase;color:#3498db;margin-bottom:0.75rem;">Better than ${pct}% of players today</div>`;
+        pEl.innerHTML = '<div style="display:inline-block;background:rgba(52,152,219,0.1);border:1px solid rgba(52,152,219,0.3);border-radius:8px;padding:0.5rem 1.25rem;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.9rem;letter-spacing:0.08em;text-transform:uppercase;color:#3498db;margin-bottom:0.75rem;">Better than ' + pct + '% of players today</div>';
       }
     } catch(e) {}
 
-    // Post-game auth prompt if not logged in
-    const user = await getCurrentUser();
-    if (!user && correct) {
-      setTimeout(() => {
-        showPostGameAuthPrompt(player.id, finalPts, 'whos_that_player', `Who\'s That, Player? (${player.league})`);
-      }, 800);
+    if (!isReplay) {
+      var user = await getCurrentUser();
+      if (!user && correct) {
+        setTimeout(function() {
+          showPostGameAuthPrompt(player.id, finalPts, 'whos_that_player', "Who's That, Player? (" + player.league + ")");
+        }, 800);
+      }
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', function() {
     updateNavAuth();
-    const stored = getStoredResult();
+    var stored = getStoredResult();
     if (stored) {
-      showResult(stored.correct, stored.finalPts, true, stored);
+      // Has stored result — always show end screen
+      showResult(stored.correct, stored.finalPts || 0, true, stored);
       return;
     }
     if (hasAttemptedLocally(player.id)) {
-      // Played but no stored result — show reveal with no score
-      showResult(false, 0, true, { correct: false, finalPts: 0, cluesUsed: 5, guessesUsed: 0, noData: true });
+      // Played before this update — no stored data, show fallback
+      showResult(false, 0, true, { correct: false, finalPts: 0, noData: true });
       return;
     }
     renderGame();
   });
+
 </script>
 </body>
 </html>

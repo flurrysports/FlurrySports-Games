@@ -169,12 +169,11 @@ function getPacificOffsetMinutes(d) {
     const dstEnd   = new Date(Date.UTC(y, 10, 7  - (new Date(Date.UTC(y, 10, 1)).getUTCDay() + 6) % 7, 9));
     return (d >= dstStart && d < dstEnd) ? -7*60 : -8*60;
   }
-  function dateSeed(offsetDays) {
+  function dateSeed() {
     const d = new Date();
-    if (offsetDays) d.setUTCDate(d.getUTCDate() + offsetDays);
     const ms = getPacificOffsetMinutes(d) * 60000;
     const pac = new Date(d.getTime() + ms);
-    return parseInt(pac.toISOString().slice(0,10).replace(/-/g,''));
+    return parseInt(pac.toISOString().slice(0,10).replace(/-/g,'')) + 166;
   }
   function seededRandom(seed) {
     let s = seed;
@@ -213,7 +212,7 @@ function getPacificOffsetMinutes(d) {
   const POINT_VALUES = [1000, 800, 600, 400, 200];
 
   function getDailyPlayer() {
-    const seed = dateSeed();
+    const seed = dateSeed(); // salt already applied inside dateSeed()
     const rng = seededRandom(seed + 7);
     const useNFL = rng() > 0.5;
     const pool = useNFL ? NFL_PLAYERS : NBA_PLAYERS;
@@ -233,11 +232,11 @@ function getPacificOffsetMinutes(d) {
   function leagueColor() { return player.league === 'NFL' ? '#e8a020' : '#3498db'; }
   function leagueBg() { return player.league === 'NFL' ? 'rgba(232,160,32,0.15)' : 'rgba(52,152,219,0.15)'; }
 
-  function getStoredResult() {
-    try { return JSON.parse(localStorage.getItem('fs_wtp_result_' + player.id)); } catch(e) { return null; }
+  function saveWTPResult(data) {
+    try { localStorage.setItem('fs_wtp_' + player.id, JSON.stringify(data)); } catch(e) {}
   }
-  function storeResult(data) {
-    try { localStorage.setItem('fs_wtp_result_' + player.id, JSON.stringify(data)); } catch(e) {}
+  function loadWTPResult() {
+    try { return JSON.parse(localStorage.getItem('fs_wtp_' + player.id)); } catch(e) { return null; }
   }
 
   function renderGame() {
@@ -425,7 +424,7 @@ function getPacificOffsetMinutes(d) {
 
     if (!isReplay) {
       // Store FIRST before any async
-      storeResult({ correct, finalPts, cluesUsed, guessesUsed: guessesUsedVal });
+      saveWTPResult({ correct, finalPts, cluesUsed, guessesUsed: guessesUsedVal });
       markAttemptedLocally(player.id);
       await saveAttempt(player.id, correct ? pts : 0, 0, { cluesUsed, guessesUsed: guessesUsedVal, correct }, 'whos_that_player');
     }
@@ -499,7 +498,7 @@ function getPacificOffsetMinutes(d) {
 
   document.addEventListener('DOMContentLoaded', function() {
     updateNavAuth();
-    var stored = getStoredResult();
+    var stored = loadWTPResult();
     if (stored) {
       // Has stored result — always show end screen
       showResult(stored.correct, stored.finalPts || 0, true, stored);

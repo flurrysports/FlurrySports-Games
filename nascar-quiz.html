@@ -13,6 +13,10 @@
 <h1 style="font-family:'Barlow Condensed',sans-serif;color:var(--gold);margin-bottom:1rem;">Add NASCAR Quiz</h1>
 <p style="color:var(--gray);margin-bottom:2rem;">Click the button below to add the NASCAR quiz to your database. Only do this once.</p>
 <button onclick="addQuiz()" class="btn btn-primary btn-lg" id="btn">Add NASCAR Quiz to Database</button>
+<div style="margin-top:1rem;">
+  <p style="color:var(--gray);font-size:0.85rem;margin-bottom:0.5rem;">Already created the quiz but questions failed? Use this to add questions to the existing quiz:</p>
+  <button onclick="fixExistingQuiz('91eea53d-e1ac-401b-aeda-e0f3cd9f1524')" class="btn btn-outline" id="fix-btn">Fix Existing Quiz (add questions only)</button>
+</div>
 <div id="status" style="margin-top:1rem;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;"></div>
 
 <script>
@@ -43,16 +47,16 @@ async function addQuiz() {
 
   const qid = quizData.id;
   const questions = [
-    { question: "Who holds the record for the most NASCAR Cup Series championships?", options: ["Richard Petty","Dale Earnhardt","Jimmie Johnson","Jeff Gordon"], correct_answer: "Richard Petty", sort_order: 1 },
-    { question: "How many total laps is the Daytona 500?", options: ["150","175","200","250"], correct_answer: "200", sort_order: 2 },
-    { question: "Which driver won the NASCAR Cup Series championship in 2020?", options: ["Kevin Harvick","Denny Hamlin","Chase Elliott","Brad Keselowski"], correct_answer: "Chase Elliott", sort_order: 3 },
-    { question: "What does NASCAR stand for?", options: ["National Association for Stock Car Auto Racing","National American Stock Car Auto Race","North American Sports Car Auto Racing","National Automobile Stock Car Association Racing"], correct_answer: "National Association for Stock Car Auto Racing", sort_order: 4 },
-    { question: "Which track is known as 'The Lady in Black'?", options: ["Talladega Superspeedway","Bristol Motor Speedway","Darlington Raceway","Charlotte Motor Speedway"], correct_answer: "Darlington Raceway", sort_order: 5 },
-    { question: "Who is known as 'The Intimidator' in NASCAR history?", options: ["Richard Petty","Dale Earnhardt Sr.","Tony Stewart","Rusty Wallace"], correct_answer: "Dale Earnhardt Sr.", sort_order: 6 },
-    { question: "Which manufacturer has the most NASCAR Cup Series wins all-time?", options: ["Ford","Chevrolet","Dodge","Toyota"], correct_answer: "Chevrolet", sort_order: 7 },
-    { question: "Kyle Busch won his first NASCAR Cup Series title in which year?", options: ["2013","2015","2019","2021"], correct_answer: "2015", sort_order: 8 },
-    { question: "Which superspeedway is located in Talladega, Alabama?", options: ["Bristol Motor Speedway","Daytona International Speedway","Talladega Superspeedway","Atlanta Motor Speedway"], correct_answer: "Talladega Superspeedway", sort_order: 9 },
-    { question: "Which driver won the 2023 NASCAR Cup Series championship?", options: ["Ryan Blaney","William Byron","Christopher Bell","Denny Hamlin"], correct_answer: "Ryan Blaney", sort_order: 10 },
+    { question_text: "Who holds the record for the most NASCAR Cup Series championships?", choices: ["Richard Petty","Dale Earnhardt","Jimmie Johnson","Jeff Gordon"], answer: "Richard Petty", points: 100 },
+    { question_text: "How many total laps is the Daytona 500?", choices: ["150","175","200","250"], answer: "200", points: 100 },
+    { question_text: "Which driver won the NASCAR Cup Series championship in 2020?", choices: ["Kevin Harvick","Denny Hamlin","Chase Elliott","Brad Keselowski"], answer: "Chase Elliott", points: 100 },
+    { question_text: "What does NASCAR stand for?", choices: ["National Association for Stock Car Auto Racing","National American Stock Car Auto Race","North American Sports Car Auto Racing","National Automobile Stock Car Association Racing"], answer: "National Association for Stock Car Auto Racing", points: 100 },
+    { question_text: "Which track is known as 'The Lady in Black'?", choices: ["Talladega Superspeedway","Bristol Motor Speedway","Darlington Raceway","Charlotte Motor Speedway"], answer: "Darlington Raceway", points: 100 },
+    { question_text: "Who is known as 'The Intimidator' in NASCAR history?", choices: ["Richard Petty","Dale Earnhardt Sr.","Tony Stewart","Rusty Wallace"], answer: "Dale Earnhardt Sr.", points: 100 },
+    { question_text: "Which manufacturer has the most NASCAR Cup Series wins all-time?", choices: ["Ford","Chevrolet","Dodge","Toyota"], answer: "Chevrolet", points: 100 },
+    { question_text: "Kyle Busch won his first NASCAR Cup Series title in which year?", choices: ["2013","2015","2019","2021"], answer: "2015", points: 100 },
+    { question_text: "Which superspeedway is located in Talladega, Alabama?", choices: ["Bristol Motor Speedway","Daytona International Speedway","Talladega Superspeedway","Atlanta Motor Speedway"], answer: "Talladega Superspeedway", points: 100 },
+    { question_text: "Which driver won the 2023 NASCAR Cup Series championship?", choices: ["Ryan Blaney","William Byron","Christopher Bell","Denny Hamlin"], answer: "Ryan Blaney", points: 100 },
   ].map(q => ({ ...q, quiz_id: qid, type: 'multiple_choice' }));
 
   const { error: qErr } = await supabase.from('questions').insert(questions);
@@ -65,7 +69,37 @@ async function addQuiz() {
   status.style.color = 'var(--success)';
   status.innerHTML = '✅ NASCAR Quiz added! Quiz ID: <strong>' + qid + '</strong><br><a href="/quiz.html?id=' + qid + '" style="color:var(--gold);">Play it now →</a> or <a href="/quizzes.html" style="color:var(--gold);">view all quizzes →</a>';
   btn.textContent = 'Done!';
-}
+  }
+
+  async function fixExistingQuiz(qid) {
+    const btn = document.getElementById('fix-btn');
+    const status = document.getElementById('status');
+    btn.disabled = true; btn.textContent = 'Adding questions...';
+
+    const questions = [
+      { question_text: "Who holds the record for the most NASCAR Cup Series championships?", choices: ["Richard Petty","Dale Earnhardt","Jimmie Johnson","Jeff Gordon"], answer: "Richard Petty", points: 100 },
+      { question_text: "How many total laps is the Daytona 500?", choices: ["150","175","200","250"], answer: "200", points: 100 },
+      { question_text: "Which driver won the NASCAR Cup Series championship in 2020?", choices: ["Kevin Harvick","Denny Hamlin","Chase Elliott","Brad Keselowski"], answer: "Chase Elliott", points: 100 },
+      { question_text: "What does NASCAR stand for?", choices: ["National Association for Stock Car Auto Racing","National American Stock Car Auto Race","North American Sports Car Auto Racing","National Automobile Stock Car Association Racing"], answer: "National Association for Stock Car Auto Racing", points: 100 },
+      { question_text: "Which track is known as 'The Lady in Black'?", choices: ["Talladega Superspeedway","Bristol Motor Speedway","Darlington Raceway","Charlotte Motor Speedway"], answer: "Darlington Raceway", points: 100 },
+      { question_text: "Who is known as 'The Intimidator' in NASCAR history?", choices: ["Richard Petty","Dale Earnhardt Sr.","Tony Stewart","Rusty Wallace"], answer: "Dale Earnhardt Sr.", points: 100 },
+      { question_text: "Which manufacturer has the most NASCAR Cup Series wins all-time?", choices: ["Ford","Chevrolet","Dodge","Toyota"], answer: "Chevrolet", points: 100 },
+      { question_text: "Kyle Busch won his first NASCAR Cup Series title in which year?", choices: ["2013","2015","2019","2021"], answer: "2015", points: 100 },
+      { question_text: "Which superspeedway is located in Talladega, Alabama?", choices: ["Bristol Motor Speedway","Daytona International Speedway","Talladega Superspeedway","Atlanta Motor Speedway"], answer: "Talladega Superspeedway", points: 100 },
+      { question_text: "Which driver won the 2023 NASCAR Cup Series championship?", choices: ["Ryan Blaney","William Byron","Christopher Bell","Denny Hamlin"], answer: "Ryan Blaney", points: 100 },
+    ].map(q => ({ ...q, quiz_id: qid, type: 'multiple_choice' }));
+
+    const { error } = await supabase.from('questions').insert(questions);
+    if (error) {
+      status.style.color = 'var(--error)';
+      status.textContent = 'Error adding questions: ' + error.message;
+      btn.disabled = false; btn.textContent = 'Try Again';
+      return;
+    }
+    status.style.color = 'var(--success)';
+    status.innerHTML = '✅ Questions added to existing quiz!<br><a href="/quiz.html?id=' + qid + '" style="color:var(--gold);">Play it now →</a>';
+    btn.textContent = 'Done!';
+  }
 </script>
 </body>
 </html>

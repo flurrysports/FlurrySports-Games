@@ -226,18 +226,19 @@
     const quizId = params.get('id');
     if (!quizId) { window.location.href = '/quizzes.html'; return; }
 
-    // Check if already attempted — show result screen if we have stored data
+    // Check local storage first — no network needed
     const storedResult = getStoredQuizResult(quizId);
-    const already = storedResult ? true : await hasAttemptedQuiz(quizId);
+    if (storedResult) {
+      // Hide loading spinner immediately, show results
+      document.getElementById('quiz-loading').classList.add('hidden');
+      await showStoredResult(quizId, storedResult);
+      return;
+    }
+    // Check if attempted (may require network)
+    const already = await hasAttemptedQuiz(quizId);
     if (already) {
       document.getElementById('quiz-loading').classList.add('hidden');
-      if (storedResult) {
-        // Show full result replay
-        await showStoredResult(quizId, storedResult);
-      } else {
-        // Played before this update — show fallback with other games links
-        document.getElementById('already-attempted').classList.remove('hidden');
-      }
+      document.getElementById('already-attempted').classList.remove('hidden');
       return;
     }
 
@@ -647,6 +648,9 @@
 
   // ─── SHOW STORED RESULT (replay) ──────────────────────
   async function showStoredResult(qid, stored) {
+    // Always hide loading, show results page immediately
+    var loadEl = document.getElementById('quiz-loading');
+    if (loadEl) loadEl.classList.add('hidden');
     quiz = { id: qid, title: stored.title, type: 'multiple_choice' };
     score = stored.score;
     questions = Array(stored.questionCount || 5).fill({});

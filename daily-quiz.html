@@ -17,7 +17,7 @@
     .q-timer-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-bottom: 1.5rem; overflow: hidden; }
     .q-timer-fill { height: 100%; background: var(--gold); border-radius: 4px; transition: width 0.1s linear; }
     .q-timer-fill.urgent { background: var(--error); }
-    .q-text { font-family: 'Barlow Condensed',sans-serif; font-weight: 800; font-size: 1.5rem; text-transform: uppercase; line-height: 1.2; margin-bottom: 1.5rem; }
+    .q-text { font-family: 'Barlow Condensed',sans-serif; font-weight: 800; font-size: 1.4rem; text-transform: uppercase; line-height: 1.2; margin-bottom: 1.5rem; }
     .q-options { display: grid; gap: 0.75rem; }
     .q-option { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 0.875rem 1.25rem; font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 1rem; letter-spacing: 0.04em; text-align: left; color: var(--white); cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 0.75rem; }
     .q-option:hover:not(:disabled) { background: rgba(245,197,24,0.1); border-color: rgba(245,197,24,0.4); }
@@ -36,7 +36,7 @@
     .progress-dot.done-correct { background: var(--success); }
     .progress-dot.done-wrong { background: var(--error); }
     .progress-dot.active { background: var(--gold); }
-    .other-games { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; margin-top: 1.5rem; }
+    .other-games { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-top: 0.75rem; }
     .other-game-btn { background: rgba(255,255,255,0.04); border: 1px solid var(--card-border); border-radius: 10px; padding: 0.875rem 1rem; text-decoration: none; color: var(--white); font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.06em; transition: var(--transition); display: flex; align-items: center; gap: 0.5rem; justify-content: center; }
     .other-game-btn:hover { border-color: rgba(245,197,24,0.3); background: rgba(245,197,24,0.05); color: var(--gold); }
     .percentile-badge { display: inline-block; background: rgba(245,197,24,0.1); border: 1px solid rgba(245,197,24,0.3); border-radius: 8px; padding: 0.5rem 1.25rem; font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.9rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); margin: 0.75rem 0; }
@@ -55,325 +55,295 @@
     <button class="btn btn-primary btn-sm" onclick="openModal('signup')">Sign Up</button>
   </div>
 </nav>
-
 <div class="quiz-shell">
-  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;">
+  <div style="margin-bottom:1.5rem;">
     <a href="/" style="color:var(--gray);text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.9rem;letter-spacing:0.08em;text-transform:uppercase;">← Back to Games</a>
   </div>
   <div id="quiz-container"><div class="spinner"></div></div>
 </div>
-
 <script src="/js/auth.js"></script>
 <script>
-  // ── Pacific-time seed ──────────────────────────────────────────
-  function getPacificOffsetMinutes(d) {
-    const y = d.getUTCFullYear();
-    const dstStart = new Date(Date.UTC(y, 2, 14 - (new Date(Date.UTC(y,2,1)).getUTCDay()+6)%7, 10));
-    const dstEnd   = new Date(Date.UTC(y, 10, 7  - (new Date(Date.UTC(y,10,1)).getUTCDay()+6)%7, 9));
-    return (d >= dstStart && d < dstEnd) ? -7*60 : -8*60;
+// ── Pacific time seed ────────────────────────────────────
+function getPacificOffsetMinutes(d) {
+  var y = d.getUTCFullYear();
+  var dstStart = new Date(Date.UTC(y, 2, 14 - (new Date(Date.UTC(y,2,1)).getUTCDay()+6)%7, 10));
+  var dstEnd   = new Date(Date.UTC(y,10,  7 - (new Date(Date.UTC(y,10,1)).getUTCDay()+6)%7, 9));
+  return (d >= dstStart && d < dstEnd) ? -420 : -480;
+}
+function dateSeed() {
+  var d = new Date();
+  var pac = new Date(d.getTime() + getPacificOffsetMinutes(d)*60000);
+  return parseInt(pac.toISOString().slice(0,10).replace(/-/g,'')) + 166;
+}
+function seededRandom(seed) {
+  var s = seed;
+  return function() { s=(s*9301+49297)%233280; return s/233280; };
+}
+
+// ── Quiz data ────────────────────────────────────────────
+var QUIZ_THEMES = [
+  { theme:'NFL Legends',        emoji:'🏈', questions: q_nfl_legends },
+  { theme:'NBA History',        emoji:'🏀', questions: q_nba_history },
+  { theme:'Super Bowl Trivia',  emoji:'🏆', questions: q_super_bowl },
+  { theme:'NFL Draft',          emoji:'📋', questions: q_nfl_draft },
+  { theme:'NBA Awards',         emoji:'⭐', questions: q_nba_awards },
+  { theme:'Sports Records',     emoji:'📊', questions: q_sports_records },
+  { theme:'Fantasy Football',   emoji:'🎯', questions: q_fantasy },
+  { theme:'MLB History',        emoji:'⚾', questions: q_mlb },
+  { theme:'NHL History',        emoji:'🏒', questions: q_nhl },
+  { theme:'College Football',   emoji:'🎓', questions: q_college },
+];
+function q_nfl_legends() { return [
+  {q:"How many Super Bowl titles did Tom Brady win?",o:["5","6","7","8"],c:2},
+  {q:"Jerry Rice won most of his Super Bowls with which team?",o:["Dallas Cowboys","San Francisco 49ers","Oakland Raiders","Green Bay Packers"],c:1},
+  {q:"Who holds the NFL record for most career rushing yards?",o:["Emmitt Smith","Barry Sanders","Walter Payton","Adrian Peterson"],c:0},
+  {q:"What year did the New Orleans Saints win their only Super Bowl?",o:["2008","2009","2010","2011"],c:2},
+  {q:"Which QB threw for 5 TDs in Super Bowl LV?",o:["Patrick Mahomes","Aaron Rodgers","Tom Brady","Josh Allen"],c:2},
+]; }
+function q_nba_history() { return [
+  {q:"How many NBA championships did Michael Jordan win with the Bulls?",o:["4","5","6","7"],c:2},
+  {q:"Who was the #1 pick in the 2003 NBA Draft?",o:["Carmelo Anthony","Dwyane Wade","Chris Bosh","LeBron James"],c:3},
+  {q:"Which team won the 2016 NBA title after being down 3-1?",o:["Golden State Warriors","Cleveland Cavaliers","Oklahoma City Thunder","Boston Celtics"],c:1},
+  {q:"Kobe Bryant played his entire career with which team?",o:["Chicago Bulls","Boston Celtics","Los Angeles Lakers","Orlando Magic"],c:2},
+  {q:"Who has won the most NBA MVP awards?",o:["LeBron James","Kareem Abdul-Jabbar","Michael Jordan","Bill Russell"],c:1},
+]; }
+function q_super_bowl() { return [
+  {q:"Which team has appeared in the most Super Bowls?",o:["Dallas Cowboys","New England Patriots","Pittsburgh Steelers","San Francisco 49ers"],c:1},
+  {q:"Score of the biggest Super Bowl blowout (Super Bowl XLVIII)?",o:["43-8","55-10","48-7","52-14"],c:0},
+  {q:"Who caught the 'Helmet Catch' in Super Bowl XLII?",o:["Plaxico Burress","Amani Toomer","David Tyree","Steve Smith"],c:2},
+  {q:"Which team overcame a 28-3 deficit to win the Super Bowl?",o:["New England Patriots","Los Angeles Rams","Seattle Seahawks","Kansas City Chiefs"],c:0},
+  {q:"How many Super Bowls have the Pittsburgh Steelers won?",o:["4","5","6","7"],c:2},
+]; }
+function q_nfl_draft() { return [
+  {q:"Mahomes was drafted in which round in 2017?",o:["1st","2nd","3rd","4th"],c:0},
+  {q:"Which team drafted Josh Allen in 2018?",o:["Kansas City Chiefs","Buffalo Bills","Cleveland Browns","Arizona Cardinals"],c:1},
+  {q:"Tom Brady was selected in which round of the 2000 Draft?",o:["4th","5th","6th","7th"],c:2},
+  {q:"Which position did the Bears take #1 overall in 2024?",o:["Wide Receiver","Quarterback","Offensive Tackle","Defensive End"],c:1},
+  {q:"Who was the #1 overall pick in the 2021 NFL Draft?",o:["Zach Wilson","Mac Jones","Trevor Lawrence","Justin Fields"],c:2},
+]; }
+function q_nba_awards() { return [
+  {q:"Who won the 2023-24 NBA MVP?",o:["Luka Doncic","Nikola Jokic","Giannis Antetokounmpo","Shai Gilgeous-Alexander"],c:1},
+  {q:"Who won the 2016 NBA Defensive Player of the Year?",o:["Rudy Gobert","Draymond Green","Kawhi Leonard","Avery Bradley"],c:1},
+  {q:"Who has won the most NBA scoring titles?",o:["Michael Jordan","LeBron James","Kobe Bryant","Kevin Durant"],c:0},
+  {q:"Who was the 2019 NBA Finals MVP?",o:["Kevin Durant","Klay Thompson","Kawhi Leonard","Steph Curry"],c:2},
+  {q:"Giannis won back-to-back MVPs in which seasons?",o:["2017-18 & 2018-19","2018-19 & 2019-20","2019-20 & 2020-21","2016-17 & 2017-18"],c:1},
+]; }
+function q_sports_records() { return [
+  {q:"Who holds the NFL record for most career passing TDs?",o:["Peyton Manning","Brett Favre","Tom Brady","Drew Brees"],c:2},
+  {q:"Who holds the NBA record for most points in a single game?",o:["Michael Jordan","Wilt Chamberlain","Kobe Bryant","LeBron James"],c:1},
+  {q:"How many consecutive games did Cal Ripken Jr. play?",o:["2,130","2,632","2,428","2,015"],c:1},
+  {q:"What is the NFL record for most receiving yards in a season?",o:["1,964","1,848","2,105","1,911"],c:0},
+  {q:"Who scored the most goals in a single NHL season?",o:["Mario Lemieux","Brett Hull","Wayne Gretzky","Jari Kurri"],c:2},
+]; }
+function q_fantasy() { return [
+  {q:"In standard PPR, how many points is a reception worth?",o:["0","0.5","1","1.5"],c:2},
+  {q:"Which passing milestone earns a QB a bonus in most formats?",o:["200 yards","300 yards","400 yards","100 yards"],c:1},
+  {q:"Which position typically has the highest fantasy pts per game?",o:["Wide Receiver","Running Back","Quarterback","Tight End"],c:2},
+  {q:"A defensive TD typically scores how many fantasy points?",o:["4","6","8","10"],c:1},
+  {q:"What does FAAB stand for?",o:["Free Agent Auction Budget","Fantasy All Around Base","Free Agency Allowance Bid","Fantasy All Access Bonus"],c:0},
+]; }
+function q_mlb() { return [
+  {q:"Who holds the all-time MLB record for career home runs?",o:["Babe Ruth","Hank Aaron","Barry Bonds","Alex Rodriguez"],c:2},
+  {q:"Which team has won the most World Series championships?",o:["Boston Red Sox","Los Angeles Dodgers","New York Yankees","St. Louis Cardinals"],c:2},
+  {q:"Who was the last player to hit .400 in a single MLB season?",o:["Joe DiMaggio","Ted Williams","Mickey Mantle","Stan Musial"],c:1},
+  {q:"Which city's team broke an 86-year World Series drought in 2004?",o:["Chicago","Boston","Cleveland","Detroit"],c:1},
+  {q:"How many balls equal a walk in MLB?",o:["3","4","5","6"],c:1},
+]; }
+function q_nhl() { return [
+  {q:"Who is the NHL's all-time leading scorer?",o:["Mario Lemieux","Gordie Howe","Wayne Gretzky","Jaromir Jagr"],c:2},
+  {q:"How many Stanley Cups have the Montreal Canadiens won?",o:["19","21","24","27"],c:2},
+  {q:"Wayne Gretzky played most of his career with which team?",o:["Edmonton Oilers","Los Angeles Kings","New York Rangers","St. Louis Blues"],c:0},
+  {q:"How many skaters (excluding goalie) are on the ice per team?",o:["4","5","6","7"],c:1},
+  {q:"What trophy is awarded to the NHL regular season MVP?",o:["Vezina Trophy","Norris Trophy","Hart Trophy","Conn Smythe Trophy"],c:2},
+]; }
+function q_college() { return [
+  {q:"Which school has the most Heisman Trophy winners?",o:["Ohio State","USC","Notre Dame","Alabama"],c:1},
+  {q:"Which coach has the most wins in college football history?",o:["Bear Bryant","Nick Saban","Bobby Bowden","Joe Paterno"],c:3},
+  {q:"What conference is the SEC?",o:["South Eastern Conference","Southern Elite Conference","Southeastern Conference","Southern Excellence Conference"],c:2},
+  {q:"Which team won the first CFP National Championship in 2015?",o:["Alabama","Florida State","Oregon","Ohio State"],c:3},
+  {q:"The Rose Bowl is located in which California city?",o:["Los Angeles","Pasadena","Anaheim","San Diego"],c:1},
+]; }
+
+// ── Build today's quiz ───────────────────────────────────
+var seed    = dateSeed();
+var rng     = seededRandom(seed);
+var theme   = QUIZ_THEMES[Math.floor(rng() * QUIZ_THEMES.length)];
+var qs      = theme.questions();
+var quizId  = 'daily-quiz-' + seed;
+
+// ── Local storage ────────────────────────────────────────
+function saveResult(data) {
+  try { localStorage.setItem('fs_r_' + quizId, JSON.stringify(data)); } catch(e) {}
+}
+function loadResult() {
+  try { return JSON.parse(localStorage.getItem('fs_r_' + quizId)); } catch(e) { return null; }
+}
+
+// ── Game state ───────────────────────────────────────────
+var TIMER  = 15, MAX_PTS = 200;
+var curQ   = 0, totalScore = 0, timerInt = null, tLeft = TIMER;
+var qStart = 0, results = [];
+var letters = ['A','B','C','D'];
+
+// ── Render header ────────────────────────────────────────
+function hdr() {
+  var dots = qs.map(function(_,i) {
+    var cls = i < curQ ? (results[i] && results[i].ok ? 'done-correct' : 'done-wrong') : (i===curQ ? 'active' : '');
+    return '<div class="progress-dot ' + cls + '" id="dot-' + i + '"></div>';
+  }).join('');
+  return '<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem;flex-wrap:wrap;">' +
+    '<span style="font-size:1.5rem;">' + theme.emoji + '</span>' +
+    '<div><div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:1.4rem;text-transform:uppercase;">Daily Quiz</div>' +
+    '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.85rem;color:var(--gray);text-transform:uppercase;">' + theme.theme + '</div></div>' +
+    '</div><div class="progress-dots">' + dots + '</div>';
+}
+
+// ── Render question ──────────────────────────────────────
+function renderQ(idx) {
+  var q = qs[idx];
+  document.getElementById('quiz-container').innerHTML = hdr() +
+    '<div class="q-card">' +
+      '<div class="q-header"><span class="q-number">Question ' + (idx+1) + ' of ' + qs.length + '</span>' +
+      '<span style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.85rem;color:var(--gold);" id="ttxt">' + TIMER + 's</span></div>' +
+      '<div class="q-timer-bar"><div class="q-timer-fill" id="tfill" style="width:100%;"></div></div>' +
+      '<div class="q-text">' + q.q + '</div>' +
+      '<div class="q-options" id="opts">' +
+        q.o.map(function(opt,i) {
+          return '<button class="q-option" onclick="pick(' + i + ')" id="opt-' + i + '">' +
+            '<span class="q-letter">' + letters[i] + '</span>' + opt + '</button>';
+        }).join('') +
+      '</div>' +
+      '<div class="q-pts-flash" id="flash"></div>' +
+    '</div>';
+  startTimer();
+}
+
+function startTimer() {
+  tLeft = TIMER; qStart = Date.now();
+  clearInterval(timerInt);
+  timerInt = setInterval(function() {
+    tLeft = Math.max(0, TIMER - (Date.now()-qStart)/1000);
+    var fill = document.getElementById('tfill');
+    var txt  = document.getElementById('ttxt');
+    if (fill) { fill.style.width = (tLeft/TIMER*100)+'%'; if(tLeft<=4) fill.classList.add('urgent'); }
+    if (txt) txt.textContent = Math.ceil(tLeft)+'s';
+    if (tLeft <= 0) { clearInterval(timerInt); pick(-1); }
+  }, 100);
+}
+
+function pick(chosen) {
+  clearInterval(timerInt);
+  var dt = (Date.now()-qStart)/1000;
+  var q  = qs[curQ];
+  var ok = chosen === q.c;
+  var pts = ok ? Math.round(MAX_PTS * Math.max(0,(TIMER-dt)/TIMER)) : 0;
+  if (ok) totalScore += pts;
+  results.push({ ok:ok, pts:pts });
+
+  var dot = document.getElementById('dot-' + curQ);
+  if (dot) { dot.classList.remove('active'); dot.classList.add(ok?'done-correct':'done-wrong'); }
+  for (var i=0; i<q.o.length; i++) {
+    var btn = document.getElementById('opt-'+i);
+    if (!btn) continue;
+    btn.disabled = true;
+    if (i===q.c) btn.classList.add('correct');
+    else if (i===chosen) btn.classList.add('wrong');
   }
-  function dateSeed() {
-    const d = new Date();
-    const pac = new Date(d.getTime() + getPacificOffsetMinutes(d)*60000);
-    const seed = parseInt(pac.toISOString().slice(0,10).replace(/-/g,''));
-    return seed + 166; // content version salt — keeps same daily rotation, fresh content
-  }
-  function seededRandom(seed) {
-    let s = seed; return () => { s=(s*9301+49297)%233280; return s/233280; };
-  }
+  var fl = document.getElementById('flash');
+  if (fl) fl.textContent = ok ? '+' + pts + ' pts' : (chosen===-1 ? "Time's Up!" : 'No points');
 
-  // ── Quiz data ──────────────────────────────────────────────────
-  const QUIZ_THEMES = [
-    { theme:'NFL Legends', emoji:'🏈', questions: nflLegendsQuiz },
-    { theme:'NBA History', emoji:'🏀', questions: nbaHistoryQuiz },
-    { theme:'Super Bowl Trivia', emoji:'🏆', questions: superBowlQuiz },
-    { theme:'NFL Rookies & Draft', emoji:'📋', questions: nflDraftQuiz },
-    { theme:'NBA Awards', emoji:'⭐', questions: nbaAwardsQuiz },
-    { theme:'Sports Records', emoji:'📊', questions: sportsRecordsQuiz },
-    { theme:'Fantasy Football', emoji:'🎯', questions: fantasyFootballQuiz },
-    { theme:'MLB History', emoji:'⚾', questions: mlbHistoryQuiz },
-    { theme:'NHL History', emoji:'🏒', questions: nhlHistoryQuiz },
-    { theme:'College Football', emoji:'🎓', questions: collegeFootballQuiz },
-  ];
-  function nflLegendsQuiz() { return [
-    {q:"How many Super Bowl titles did Tom Brady win?",options:["5","6","7","8"],correct:2},
-    {q:"Which team did Jerry Rice win most of his Super Bowls with?",options:["Dallas Cowboys","San Francisco 49ers","Oakland Raiders","Green Bay Packers"],correct:1},
-    {q:"Who holds the NFL record for most career rushing yards?",options:["Emmitt Smith","Barry Sanders","Walter Payton","Adrian Peterson"],correct:0},
-    {q:"What year did the New Orleans Saints win their only Super Bowl?",options:["2008","2009","2010","2011"],correct:2},
-    {q:"Which QB threw for 5 touchdowns in Super Bowl LV?",options:["Patrick Mahomes","Aaron Rodgers","Tom Brady","Josh Allen"],correct:2},
-  ]; }
-  function nbaHistoryQuiz() { return [
-    {q:"How many NBA championships did Michael Jordan win?",options:["4","5","6","7"],correct:2},
-    {q:"Who was the 1st overall pick in the 2003 NBA Draft?",options:["Carmelo Anthony","Dwyane Wade","Chris Bosh","LeBron James"],correct:3},
-    {q:"Which team won the 2016 NBA championship after being down 3-1?",options:["Golden State Warriors","Cleveland Cavaliers","Oklahoma City Thunder","Boston Celtics"],correct:1},
-    {q:"Kobe Bryant played his entire career with which team?",options:["Chicago Bulls","Boston Celtics","Los Angeles Lakers","Orlando Magic"],correct:2},
-    {q:"Which player has won the most NBA MVP awards?",options:["LeBron James","Kareem Abdul-Jabbar","Michael Jordan","Bill Russell"],correct:1},
-  ]; }
-  function superBowlQuiz() { return [
-    {q:"Which team has appeared in the most Super Bowls?",options:["Dallas Cowboys","New England Patriots","Pittsburgh Steelers","San Francisco 49ers"],correct:1},
-    {q:"Score of the biggest Super Bowl blowout (Super Bowl XLVIII)?",options:["43-8","55-10","48-7","52-14"],correct:0},
-    {q:"Who caught the famous 'Helmet Catch' in Super Bowl XLII?",options:["Plaxico Burress","Amani Toomer","David Tyree","Steve Smith"],correct:2},
-    {q:"Which team overcame a 28-3 deficit to win the Super Bowl?",options:["New England Patriots","Los Angeles Rams","Seattle Seahawks","Kansas City Chiefs"],correct:0},
-    {q:"How many Super Bowls have the Pittsburgh Steelers won?",options:["4","5","6","7"],correct:2},
-  ]; }
-  function nflDraftQuiz() { return [
-    {q:"Patrick Mahomes was drafted in which round in 2017?",options:["1st","2nd","3rd","4th"],correct:0},
-    {q:"Which team drafted Josh Allen in 2018?",options:["Kansas City Chiefs","Buffalo Bills","Cleveland Browns","Arizona Cardinals"],correct:1},
-    {q:"Tom Brady was selected in which round of the 2000 Draft?",options:["4th","5th","6th","7th"],correct:2},
-    {q:"Which position did the Bears take #1 overall in 2024?",options:["Wide Receiver","Quarterback","Offensive Tackle","Defensive End"],correct:1},
-    {q:"Who was the #1 overall pick in the 2021 NFL Draft?",options:["Zach Wilson","Mac Jones","Trevor Lawrence","Justin Fields"],correct:2},
-  ]; }
-  function nbaAwardsQuiz() { return [
-    {q:"Who won the 2023-24 NBA MVP award?",options:["Luka Doncic","Nikola Jokic","Giannis Antetokounmpo","Shai Gilgeous-Alexander"],correct:1},
-    {q:"Who won the 2016 NBA Defensive Player of the Year?",options:["Rudy Gobert","Draymond Green","Kawhi Leonard","Avery Bradley"],correct:1},
-    {q:"Which player has won the most NBA Scoring titles?",options:["Michael Jordan","LeBron James","Kobe Bryant","Kevin Durant"],correct:0},
-    {q:"Who was the 2019 NBA Finals MVP?",options:["Kevin Durant","Klay Thompson","Kawhi Leonard","Steph Curry"],correct:2},
-    {q:"Giannis won back-to-back MVPs in which two seasons?",options:["2017-18 & 2018-19","2018-19 & 2019-20","2019-20 & 2020-21","2016-17 & 2017-18"],correct:1},
-  ]; }
-  function sportsRecordsQuiz() { return [
-    {q:"Who holds the NFL record for most career passing touchdowns?",options:["Peyton Manning","Brett Favre","Tom Brady","Drew Brees"],correct:2},
-    {q:"Who holds the NBA record for most points in a single game?",options:["Michael Jordan","Wilt Chamberlain","Kobe Bryant","LeBron James"],correct:1},
-    {q:"How many consecutive games did Cal Ripken Jr. play in MLB?",options:["2,130","2,632","2,428","2,015"],correct:1},
-    {q:"What is the NFL record for most receiving yards in a season?",options:["1,964","1,848","2,105","1,911"],correct:0},
-    {q:"Who scored the most goals in a single NHL season?",options:["Mario Lemieux","Brett Hull","Wayne Gretzky","Jari Kurri"],correct:2},
-  ]; }
-  function fantasyFootballQuiz() { return [
-    {q:"In standard PPR, how many points is a reception worth?",options:["0","0.5","1","1.5"],correct:2},
-    {q:"Which passing milestone earns a QB a bonus in most formats?",options:["200 yards","300 yards","400 yards","100 yards"],correct:1},
-    {q:"Which position typically scores the most fantasy pts per game?",options:["Wide Receiver","Running Back","Quarterback","Tight End"],correct:2},
-    {q:"A defensive TD typically scores how many fantasy points?",options:["4","6","8","10"],correct:1},
-    {q:"What does 'FAAB' stand for in fantasy football?",options:["Free Agent Auction Budget","Fantasy All Around Base","Free Agency Allowance Bid","Fantasy All Access Bonus"],correct:0},
-  ]; }
-  function mlbHistoryQuiz() { return [
-    {q:"Who holds the all-time MLB record for career home runs?",options:["Babe Ruth","Hank Aaron","Barry Bonds","Alex Rodriguez"],correct:2},
-    {q:"Which team has won the most World Series championships?",options:["Boston Red Sox","Los Angeles Dodgers","New York Yankees","St. Louis Cardinals"],correct:2},
-    {q:"What is the record for most strikeouts by a pitcher in a single game?",options:["18","19","20","21"],correct:2},
-    {q:"Who was the last player to hit .400 in a single MLB season?",options:["Joe DiMaggio","Ted Williams","Mickey Mantle","Stan Musial"],correct:1},
-    {q:"Which city's team broke an 86-year World Series drought in 2004?",options:["Chicago","Boston","Cleveland","Detroit"],correct:1},
-  ]; }
-  function nhlHistoryQuiz() { return [
-    {q:"Who is the NHL's all-time leading scorer?",options:["Mario Lemieux","Gordie Howe","Wayne Gretzky","Jaromir Jagr"],correct:2},
-    {q:"How many Stanley Cup championships did the Montreal Canadiens win?",options:["19","21","24","27"],correct:2},
-    {q:"Which team did Wayne Gretzky play most of his career with?",options:["Edmonton Oilers","Los Angeles Kings","New York Rangers","St. Louis Blues"],correct:0},
-    {q:"What is the maximum number of players on the ice per team (excluding goalie)?",options:["4","5","6","7"],correct:1},
-    {q:"Which country won the first Olympic men's hockey gold medal in 1920?",options:["Canada","United States","Russia","Sweden"],correct:0},
-  ]; }
-  function collegeFootballQuiz() { return [
-    {q:"Which school has the most Heisman Trophy winners?",options:["Ohio State","USC","Notre Dame","Alabama"],correct:1},
-    {q:"Which coach has the most wins in college football history?",options:["Bear Bryant","Nick Saban","Bobby Bowden","Joe Paterno"],correct:3},
-    {q:"What conference is known as the 'SEC'?",options:["South Eastern Conference","Southern Elite Conference","Southeastern Conference","Southern Excellence Conference"],correct:2},
-    {q:"Which team won the first College Football Playoff National Championship in 2015?",options:["Alabama","Florida State","Oregon","Ohio State"],correct:3},
-    {q:"The Rose Bowl is located in which California city?",options:["Los Angeles","Pasadena","Anaheim","San Diego"],correct:1},
-  ]; }
+  setTimeout(function() {
+    curQ++;
+    if (curQ < qs.length) renderQ(curQ);
+    else showResults(null);
+  }, 1200);
+}
 
-  // ── Build today's quiz ─────────────────────────────────────────
- ─────────────────────────────────────────
-  const seed = dateSeed();
-  const rng = seededRandom(seed);
-  const themeIdx = Math.floor(rng() * QUIZ_THEMES.length);
-  const theme = QUIZ_THEMES[themeIdx];
-  const questions = theme.questions(rng);
-  const quizId = `daily-quiz-${seed}`;
+// ── Results screen ───────────────────────────────────────
+async function showResults(stored) {
+  var isReplay = stored !== null && stored !== undefined;
+  var correct    = isReplay ? stored.correct    : results.filter(function(r){return r.ok;}).length;
+  var emojiRow   = isReplay ? stored.emojiRow   : results.map(function(r){return r.ok?'✅':'❌';}).join('');
+  var finalScore = isReplay ? stored.finalScore : (isOnFire() ? Math.round(totalScore*1.10) : totalScore);
 
-  const TIMER_PER_Q = 15;
-  const MAX_PTS_PER_Q = 200;
-  const letters = ['A','B','C','D'];
-  let currentQ = 0, totalScore = 0, timerInt = null, timeLeft = TIMER_PER_Q;
-  let qStartTime = 0, results = [];
-
-  // ── Stored result for replay ───────────────────────────────────
-  // Key includes quizId so it resets each day
-  function getStoredResult() {
-    try { return JSON.parse(localStorage.getItem(`fs_result_${quizId}`)); } catch(e) { return null; }
-  }
-  function storeResult(data) {
-    try { localStorage.setItem(`fs_result_${quizId}`, JSON.stringify(data)); } catch(e) {}
-  }
-
-  function renderQuizHeader() {
-    return `
-      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem;flex-wrap:wrap;">
-        <span style="font-size:1.5rem;">${theme.emoji}</span>
-        <div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.4rem;text-transform:uppercase;line-height:1;">Daily Quiz</div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;color:var(--gray);letter-spacing:0.08em;text-transform:uppercase;">${theme.theme}</div>
-        </div>
-      </div>
-      <div class="progress-dots" id="progress-dots">
-        ${questions.map((_,i)=>`<div class="progress-dot ${i===0?'active':''}" id="dot-${i}"></div>`).join('')}
-      </div>
-    `;
-  }
-
-  function renderQuestion(idx) {
-    const q = questions[idx];
-    document.getElementById('quiz-container').innerHTML = `
-      ${renderQuizHeader()}
-      <div class="q-card">
-        <div class="q-header">
-          <span class="q-number">Question ${idx+1} of ${questions.length}</span>
-          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;color:var(--gold);" id="timer-text">${TIMER_PER_Q}s</span>
-        </div>
-        <div class="q-timer-bar"><div class="q-timer-fill" id="timer-fill" style="width:100%;"></div></div>
-        <div class="q-text">${q.q}</div>
-        <div class="q-options" id="options-grid">
-          ${q.options.map((opt,i)=>`
-            <button class="q-option" onclick="pickAnswer(${i})" id="opt-${i}">
-              <span class="q-letter">${letters[i]}</span>${opt}
-            </button>
-          `).join('')}
-        </div>
-        <div class="q-pts-flash" id="pts-flash"></div>
-      </div>
-    `;
-    startTimer();
-  }
-
-  function startTimer() {
-    timeLeft = TIMER_PER_Q;
-    qStartTime = Date.now();
-    clearInterval(timerInt);
-    timerInt = setInterval(() => {
-      timeLeft = Math.max(0, TIMER_PER_Q - (Date.now()-qStartTime)/1000);
-      const fill = document.getElementById('timer-fill');
-      const txt  = document.getElementById('timer-text');
-      if (fill) { fill.style.width = (timeLeft/TIMER_PER_Q*100)+'%'; if(timeLeft<=4) fill.classList.add('urgent'); }
-      if (txt)  txt.textContent = Math.ceil(timeLeft)+'s';
-      if (timeLeft <= 0) { clearInterval(timerInt); pickAnswer(-1); }
-    }, 100);
-  }
-
-  function pickAnswer(chosen) {
-    clearInterval(timerInt);
-    const decisionTime = (Date.now()-qStartTime)/1000;
-    const q = questions[currentQ];
-    const isCorrect = chosen === q.correct;
-    const pts = isCorrect ? Math.round(MAX_PTS_PER_Q * Math.max(0,(TIMER_PER_Q-decisionTime)/TIMER_PER_Q)) : 0;
-    if (isCorrect) totalScore += pts;
-    results.push({ chosen, correct: q.correct, pts, isCorrect });
-
-    const dot = document.getElementById(`dot-${currentQ}`);
-    if (dot) { dot.classList.remove('active'); dot.classList.add(isCorrect?'done-correct':'done-wrong'); }
-
-    q.options.forEach((_,i) => {
-      const btn = document.getElementById(`opt-${i}`);
-      if (!btn) return;
-      btn.disabled = true;
-      if (i===q.correct) btn.classList.add('correct');
-      else if (i===chosen) btn.classList.add('wrong');
-    });
-
-    const flash = document.getElementById('pts-flash');
-    if (flash) flash.textContent = isCorrect ? `+${pts} pts` : chosen===-1 ? "Time's Up!" : 'No points';
-
-    setTimeout(() => {
-      currentQ++;
-      if (currentQ < questions.length) {
-        const nextDot = document.getElementById(`dot-${currentQ}`);
-        if (nextDot) nextDot.classList.add('active');
-        renderQuestion(currentQ);
-      } else {
-        showResults();
-      }
-    }, 1200);
+  if (!isReplay) {
+    saveResult({ correct:correct, emojiRow:emojiRow, finalScore:finalScore });
+    markAttemptedLocally(quizId);
+    saveAttempt(quizId, totalScore, 0, results, 'trivia');
   }
 
-  // ── Store/retrieve result for replay ─────────────────────────
-  function storeResult(data) {
-    try { localStorage.setItem('fs_result_' + quizId, JSON.stringify(data)); } catch(e) {}
+  var pctHtml = '';
+  try {
+    var pct = await getPercentile(quizId, finalScore);
+    if (pct !== null) pctHtml = '<div class="percentile-badge">Better than ' + pct + '% of players today</div>';
+  } catch(e) {}
+
+  window._lastShareText = buildShareText(
+    'Daily Quiz — ' + theme.theme, finalScore, emojiRow, correct + '/' + qs.length + ' correct'
+  );
+
+  document.getElementById('quiz-container').innerHTML =
+    '<div class="results-card">' +
+      '<div style="font-size:2rem;margin-bottom:0.5rem;">' + theme.emoji + '</div>' +
+      '<div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:1.1rem;text-transform:uppercase;color:var(--gold);">Quiz Complete!</div>' +
+      (isOnFire() && !isReplay ? '<div style="font-size:0.8rem;color:#ff6400;font-family:Barlow Condensed,sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.25rem;">🔥 On Fire! +10% bonus applied</div>' : '') +
+      '<div class="results-score">' + finalScore.toLocaleString() + '</div>' +
+      '<div class="results-label">' + correct + ' of ' + qs.length + ' correct</div>' +
+      '<div style="margin:1rem 0;font-size:1.5rem;letter-spacing:0.2rem;">' + emojiRow + '</div>' +
+      pctHtml +
+      '<div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin:1.25rem 0;">' +
+        '<button class="btn btn-primary" onclick="showShareModal(window._lastShareText)">📣 Share Result</button>' +
+        '<a href="/" class="btn btn-outline">Back to Games</a>' +
+      '</div>' +
+      '<div style="border-top:1px solid var(--card-border);padding-top:1.25rem;margin-top:0.5rem;">' +
+        '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray);margin-bottom:0.75rem;">Try Today\'s Other Games</div>' +
+        '<div class="other-games">' +
+          '<a href="/snap-decision.html" class="other-game-btn">🏈 Snap Decision</a>' +
+          '<a href="/whos-that-player.html" class="other-game-btn">❓ Who\'s That, Player?</a>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  if (!isReplay) {
+    var user = await getCurrentUser();
+    if (!user) setTimeout(function() {
+      showPostGameAuthPrompt(quizId, finalScore, 'trivia', 'Daily Quiz — ' + theme.theme);
+    }, 600);
   }
-  function getStoredResult() {
-    try { return JSON.parse(localStorage.getItem('fs_result_' + quizId)); } catch(e) { return null; }
-  }
+}
 
-  // ── Results screen ──────────────────────────────────────────────
-  async function showResults(stored) {
-    const isReplay = !!stored;
-    const correct    = isReplay ? stored.correct    : results.filter(r => r.isCorrect).length;
-    const emojiRow   = isReplay ? stored.emojiRow   : results.map(r => r.isCorrect ? '✅' : '❌').join('');
-    const finalScore = isReplay ? stored.finalScore : (isOnFire() ? Math.round(totalScore * 1.10) : totalScore);
+// ── Init ─────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  updateNavAuth();
 
-    if (!isReplay) {
-      // Store locally FIRST — before any async calls
-      storeResult({ correct, emojiRow, finalScore, quizId });
-      markAttemptedLocally(quizId);
-      await saveAttempt(quizId, totalScore, 0, results, 'trivia');
-    }
+  // If we have a stored result — show it immediately, no Supabase needed
+  var stored = loadResult();
+  if (stored) { showResults(stored); return; }
 
-    let percentileHtml = '';
-    try {
-      const pct = await getPercentile(quizId, finalScore);
-      if (pct !== null) percentileHtml = '<div class="percentile-badge">Better than ' + pct + '% of players today</div>';
-    } catch(e) {}
-
-    window._lastShareText = buildShareText(
-      'Daily Quiz — ' + theme.theme, finalScore, emojiRow, correct + '/' + questions.length + ' correct'
-    );
-
+  // If locally marked as attempted but no stored result (old play)
+  if (hasAttemptedLocally(quizId)) {
     document.getElementById('quiz-container').innerHTML =
       '<div class="results-card">' +
-        '<div style="font-size:2rem;margin-bottom:0.5rem;">' + theme.emoji + '</div>' +
-        '<div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:1.1rem;text-transform:uppercase;color:var(--gold);">Quiz Complete!</div>' +
-        (isOnFire() && !isReplay ? '<div style="font-size:0.8rem;color:#ff6400;font-family:Barlow Condensed,sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.25rem;">🔥 On Fire! +10% bonus applied</div>' : '') +
-        '<div class="results-score">' + finalScore.toLocaleString() + '</div>' +
-        '<div class="results-label">' + correct + ' of ' + questions.length + ' correct</div>' +
-        '<div style="margin:1rem 0;font-size:1.5rem;letter-spacing:0.2rem;">' + emojiRow + '</div>' +
-        percentileHtml +
-        '<div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin:1.25rem 0;">' +
-          '<button class="btn btn-primary" onclick="showShareModal(window._lastShareText)">📣 Share Result</button>' +
-          '<a href="/" class="btn btn-outline">Back to Games</a>' +
+        '<div style="font-size:2rem;margin-bottom:1rem;">✅</div>' +
+        '<div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:1.5rem;text-transform:uppercase;">Already Completed!</div>' +
+        '<p style="color:var(--gray);margin:1rem 0;">Come back tomorrow for a new quiz!</p>' +
+        '<div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin:1rem 0;">' +
+          '<a href="/" class="btn btn-primary">Back to Games</a>' +
         '</div>' +
         '<div style="border-top:1px solid var(--card-border);padding-top:1.25rem;margin-top:0.5rem;">' +
-          '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray);margin-bottom:0.75rem;">Try Today's Other Games</div>' +
+          '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray);margin-bottom:0.75rem;">Try Today\'s Other Games</div>' +
           '<div class="other-games">' +
             '<a href="/snap-decision.html" class="other-game-btn">🏈 Snap Decision</a>' +
-            '<a href="/whos-that-player.html" class="other-game-btn">❓ Who's That, Player?</a>' +
+            '<a href="/whos-that-player.html" class="other-game-btn">❓ Who\'s That, Player?</a>' +
           '</div>' +
         '</div>' +
       '</div>';
-
-    if (!isReplay) {
-      const user = await getCurrentUser();
-      if (!user) {
-        setTimeout(function() {
-          showPostGameAuthPrompt(quizId, finalScore, 'trivia', 'Daily Quiz — ' + theme.theme);
-        }, 600);
-      }
-    }
+    return;
   }
 
-  document.addEventListener('DOMContentLoaded', function() {
-    updateNavAuth();
-    // Check for stored result first — this always works even after page reload
-    var stored = getStoredResult();
-    if (stored) {
-      showResults(stored);
-      return;
-    }
-    // No stored result — check if attempted via localStorage flag
-    if (hasAttemptedLocally(quizId)) {
-      // Played before this update existed — no data to show
-      document.getElementById('quiz-container').innerHTML =
-        '<div class="results-card">' +
-          '<div style="font-size:2rem;margin-bottom:1rem;">✅</div>' +
-          '<div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:1.5rem;text-transform:uppercase;">Already Completed!</div>' +
-          '<p style="color:var(--gray);margin:1rem 0;">Come back tomorrow for a new quiz!</p>' +
-          '<div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin:1rem 0;">' +
-            '<a href="/" class="btn btn-primary">Back to Games</a>' +
-          '</div>' +
-          '<div style="border-top:1px solid var(--card-border);padding-top:1.25rem;margin-top:0.5rem;">' +
-            '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray);margin-bottom:0.75rem;">Try Today's Other Games</div>' +
-            '<div class="other-games">' +
-              '<a href="/snap-decision.html" class="other-game-btn">🏈 Snap Decision</a>' +
-              '<a href="/whos-that-player.html" class="other-game-btn">❓ Who's That, Player?</a>' +
-            '</div>' +
-          '</div>' +
-        '</div>';
-      return;
-    }
-    showCountdown(function() { renderQuestion(0); });
-  });
-
+  // Fresh play
+  showCountdown(function() { renderQ(0); });
+});
 </script>
 </body>
 </html>

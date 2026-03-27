@@ -71,13 +71,18 @@
 
 <script src="/js/auth.js"></script>
 <script>
-  function dateSeed() { return getPacificDateSeed(); }
-  function getPacificDateSeed() {
-    const now = new Date();
-    const isDST = now.getTimezoneOffset() < Math.max(new Date(now.getFullYear(),0,1).getTimezoneOffset(), new Date(now.getFullYear(),6,1).getTimezoneOffset());
-    const offset = isDST ? -7*60 : -8*60;
-    const pacific = new Date(now.getTime() + offset*60000);
-    return parseInt(pacific.toISOString().slice(0,10).replace(/-/g,''));
+function getPacificOffsetMinutes(d) {
+    const y = d.getUTCFullYear();
+    const dstStart = new Date(Date.UTC(y, 2, 14 - (new Date(Date.UTC(y, 2, 1)).getUTCDay() + 6) % 7, 10));
+    const dstEnd   = new Date(Date.UTC(y, 10, 7  - (new Date(Date.UTC(y, 10, 1)).getUTCDay() + 6) % 7, 9));
+    return (d >= dstStart && d < dstEnd) ? -7*60 : -8*60;
+  }
+  function dateSeed(offsetDays) {
+    const d = new Date();
+    if (offsetDays) d.setUTCDate(d.getUTCDate() + offsetDays);
+    const ms = getPacificOffsetMinutes(d) * 60000;
+    const pac = new Date(d.getTime() + ms);
+    return parseInt(pac.toISOString().slice(0,10).replace(/-/g,''));
   }
   function seededRandom(seed) {
     let s = seed;

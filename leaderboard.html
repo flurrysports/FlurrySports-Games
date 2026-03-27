@@ -151,23 +151,28 @@
     document.getElementById('lb-table').innerHTML = '<div class="spinner" style="margin:2rem auto;"></div>';
     document.getElementById('podium-section').innerHTML = '';
 
-    let query = supabase.from('attempts').select('user_id, score, quiz_id, created_at, game_type').not('user_id', 'is', null);
+    // Fetch all attempts — filter by quiz_id prefix on client side
+    // quiz_id patterns: 'daily-quiz-*' = trivia, 'snap-decision-*' = snap, 'wtp-*' = whos that player
+    let query = supabase.from('attempts').select('user_id, score, quiz_id, created_at').not('user_id', 'is', null);
 
     if (currentTime === 'weekly') {
       const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       query = query.gte('created_at', oneWeekAgo);
     }
 
-    // Filter by game type for category tabs
-    if (currentCat === 'trivia') {
-      query = query.or('game_type.eq.trivia,game_type.is.null');
-    } else if (currentCat === 'snap_decision') {
-      query = query.eq('game_type', 'snap_decision');
-    } else if (currentCat === 'whos_that_player') {
-      query = query.eq('game_type', 'whos_that_player');
-    }
+    const { data: rawData, error } = await query;
 
-    const { data, error } = await query;
+    // Filter by category using quiz_id prefix (no game_type column needed)
+    let data = rawData;
+    if (data && currentCat !== 'overall') {
+      data = data.filter(a => {
+        const id = (a.quiz_id || '').toLowerCase();
+        if (currentCat === 'trivia') return id.startsWith('daily-quiz-') || (!id.startsWith('snap-') && !id.startsWith('wtp-'));
+        if (currentCat === 'snap_decision') return id.startsWith('snap-decision');
+        if (currentCat === 'whos_that_player') return id.startsWith('wtp-');
+        return true;
+      });
+    }
 
     if (error) {
       document.getElementById('lb-table').innerHTML = `<p style="padding:2rem;color:var(--error);">Failed to load: ${error.message}</p>`;

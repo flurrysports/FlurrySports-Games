@@ -19,23 +19,24 @@ function hasAttemptedLocally(gameId) {
   try { return JSON.parse(localStorage.getItem('fs_attempted') || '[]').includes(gameId); } catch(e) { return false; }
 }
 
-// ─── DATE HELPERS (Pacific Time) ──────────────────────────────────
-function getPacificDateString() {
-  // Returns YYYY-MM-DD in Pacific time
-  const now = new Date();
-  const pacificOffset = getPacificOffset(now);
-  const pacific = new Date(now.getTime() + pacificOffset * 60 * 1000);
-  return pacific.toISOString().slice(0, 10);
+// ─── PACIFIC TIME (correct implementation) ────────────────────────
+// Uses fixed UTC offsets. Pacific DST runs from 2nd Sunday March to 1st Sunday Nov.
+// PST = UTC-8, PDT = UTC-7. No browser locale dependency.
+function getPacificOffsetMinutes(utcDate) {
+  const y = utcDate.getUTCFullYear();
+  // 2nd Sunday of March at 2am PST (= 10:00 UTC)
+  const dstStart = new Date(Date.UTC(y, 2, 14 - (new Date(Date.UTC(y, 2, 1)).getUTCDay() + 6) % 7, 10));
+  // 1st Sunday of November at 2am PDT (= 09:00 UTC)
+  const dstEnd   = new Date(Date.UTC(y, 10, 7 - (new Date(Date.UTC(y, 10, 1)).getUTCDay() + 6) % 7, 9));
+  const inDST = utcDate >= dstStart && utcDate < dstEnd;
+  return inDST ? -7 * 60 : -8 * 60; // minutes offset from UTC
 }
 
-function getPacificOffset(date) {
-  // Returns offset in minutes from UTC to Pacific (handles DST)
-  const jan = new Date(date.getFullYear(), 0, 1);
-  const jul = new Date(date.getFullYear(), 6, 1);
-  const stdOffset = Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
-  const isDST = date.getTimezoneOffset() < stdOffset;
-  // Pacific Standard = UTC-8, Pacific Daylight = UTC-7
-  return isDST ? -7 * 60 : -8 * 60;
+function getPacificDateString(utcDate) {
+  const d = utcDate || new Date();
+  const offsetMs = getPacificOffsetMinutes(d) * 60 * 1000;
+  const pacific = new Date(d.getTime() + offsetMs);
+  return pacific.toISOString().slice(0, 10); // YYYY-MM-DD
 }
 
 function getPacificDateSeed() {
@@ -72,8 +73,7 @@ async function saveAttempt(gameId, score, timeTakenSeconds, answers, gameType) {
     score: finalScore,
     time_taken_seconds: timeTakenSeconds,
     answers: answers,
-    cookie_id: cookieId,
-    game_type: gameType || 'trivia'
+    cookie_id: cookieId
   };
   if (user) attemptData.user_id = user.id;
   const { data, error } = await supabase.from('attempts').insert(attemptData).select().single();
@@ -110,7 +110,6 @@ async function claimPendingScore(userId) {
     answers: {},
     cookie_id: cookieId,
     user_id: userId,
-    game_type: pending.gameType || 'trivia'
   };
   const { error } = await supabase.from('attempts').insert(attemptData);
   if (!error) { clearPendingScore(); markAttemptedLocally(pending.gameId); updateStreak(); }
@@ -441,7 +440,7 @@ function updateStreak() {
   if (last === today) return streak;
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = new Date(yesterday.getTime() + getPacificOffset(yesterday) * 60000).toISOString().slice(0,10);
+  const yesterdayStr = getPacificDateString(yesterday);
   if (last === yesterdayStr) { streak++; }
   else if (last === null) { streak = 1; }
   else { streak = 1; localStorage.removeItem(STREAK_FIRE_KEY); }
@@ -456,7 +455,7 @@ function getStreakDisplay() { return { streak: getStreak(), fire: isOnFire() }; 
 
 function reviveStreak() {
   const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
-  const ys = new Date(yesterday.getTime() + getPacificOffset(yesterday)*60000).toISOString().slice(0,10);
+  const ys = getPacificDateString(yesterday);
   localStorage.setItem(STREAK_DATE_KEY, ys);
   showToast('Streak revived! 🔥 Play today to keep it going!', 'success');
 }
@@ -476,7 +475,7 @@ function showStreakModal() {
   const { streak, fire } = getStreakDisplay();
   const last = getLastPlayedDate(), today = getTodayString();
   const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
-  const ys = new Date(yesterday.getTime()+getPacificOffset(yesterday)*60000).toISOString().slice(0,10);
+  const ys = getPacificDateString(yesterday);
   const streakBroken = last && last !== today && last !== ys;
   let modal = document.getElementById('streak-modal'); if (modal) modal.remove();
   modal = document.createElement('div'); modal.id='streak-modal'; modal.className='modal-overlay';

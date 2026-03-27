@@ -225,7 +225,7 @@
   function dateSeed(offsetDays) {
     const d = new Date();
     if (offsetDays) d.setUTCDate(d.getUTCDate() + offsetDays);
-    return parseInt(getPacificDateStr(d).replace(/-/g,''));
+    return parseInt(getPacificDateStr(d).replace(/-/g,'')) + 166;
   }
   const now = new Date();
   const pacMs = getPacificOffsetMinutes(now) * 60000;
@@ -321,14 +321,17 @@
     ];
   }
 
+  const QUIZ_THEMES_HOME = [
+    'NFL Legends','NBA History','Super Bowl Trivia','NFL Draft','NBA Awards',
+    'Sports Records','Fantasy Football','MLB History','NHL History','College Football'
+  ];
+
   function getDailyQuiz() {
     const seed = dateSeed();
     const rng = seededRandom(seed);
-    const themeIdx = Math.floor(rng() * QUIZ_THEMES.length);
-    const theme = QUIZ_THEMES[themeIdx];
-    const questions = theme.questions(rng);
-    // Shuffle options within each question using seed
-    return { ...theme, questions, id: `daily-quiz-${seed}` };
+    const themeIdx = Math.floor(rng() * QUIZ_THEMES_HOME.length);
+    const themeName = QUIZ_THEMES_HOME[themeIdx];
+    return { theme: themeName, id: 'daily-quiz-' + seed };
   }
 
   // ─── WHO'S THAT PLAYER DATA ───────────────────────────────────
@@ -356,96 +359,87 @@
     { name:"Shai Gilgeous-Alexander", pos:"PG", team:"Oklahoma City Thunder", college:"Kentucky", drafted:"2018 · 1st Round · 11th Pick", clues:["Originally drafted by Charlotte, traded to OKC via LA Clippers","Won the 2024-25 NBA MVP award","Led OKC to the best record in the NBA","From Canada, known as 'SGA'"] },
   ];
 
+  // Player names only - full data lives in whos-that-player.html
+  const HOME_NFL = ['Patrick Mahomes','Josh Allen','Justin Jefferson',"Ja'Marr Chase",'Lamar Jackson',
+    'CeeDee Lamb','Travis Kelce','Jalen Hurts','Brock Purdy','Tyreek Hill'];
+  const HOME_NBA = ['Stephen Curry','Nikola Jokic','Giannis Antetokounmpo','Luka Doncic','Jayson Tatum',
+    'Joel Embiid','Ja Morant','Anthony Edwards','Shai Gilgeous-Alexander','LeBron James','Kevin Durant','Devin Booker'];
+
   function getDailyPlayer() {
     const seed = dateSeed();
     const rng = seededRandom(seed + 7); // offset so it differs from quiz
     const useNFL = rng() > 0.5;
-    const pool = useNFL ? NFL_PLAYERS : NBA_PLAYERS;
+    const pool = useNFL ? HOME_NFL : HOME_NBA;
     const idx = Math.floor(rng() * pool.length);
-    const player = pool[idx];
-    return { ...player, league: useNFL ? 'NFL' : 'NBA', id: `wtp-${seed}` };
+    return { name: pool[idx], league: useNFL ? 'NFL' : 'NBA', id: 'wtp-' + seed };
   }
 
   // ─── BUILD TODAY'S GAMES GRID ─────────────────────────────────
   async function loadTodaysGames() {
     const grid = document.getElementById('todays-games-grid');
-
     const dailyQuiz = getDailyQuiz();
     const dailyPlayer = getDailyPlayer();
 
+    const THEME_EMOJIS = {
+      'NFL Legends':'🏈','NBA History':'🏀','Super Bowl Trivia':'🏆','NFL Draft':'📋',
+      'NBA Awards':'⭐','Sports Records':'📊','Fantasy Football':'🎯',
+      'MLB History':'⚾','NHL History':'🏒','College Football':'🎓'
+    };
+    const quizEmoji = THEME_EMOJIS[dailyQuiz.theme] || '🎯';
+
     const quizDone = hasAttemptedLocally(dailyQuiz.id);
     const snapDone = hasAttemptedLocally('snap-decision-v1');
-    const wtpDone = hasAttemptedLocally(dailyPlayer.id);
+    const wtpDone  = hasAttemptedLocally(dailyPlayer.id);
 
-    grid.innerHTML = `
-      <!-- DAILY QUIZ TILE -->
-      <div class="game-tile">
-        <div class="game-tile-header">
-          <div class="game-tile-icon quiz">${dailyQuiz.emoji}</div>
-          <div>
-            <div class="game-tile-name" style="color:var(--gold);">Daily Quiz</div>
-            <div class="game-tile-tag">5 Questions · Multiple Choice</div>
-          </div>
-        </div>
-        <div class="game-tile-body">
-          <div class="game-tile-title">${dailyQuiz.theme}</div>
-          <div class="game-tile-desc">5 sports trivia questions with today's theme. Earn points for every correct answer — faster answers score more!</div>
-        </div>
-        <div class="game-tile-footer">
-          <span class="game-tile-meta">⏱️ 15s per question</span>
-          ${quizDone
-            ? `<span class="game-completed-badge">✓ Completed</span>`
-            : `<a href="/daily-quiz.html" class="btn btn-primary btn-sm">Play Now →</a>`
-          }
-        </div>
-      </div>
+    grid.innerHTML =
+      '<div class="game-tile">' +
+        '<div class="game-tile-header">' +
+          '<div class="game-tile-icon quiz">' + quizEmoji + '</div>' +
+          '<div><div class="game-tile-name" style="color:var(--gold);">Daily Quiz</div>' +
+          '<div class="game-tile-tag">5 Questions · Multiple Choice</div></div>' +
+        '</div>' +
+        '<div class="game-tile-body">' +
+          '<div class="game-tile-title">' + dailyQuiz.theme + '</div>' +
+          '<div class="game-tile-desc">5 sports trivia questions on today's theme. Faster correct answers score more!</div>' +
+        '</div>' +
+        '<div class="game-tile-footer"><span class="game-tile-meta">⏱️ 15s per question</span>' +
+          (quizDone ? '<span class="game-completed-badge">✓ Completed</span>' :
+            '<a href="/daily-quiz.html" class="btn btn-primary btn-sm">Play Now →</a>') +
+        '</div>' +
+      '</div>' +
 
-      <!-- SNAP DECISION TILE -->
-      <div class="game-tile">
-        <div class="game-tile-header">
-          <div class="game-tile-icon snap">🏈</div>
-          <div>
-            <div class="game-tile-name" style="color:#4caf50;">Snap Decision</div>
-            <div class="game-tile-tag">Read the Defense · Call the Play</div>
-          </div>
-        </div>
-        <div class="game-tile-body">
-          <div class="game-tile-title">Drive for a Touchdown</div>
-          <div class="game-tile-desc">Read 4 defensive looks and call the right play each time. 3.5 seconds per snap. Score a touchdown to win.</div>
-        </div>
-        <div class="game-tile-footer">
-          <span class="game-tile-meta">⏱️ 3.5s per snap · 4 Downs</span>
-          ${snapDone
-            ? `<span class="game-completed-badge">✓ Completed</span>`
-            : `<a href="/snap-decision.html" class="btn btn-sm" style="background:#4caf50;color:#030f03;font-family:'Barlow Condensed',sans-serif;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;border-radius:8px;padding:0.4rem 0.9rem;text-decoration:none;">Play Now →</a>`
-          }
-        </div>
-      </div>
+      '<div class="game-tile">' +
+        '<div class="game-tile-header">' +
+          '<div class="game-tile-icon snap">🏈</div>' +
+          '<div><div class="game-tile-name" style="color:#4caf50;">Snap Decision</div>' +
+          '<div class="game-tile-tag">Read the Defense · Call the Play</div></div>' +
+        '</div>' +
+        '<div class="game-tile-body">' +
+          '<div class="game-tile-title">Drive for a Touchdown</div>' +
+          '<div class="game-tile-desc">Read 4 defensive looks and call the right play each time. 3.5 seconds per snap.</div>' +
+        '</div>' +
+        '<div class="game-tile-footer"><span class="game-tile-meta">⏱️ 3.5s per snap · 4 Downs</span>' +
+          (snapDone ? '<span class="game-completed-badge">✓ Completed</span>' :
+            '<a href="/snap-decision.html" class="btn btn-sm" style="background:#4caf50;color:#030f03;font-family:'Barlow Condensed',sans-serif;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;border-radius:8px;padding:0.4rem 0.9rem;text-decoration:none;">Play Now →</a>') +
+        '</div>' +
+      '</div>' +
 
-      <!-- WHO'S THAT PLAYER TILE -->
-      <div class="game-tile">
-        <div class="game-tile-header">
-          <div class="game-tile-icon wtp">❓</div>
-          <div>
-            <div class="game-tile-name" style="color:#3498db;">Who's That, Player?</div>
-            <div class="game-tile-tag">${dailyPlayer.league} · Active Player</div>
-          </div>
-        </div>
-        <div class="game-tile-body">
-          <div class="game-tile-title">Mystery ${dailyPlayer.league} Player</div>
-          <div class="game-tile-desc">5 clues are revealed one at a time. Guess the player as early as possible — the sooner you guess correctly, the more points you earn.</div>
-        </div>
-        <div class="game-tile-footer">
-          <span class="game-tile-meta">Up to 5 clues · ${dailyPlayer.league}</span>
-          ${wtpDone
-            ? `<span class="game-completed-badge">✓ Completed</span>`
-            : `<a href="/whos-that-player.html" class="btn btn-sm" style="background:#1a4a6a;color:#3498db;border:1px solid #1a4a6a;font-family:'Barlow Condensed',sans-serif;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;border-radius:8px;padding:0.4rem 0.9rem;text-decoration:none;">Play Now →</a>`
-          }
-        </div>
-      </div>
-    `;
+      '<div class="game-tile">' +
+        '<div class="game-tile-header">' +
+          '<div class="game-tile-icon wtp">❓</div>' +
+          '<div><div class="game-tile-name" style="color:#3498db;">Who's That, Player?</div>' +
+          '<div class="game-tile-tag">' + dailyPlayer.league + ' · Active Player</div></div>' +
+        '</div>' +
+        '<div class="game-tile-body">' +
+          '<div class="game-tile-title">Mystery ' + dailyPlayer.league + ' Player</div>' +
+          '<div class="game-tile-desc">5 clues revealed one at a time. Guess early for more points.</div>' +
+        '</div>' +
+        '<div class="game-tile-footer"><span class="game-tile-meta">Up to 5 clues · ' + dailyPlayer.league + '</span>' +
+          (wtpDone ? '<span class="game-completed-badge">✓ Completed</span>' :
+            '<a href="/whos-that-player.html" class="btn btn-sm" style="background:#1a4a6a;color:#3498db;border:1px solid #1a5a8a;font-family:'Barlow Condensed',sans-serif;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;border-radius:8px;padding:0.4rem 0.9rem;text-decoration:none;">Play Now →</a>') +
+        '</div>' +
+      '</div>';
   }
-
   // ─── STREAK PIPS ──────────────────────────────────────────────
   function renderStreakPips() {
     const { streak, fire } = getStreakDisplay();

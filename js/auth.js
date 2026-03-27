@@ -272,6 +272,17 @@ async function handlePostGameAuth(e) {
 }
 
 // ─── SHARE SCORE ──────────────────────────────────────────────────
+
+// ─── SHARE SCORE (for quiz.html) ─────────────────────────────────
+function shareScore(quizTitle, score, quizUrl) {
+  const message = 'I scored ' + score.toLocaleString() + ' pts on "' + quizTitle + '" on FlurrySports Games! Can you beat me? ' + quizUrl;
+  return {
+    sms: 'sms:?body=' + encodeURIComponent(message),
+    facebook: 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(quizUrl) + '&quote=' + encodeURIComponent(message),
+    x: 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(message)
+  };
+}
+
 function buildShareText(gameTitle, score, emoji, extraLine) {
   const base = `FlurrySports · ${gameTitle}\n${emoji}\nScore: ${score.toLocaleString()} pts${extraLine ? '\n' + extraLine : ''}\nPlay at flurrysportsgames.pages.dev`;
   return base;
@@ -307,35 +318,58 @@ function showShareModal(shareText) {
 
 // ─── COUNTDOWN OVERLAY ────────────────────────────────────────────
 function showCountdown(onComplete) {
+  // Remove any existing overlay
   let overlay = document.getElementById('countdown-overlay');
   if (overlay) overlay.remove();
+
+  // Create overlay matching quiz.html style (light blue numbers)
   overlay = document.createElement('div');
   overlay.id = 'countdown-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(8,12,46,0.97);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
-  overlay.innerHTML = `
-    <img src="/images/logo-icon-noborder.png" style="height:70px;margin-bottom:1.5rem;opacity:0.9;">
-    <div id="countdown-num" style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:min(22vw,140px);color:var(--gold);line-height:1;letter-spacing:-2px;">3</div>
-    <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gray);margin-top:1rem;">GET READY</div>
-  `;
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(8,12,46,0.97);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;';
+
+  const numEl = document.createElement('div');
+  numEl.id = 'countdown-num';
+  numEl.style.cssText = "font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:18rem;line-height:1;color:#a8d8f0;text-shadow:0 0 80px rgba(168,216,240,0.7),0 0 30px rgba(168,216,240,0.4);position:relative;z-index:2;";
+  numEl.textContent = '3';
+
+  const labelEl = document.createElement('div');
+  labelEl.style.cssText = "font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:clamp(1.6rem,8vw,2.8rem);letter-spacing:clamp(0.1em,2vw,0.35em);text-transform:uppercase;color:#a8d8f0;text-shadow:0 0 40px rgba(168,216,240,0.6);margin-top:0.5rem;position:relative;z-index:2;white-space:nowrap;";
+  labelEl.textContent = 'GET READY!';
+
+  overlay.appendChild(numEl);
+  overlay.appendChild(labelEl);
   document.body.appendChild(overlay);
-  let count = 3;
-  const tick = () => {
-    const el = document.getElementById('countdown-num');
-    if (!el) return;
-    if (count <= 0) { overlay.remove(); onComplete(); return; }
-    el.textContent = count;
-    el.style.animation = 'none';
-    void el.offsetWidth;
-    el.style.animation = 'countPop 0.7s ease';
-    count--;
-    setTimeout(tick, 900);
-  };
-  // Add animation if not present
+
+  // Inject animation
   if (!document.getElementById('countdown-style')) {
     const s = document.createElement('style');
     s.id = 'countdown-style';
-    s.textContent = '@keyframes countPop { 0%{transform:scale(1.3);opacity:0.5} 50%{transform:scale(1);opacity:1} 100%{transform:scale(0.9);opacity:0.7} }';
+    s.textContent = '@keyframes countPulse{0%{transform:scale(1.5);opacity:0}40%{transform:scale(1);opacity:1}85%{transform:scale(0.92);opacity:0.9}100%{transform:scale(0.85);opacity:0}}';
     document.head.appendChild(s);
+  }
+
+  let count = 3;
+  function tick() {
+    if (count > 0) {
+      numEl.textContent = count;
+      numEl.style.color = '#a8d8f0';
+      numEl.style.textShadow = '0 0 80px rgba(168,216,240,0.7)';
+      numEl.style.animation = 'none';
+      numEl.offsetHeight; // reflow
+      numEl.style.animation = 'countPulse 1s ease-in-out forwards';
+      count--;
+      setTimeout(tick, 1000);
+    } else {
+      numEl.textContent = 'GO!';
+      numEl.style.color = 'var(--gold)';
+      numEl.style.textShadow = '0 0 80px rgba(245,197,24,0.9)';
+      numEl.style.animation = 'none';
+      numEl.offsetHeight;
+      numEl.style.animation = 'countPulse 0.6s ease-in-out forwards';
+      labelEl.textContent = "LET'S GO!";
+      labelEl.style.color = 'var(--gold)';
+      setTimeout(function() { overlay.remove(); onComplete(); }, 700);
+    }
   }
   tick();
 }

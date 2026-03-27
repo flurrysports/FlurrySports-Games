@@ -269,7 +269,7 @@ async function showResults(stored) {
   if (!isReplay) {
     saveResult({ correct:correct, emojiRow:emojiRow, finalScore:finalScore });
     markAttemptedLocally(quizId);
-    saveAttempt(quizId, totalScore, 0, results, 'trivia');
+    await saveAttempt(quizId, totalScore, 0, results, 'trivia');
   }
 
   var pctHtml = '';

@@ -227,6 +227,13 @@ function getPacificOffsetMinutes(d) {
   function leagueColor() { return player.league === 'NFL' ? '#e8a020' : '#3498db'; }
   function leagueBg() { return player.league === 'NFL' ? 'rgba(232,160,32,0.15)' : 'rgba(52,152,219,0.15)'; }
 
+  function getStoredResult() {
+    try { return JSON.parse(localStorage.getItem('fs_wtp_result_' + player.id)); } catch(e) { return null; }
+  }
+  function storeResult(data) {
+    try { localStorage.setItem('fs_wtp_result_' + player.id, JSON.stringify(data)); } catch(e) {}
+  }
+
   function renderGame() {
     const container = document.getElementById('wtp-container');
     container.innerHTML = `
@@ -375,6 +382,7 @@ function getPacificOffsetMinutes(d) {
       gameOver = true;
       won = true;
       markAttemptedLocally(player.id);
+    if (!isReplay) storeResult({ correct, finalPts, cluesUsed, guessesUsed });
       showResult(true, pointsAvailable);
     } else {
       // Check for partial last name
@@ -390,15 +398,18 @@ function getPacificOffsetMinutes(d) {
     }
   }
 
-  async function showResult(correct, pts) {
+  async function showResult(correct, pts, isReplay, storedData) {
+    if (isReplay) { correct = storedData.correct; pts = storedData.finalPts; }
     markAttemptedLocally(player.id);
+    if (!isReplay) storeResult({ correct, finalPts, cluesUsed, guessesUsed });
     const { fire } = getStreakDisplay();
     const finalPts = correct ? (fire ? Math.round(pts * 1.10) : pts) : 0;
     const emojiResult = correct ? '🎉' : '😔';
     const headline = correct ? 'Correct!' : 'Nice Try!';
     const cluesUsed = revealedClues;
     const shareEmoji = correct ? `✅ Guessed in ${cluesUsed} clue${cluesUsed!==1?'s':''}!` : '❌ Couldn\'t get it today';
-    const shareText = buildShareText(`Who\'s That, Player? (${player.league})`, finalPts, shareEmoji, correct ? `Identified in ${cluesUsed}/5 clues` : 'Better luck tomorrow!');
+    const shareText = buildShareText(`Who's That, Player? (${player.league})`, finalPts, shareEmoji, correct ? `Identified in ${cluesUsed}/5 clues` : 'Better luck tomorrow!');
+    window._lastShareText = shareText;
 
     // Save attempt
     await saveAttempt(player.id, correct ? pts : 0, 0, { cluesUsed, guessesUsed, correct }, 'whos_that_player');
@@ -413,6 +424,7 @@ function getPacificOffsetMinutes(d) {
           ${fire ? `<div style="font-size:0.8rem;color:#ff6400;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1rem;">🔥 On Fire bonus applied!</div>` : ''}
         ` : `<div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1rem;color:var(--gray);margin-bottom:1.5rem;">Better luck tomorrow!</div>`}
 
+        <div id="wtp-percentile" style="margin-bottom:1rem;"></div>
         <div class="wtp-player-reveal">
           <img class="wtp-player-img-reveal" src="${espnImg}" alt="${player.name}" onerror="this.style.opacity=0.3;"/>
           <div>
@@ -435,12 +447,28 @@ function getPacificOffsetMinutes(d) {
           `).join('')}
         </div>
 
-        <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
-          <button class="btn btn-primary" onclick="showShareModal(${JSON.stringify(shareText)})">📣 Share Result</button>
+        <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin-bottom:1rem;">
+          <button class="btn btn-primary" onclick="showShareModal(window._lastShareText)">📣 Share Result</button>
           <a href="/" class="btn btn-outline">Back to Games</a>
+        </div>
+        <div style="border-top:1px solid rgba(52,152,219,0.15);padding-top:1.25rem;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:0.75rem;">Try Today's Other Games</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+            <a href="/daily-quiz.html" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:0.875rem;text-decoration:none;color:var(--white);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;text-align:center;">🎯 Daily Quiz</a>
+            <a href="/snap-decision.html" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:0.875rem;text-decoration:none;color:var(--white);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;text-align:center;">🏈 Snap Decision</a>
+          </div>
         </div>
       </div>
     `;
+
+    // Fetch percentile
+    try {
+      const pct = await getPercentile(player.id, correct ? pts : 0);
+      const pEl = document.getElementById('wtp-percentile');
+      if (pEl && pct !== null && correct) {
+        pEl.innerHTML = `<div style="display:inline-block;background:rgba(52,152,219,0.1);border:1px solid rgba(52,152,219,0.3);border-radius:8px;padding:0.5rem 1.25rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.9rem;letter-spacing:0.08em;text-transform:uppercase;color:#3498db;margin-bottom:0.75rem;">Better than ${pct}% of players today</div>`;
+      }
+    } catch(e) {}
 
     // Post-game auth prompt if not logged in
     const user = await getCurrentUser();
@@ -453,13 +481,27 @@ function getPacificOffsetMinutes(d) {
 
   document.addEventListener('DOMContentLoaded', () => {
     updateNavAuth();
+    const stored = getStoredResult();
+    if (stored) {
+      showResult(stored.correct, stored.finalPts, true, stored);
+      return;
+    }
     if (hasAttemptedLocally(player.id)) {
       document.getElementById('wtp-container').innerHTML = `
         <div class="wtp-result correct" style="text-align:center;">
           <div style="font-size:2rem;margin-bottom:1rem;">✅</div>
           <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;text-transform:uppercase;">Already Played!</div>
-          <p style="color:var(--gray);margin:1rem 0;">You've already played today's Who's That, Player? Come back tomorrow for a new mystery player!</p>
-          <a href="/" class="btn btn-primary">Back to Games</a>
+          <p style="color:var(--gray);margin:1rem 0;">Come back tomorrow for a new mystery player!</p>
+          <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin:1rem 0;">
+            <a href="/" class="btn btn-primary">Back to Games</a>
+          </div>
+          <div style="border-top:1px solid rgba(52,152,219,0.15);padding-top:1.25rem;">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:0.75rem;">Try Today's Other Games</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+              <a href="/daily-quiz.html" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:0.875rem;text-decoration:none;color:var(--white);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;text-align:center;">🎯 Daily Quiz</a>
+              <a href="/snap-decision.html" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:0.875rem;text-decoration:none;color:var(--white);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;text-align:center;">🏈 Snap Decision</a>
+            </div>
+          </div>
         </div>
       `;
       return;

@@ -278,6 +278,7 @@ function buildShareText(gameTitle, score, emoji, extraLine) {
 }
 
 function showShareModal(shareText) {
+  window._shareModalText = shareText;
   let modal = document.getElementById('share-modal');
   if (modal) modal.remove();
   modal = document.createElement('div');
@@ -297,7 +298,7 @@ function showShareModal(shareText) {
         <a href="https://twitter.com/intent/tweet?text=${encoded}" target="_blank" class="btn btn-ghost" style="justify-content:center;">🐦 Post on X</a>
         <a href="https://www.facebook.com/sharer/sharer.php?u=https://flurrysportsgames.pages.dev&quote=${encoded}" target="_blank" class="btn btn-ghost" style="justify-content:center;">📘 Facebook</a>
       </div>
-      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="navigator.clipboard.writeText(${JSON.stringify(shareText)}).then(()=>showToast('Copied!','success'))">📋 Copy to Clipboard</button>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="navigator.clipboard.writeText(window._shareModalText||'').then(()=>showToast('Copied! ✓','success'))">📋 Copy to Clipboard</button>
     </div>
   `;
   document.body.appendChild(modal);

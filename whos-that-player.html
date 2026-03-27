@@ -382,7 +382,6 @@ function getPacificOffsetMinutes(d) {
       gameOver = true;
       won = true;
       markAttemptedLocally(player.id);
-    if (!isReplay) storeResult({ correct, finalPts, cluesUsed, guessesUsed });
       showResult(true, pointsAvailable);
     } else {
       // Check for partial last name
@@ -400,8 +399,8 @@ function getPacificOffsetMinutes(d) {
 
   async function showResult(correct, pts, isReplay, storedData) {
     if (isReplay) { correct = storedData.correct; pts = storedData.finalPts; }
+    const noData = isReplay && storedData && storedData.noData;
     markAttemptedLocally(player.id);
-    if (!isReplay) storeResult({ correct, finalPts, cluesUsed, guessesUsed });
     const { fire } = getStreakDisplay();
     const finalPts = correct ? (fire ? Math.round(pts * 1.10) : pts) : 0;
     const emojiResult = correct ? '🎉' : '😔';
@@ -411,6 +410,8 @@ function getPacificOffsetMinutes(d) {
     const shareText = buildShareText(`Who's That, Player? (${player.league})`, finalPts, shareEmoji, correct ? `Identified in ${cluesUsed}/5 clues` : 'Better luck tomorrow!');
     window._lastShareText = shareText;
 
+    // Store locally FIRST
+    if (!isReplay) storeResult({ correct, finalPts, cluesUsed, guessesUsed });
     // Save attempt
     await saveAttempt(player.id, correct ? pts : 0, 0, { cluesUsed, guessesUsed, correct }, 'whos_that_player');
 
@@ -418,11 +419,12 @@ function getPacificOffsetMinutes(d) {
     container.innerHTML = `
       <div class="wtp-result ${correct ? 'correct' : 'wrong'}">
         <div style="font-size:3rem;margin-bottom:0.5rem;">${emojiResult}</div>
-        <div class="wtp-result-main">${headline}</div>
-        ${correct ? `
-          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.1rem;color:var(--success);margin-bottom:0.5rem;">+${finalPts.toLocaleString()} pts earned</div>
+        <div class="wtp-result-main">${noData ? 'Already Played!' : headline}</div>
+        ${noData ? `<div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.9rem;color:var(--gray);margin-bottom:1rem;">Score data only persists during the same session.</div>` :
+        correct ? `
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.1rem;color:var(--success);margin-bottom:0.5rem;">+${finalPts.toLocaleString()} pts earned</div>`
           ${fire ? `<div style="font-size:0.8rem;color:#ff6400;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1rem;">🔥 On Fire bonus applied!</div>` : ''}
-        ` : `<div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1rem;color:var(--gray);margin-bottom:1.5rem;">Better luck tomorrow!</div>`}
+        ` : !noData ? `<div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1rem;color:var(--gray);margin-bottom:1.5rem;">Better luck tomorrow!</div>` : ``}
 
         <div id="wtp-percentile" style="margin-bottom:1rem;"></div>
         <div class="wtp-player-reveal">
@@ -487,23 +489,8 @@ function getPacificOffsetMinutes(d) {
       return;
     }
     if (hasAttemptedLocally(player.id)) {
-      document.getElementById('wtp-container').innerHTML = `
-        <div class="wtp-result correct" style="text-align:center;">
-          <div style="font-size:2rem;margin-bottom:1rem;">✅</div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;text-transform:uppercase;">Already Played!</div>
-          <p style="color:var(--gray);margin:1rem 0;">Come back tomorrow for a new mystery player!</p>
-          <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin:1rem 0;">
-            <a href="/" class="btn btn-primary">Back to Games</a>
-          </div>
-          <div style="border-top:1px solid rgba(52,152,219,0.15);padding-top:1.25rem;">
-            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:0.75rem;">Try Today's Other Games</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
-              <a href="/daily-quiz.html" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:0.875rem;text-decoration:none;color:var(--white);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;text-align:center;">🎯 Daily Quiz</a>
-              <a href="/snap-decision.html" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:0.875rem;text-decoration:none;color:var(--white);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;text-align:center;">🏈 Snap Decision</a>
-            </div>
-          </div>
-        </div>
-      `;
+      // Played but no stored result — show reveal with no score
+      showResult(false, 0, true, { correct: false, finalPts: 0, cluesUsed: 5, guessesUsed: 0, noData: true });
       return;
     }
     renderGame();

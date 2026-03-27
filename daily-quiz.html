@@ -260,11 +260,12 @@
       const { fire } = getStreakDisplay();
       return fire ? Math.round(totalScore*1.10) : totalScore;
     })();
+    const noData = isReplay && storedData.noData;
 
     if (!isReplay) {
-      // Save to DB and locally
-      await saveAttempt(quizId, totalScore, 0, results, 'trivia');
+      // Store locally FIRST so replay always works even if DB fails
       storeResult({ correct, emojiRow, finalScore, quizId });
+      await saveAttempt(quizId, totalScore, 0, results, 'trivia');
     }
 
     // Percentile
@@ -288,10 +289,14 @@
         <div style="font-size:2rem;margin-bottom:0.5rem;">${theme.emoji}</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.1rem;text-transform:uppercase;color:var(--gold);">Quiz Complete!</div>
         ${fire && !isReplay ? `<div style="font-size:0.8rem;color:#ff6400;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.25rem;">🔥 On Fire! +10% bonus applied</div>` : ''}
-        <div class="results-score">${finalScore.toLocaleString()}</div>
-        <div class="results-label">${correct} of ${questions.length} correct</div>
-        <div style="margin:1rem 0;font-size:1.5rem;letter-spacing:0.2rem;">${emojiRow}</div>
-        ${percentileHtml}
+        ${noData
+          ? `<div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.5rem;text-transform:uppercase;color:var(--gold);margin:1rem 0;">Already Completed ✓</div>
+             <p style="color:var(--gray);font-size:0.9rem;margin-bottom:1.25rem;">Score data is only stored from this session — come back tomorrow for a fresh game!</p>`
+          : `<div class="results-score">${finalScore.toLocaleString()}</div>
+             <div class="results-label">${correct} of ${questions.length} correct</div>
+             <div style="margin:1rem 0;font-size:1.5rem;letter-spacing:0.2rem;">${emojiRow}</div>
+             ${percentileHtml}`
+        }
         <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin:1.25rem 0;">
           <button class="btn btn-primary" onclick="showShareModal(window._lastShareText)">📣 Share Result</button>
           <a href="/" class="btn btn-outline">Back to Games</a>
@@ -323,24 +328,8 @@
       // Already played today — show their result screen
       showResults(true, stored);
     } else if (hasAttemptedLocally(quizId)) {
-      // Played but no stored result (older attempt) — show simple recap
-      document.getElementById('quiz-container').innerHTML = `
-        <div class="results-card">
-          <div style="font-size:2rem;margin-bottom:1rem;">✅</div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.5rem;text-transform:uppercase;">Already Completed!</div>
-          <p style="color:var(--gray);margin:1rem 0;">You've already played today's quiz. Come back tomorrow for a new one!</p>
-          <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin:1rem 0;">
-            <a href="/" class="btn btn-primary">Back to Games</a>
-          </div>
-          <div style="border-top:1px solid var(--card-border);padding-top:1.25rem;margin-top:0.5rem;">
-            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray);margin-bottom:0.75rem;">Try Today's Other Games</div>
-            <div class="other-games">
-              <a href="/snap-decision.html" class="other-game-btn">🏈 Snap Decision</a>
-              <a href="/whos-that-player.html" class="other-game-btn">❓ Who's That, Player?</a>
-            </div>
-          </div>
-        </div>
-      `;
+      // Played but no stored result — show partial result with what we know
+      showResults(true, { correct: '?', emojiRow: '—', finalScore: 0, quizId, noData: true });
     } else {
       showCountdown(() => renderQuestion(0));
     }

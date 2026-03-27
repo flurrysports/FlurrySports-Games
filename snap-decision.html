@@ -401,10 +401,26 @@ function hasAttemptedLocally(id) {
       <div class="rule-item">Run out the clock = <strong>Delay of Game</strong>, game over</div>
       <div class="rule-item">A neutral on 4th down = <strong>Turnover on Downs</strong>, game over</div>
     </div>
-    <button class="start-btn" onclick="startGame()">HIKE!</button>
+    <button class="start-btn" id="start-btn" onclick="startGame()">HIKE!</button>
     <div class="start-footer">FlurrySports.org</div>
   </div>
 </div>
+
+<script>
+// Update start button if already played today
+(function() {
+  try {
+    const stored = JSON.parse(localStorage.getItem("fs_snap_result_v1"));
+    const attempted = JSON.parse(localStorage.getItem("fs_attempted") || "[]").includes("snap-decision-v1");
+    if (stored && attempted) {
+      document.addEventListener("DOMContentLoaded", () => {
+        const btn = document.getElementById("start-btn");
+        if (btn) { btn.textContent = "View My Result"; btn.style.background = "#2a5a2a"; }
+      });
+    }
+  } catch(e) {}
+})();
+</script>
 
 <!-- ═══════════════════════════════════════
      GAME SCREEN
@@ -1244,15 +1260,42 @@ function calcPoints(playIdx, decisionTime) {
   return Math.round(max * ratio);
 }
 
+// ── Snap result storage ──────────────────────────────────────
+function getSnapStoredResult() {
+  try { return JSON.parse(localStorage.getItem('fs_snap_result_v1')); } catch(e) { return null; }
+}
+function storeSnapResult(data) {
+  try { localStorage.setItem('fs_snap_result_v1', JSON.stringify(data)); } catch(e) {}
+}
+
 function startGame() {
+  // If already played, show stored result instead of replaying
+  const stored = getSnapStoredResult();
+  if (stored && hasAttemptedLocally('snap-decision-v1')) {
+    document.getElementById('startScreen').style.display = 'none';
+    if (stored.type === 'td') {
+      score = stored.score || 0;
+      playHistory = stored.playHistory || [];
+      decisionTimes = stored.decisionTimes || [];
+      showTouchdown(true);
+    } else {
+      score = stored.score || 0;
+      playHistory = stored.playHistory || [];
+      currentPlay = stored.currentPlay || 0;
+      showLoss(stored.headline || 'TURNOVER!', stored.desc || 'Lace up your cleats tomorrow.', stored.badge || 'Turnover', true);
+    }
+    return;
+  }
   document.getElementById('startScreen').style.display = 'none';
-  document.getElementById('gameScreen').classList.add('active');
   currentPlay = 0;
   score = 0;
   playHistory = [];
   decisionTimes = [];
-  updateScore();
-  loadPlay(0);
+  showCountdown(() => {
+    document.getElementById('gameScreen').classList.add('active');
+    updateScore();
+    loadPlay(0);
+  });
 }
 
 function loadPlay(idx) {
@@ -1414,23 +1457,83 @@ function updateScore() {
   document.getElementById('scoreDisplay').textContent = score.toLocaleString();
 }
 
-function showTouchdown() {
+async function showTouchdown(isReplay) {
+  markAttemptedLocally('snap-decision-v1');
   document.getElementById('gameScreen').classList.remove('active');
   const tdScreen = document.getElementById('tdScreen');
   tdScreen.style.display = 'block';
 
-  document.getElementById('tdScore').textContent = score.toLocaleString();
+  const { fire } = getStreakDisplay();
+  const finalScore = fire ? Math.round(score * 1.10) : score;
+
+  // Store result immediately
+  if (!isReplay) {
+    storeSnapResult({ type:'td', score: finalScore, playHistory, decisionTimes });
+  }
+
+  document.getElementById('tdScore').textContent = finalScore.toLocaleString();
   document.getElementById('tdCorrect').textContent = playHistory.filter(h => h === 'correct').length + '/4';
   document.getElementById('tdNeutral').textContent = playHistory.filter(h => h === 'neutral').length;
   const avgTime = decisionTimes.length ? (decisionTimes.reduce((a,b) => a+b,0) / decisionTimes.length).toFixed(1) + 's' : 'N/A';
   document.getElementById('tdAvgTime').textContent = avgTime;
   document.getElementById('tdPlaySummary').innerHTML = buildPlaySummary('td');
+
+  if (fire && !isReplay) {
+    const badge = document.createElement('div');
+    badge.style.cssText = 'font-size:0.8rem;color:#ff6400;font-family:Barlow Condensed,sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.5rem;text-align:center;';
+    badge.textContent = '🔥 On Fire bonus applied!';
+    document.getElementById('tdScore').parentNode.insertBefore(badge, document.getElementById('tdScore'));
+  }
+
+  // Percentile
+  try {
+    const pct = await getPercentile('snap-decision-v1', finalScore);
+    if (pct !== null) {
+      const pEl = document.createElement('div');
+      pEl.style.cssText = 'font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.85rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--gold);margin:0.5rem 0;text-align:center;';
+      pEl.textContent = `Better than ${pct}% of players today`;
+      document.getElementById('tdScore').parentNode.insertBefore(pEl, document.getElementById('tdScore').nextSibling);
+    }
+  } catch(e) {}
+
+  // Share text
+  const shareEmoji = playHistory.map(h => h==='correct'?'✅':h==='neutral'?'🟡':'❌').join('');
+  window._lastShareText = buildShareText('Snap Decision', finalScore, shareEmoji, `${playHistory.filter(h=>h==='correct').length}/4 correct reads`);
+
+  // Add share button
+  const shareBtn = document.createElement('button');
+  shareBtn.className = 'btn-secondary';
+  shareBtn.style.cssText = 'background:transparent;border:1px solid #0a2a0a;border-radius:8px;padding:11px 40px;font-family:Barlow Condensed,sans-serif;font-size:12px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;width:100%;max-width:420px;color:#2a5a2a;margin-bottom:10px;display:block;';
+  shareBtn.textContent = '📣 Share Result';
+  shareBtn.onclick = () => showShareModal(window._lastShareText);
+  const primaryBtn = document.querySelector('#tdScreen .btn-primary');
+  if (primaryBtn) primaryBtn.after(shareBtn);
+
+  // Other games
+  const otherDiv = document.createElement('div');
+  otherDiv.style.cssText = 'border-top:1px solid #0a2a0a;padding-top:1rem;margin-top:0.5rem;width:100%;max-width:420px;text-align:center;';
+  otherDiv.innerHTML = '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:#1a3a1a;margin-bottom:0.625rem;">Try Today's Other Games</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:0.625rem;"><a href="/daily-quiz.html" style="background:rgba(76,175,80,0.05);border:1px solid #1a3a1a;border-radius:8px;padding:0.75rem;text-decoration:none;color:#2a5a2a;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;text-align:center;">🎯 Daily Quiz</a><a href="/whos-that-player.html" style="background:rgba(76,175,80,0.05);border:1px solid #1a3a1a;border-radius:8px;padding:0.75rem;text-decoration:none;color:#2a5a2a;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;text-align:center;">❓ Who's That, Player?</a></div>';
+  if (shareBtn.parentNode) shareBtn.after(otherDiv);
+
+  if (!isReplay) {
+    await saveAttempt('snap-decision-v1', score, 0, { plays: playHistory, decisionTimes }, 'snap_decision');
+    const user = await getCurrentUser();
+    if (!user) {
+      setTimeout(() => showPostGameAuthPrompt('snap-decision-v1', finalScore, 'snap_decision', 'Snap Decision'), 800);
+    }
+  }
 }
 
-function showLoss(headline, desc, badge) {
+async function showLoss(headline, desc, badge, isReplay) {
+  markAttemptedLocally('snap-decision-v1');
   document.getElementById('gameScreen').classList.remove('active');
   const lossScreen = document.getElementById('lossScreen');
   lossScreen.style.display = 'block';
+
+  // Store result immediately
+  if (!isReplay) {
+    storeSnapResult({ type:'loss', score, playHistory, currentPlay, headline, desc, badge });
+  }
 
   document.getElementById('lossMain').textContent = headline;
   document.getElementById('lossBadge').textContent = badge;
@@ -1440,6 +1543,30 @@ function showLoss(headline, desc, badge) {
   document.getElementById('lossDown').textContent = currentPlay + 1;
   document.getElementById('lossNeeded').textContent = 4;
   document.getElementById('lossPlaySummary').innerHTML = buildPlaySummary('loss');
+
+  // Share
+  const shareEmoji = playHistory.map(h => h==='correct'?'✅':h==='neutral'?'🟡':'❌').join('');
+  window._lastLossShareText = buildShareText('Snap Decision', score, shareEmoji, `Fell on play ${currentPlay+1} of 4`);
+  const shareBtn = document.createElement('button');
+  shareBtn.style.cssText = 'background:transparent;border:1px solid #2a0808;border-radius:8px;padding:11px 40px;font-family:Barlow Condensed,sans-serif;font-size:12px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;width:100%;max-width:400px;color:#5a2020;margin-bottom:10px;display:block;';
+  shareBtn.textContent = '📣 Share Result';
+  shareBtn.onclick = () => showShareModal(window._lastLossShareText);
+  const lossPrimaryBtn = document.querySelector('#lossScreen .btn-primary');
+  if (lossPrimaryBtn) lossPrimaryBtn.after(shareBtn);
+
+  // Other games
+  const otherDiv = document.createElement('div');
+  otherDiv.style.cssText = 'border-top:1px solid #2a0808;padding-top:1rem;margin-top:0.5rem;width:100%;max-width:400px;text-align:center;';
+  otherDiv.innerHTML = '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:#3a1a1a;margin-bottom:0.625rem;">Try Today's Other Games</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:0.625rem;"><a href="/daily-quiz.html" style="background:rgba(192,57,43,0.05);border:1px solid #2a0808;border-radius:8px;padding:0.75rem;text-decoration:none;color:#5a2020;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;text-align:center;">🎯 Daily Quiz</a><a href="/whos-that-player.html" style="background:rgba(192,57,43,0.05);border:1px solid #2a0808;border-radius:8px;padding:0.75rem;text-decoration:none;color:#5a2020;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;text-align:center;">❓ Who's That, Player?</a></div>';
+  if (shareBtn.parentNode) shareBtn.after(otherDiv);
+
+  if (!isReplay) {
+    await saveAttempt('snap-decision-v1', score, 0, { plays: playHistory }, 'snap_decision');
+    const user = await getCurrentUser();
+    if (!user && score > 0) {
+      setTimeout(() => showPostGameAuthPrompt('snap-decision-v1', score, 'snap_decision', 'Snap Decision'), 800);
+    }
+  }
 }
 
 function buildPlaySummary(type) {
@@ -1489,8 +1616,4 @@ function resetGame() {
 <script src="/js/auth.js"></script>
 </body>
 </html>
-<script>
-// Mark snap decision as played when touchdown or loss screen shows
-const _origShowTD = showTouchdown;
-const _origShowLoss = showLoss;
-</script>
+

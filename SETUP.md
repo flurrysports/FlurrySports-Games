@@ -137,3 +137,13 @@ After completing a quiz, players can share via:
 - 𝕏 X (Twitter)
 
 Message: *"I scored X points on the '[Quiz Title]' trivia quiz on Flurry Sports! Think you can beat me? Let's see! [link]"*
+
+## v3 Update — Additional DB Column Required
+
+Run this SQL in your Supabase dashboard to add game_type tracking:
+
+```sql
+ALTER TABLE attempts ADD COLUMN IF NOT EXISTS game_type TEXT DEFAULT 'trivia';
+```
+
+This enables the per-game leaderboard filtering (Trivia, Snap Decision, Who's That Player).

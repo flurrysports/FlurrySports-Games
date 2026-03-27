@@ -71,8 +71,13 @@
 
 <script src="/js/auth.js"></script>
 <script>
-  function dateSeed() {
-    return parseInt(new Date().toISOString().slice(0,10).replace(/-/g,''));
+  function dateSeed() { return getPacificDateSeed(); }
+  function getPacificDateSeed() {
+    const now = new Date();
+    const isDST = now.getTimezoneOffset() < Math.max(new Date(now.getFullYear(),0,1).getTimezoneOffset(), new Date(now.getFullYear(),6,1).getTimezoneOffset());
+    const offset = isDST ? -7*60 : -8*60;
+    const pacific = new Date(now.getTime() + offset*60000);
+    return parseInt(pacific.toISOString().slice(0,10).replace(/-/g,''));
   }
   function seededRandom(seed) {
     let s = seed;
@@ -243,31 +248,39 @@
     }, 1200);
   }
 
-  function showResults() {
+  async function showResults() {
     markAttemptedLocally(quizId);
     const correct = results.filter(r => r.isCorrect).length;
     const emojiRow = results.map(r => r.isCorrect ? '✅' : '❌').join('');
-    const shareText = `FlurrySports Daily Quiz — ${theme.theme}\n${emojiRow}\nScore: ${totalScore} pts\nPlay at flurrysportsgames.pages.dev`;
+    const { fire } = getStreakDisplay();
+    const finalScore = fire ? Math.round(totalScore * 1.10) : totalScore;
+    const shareText = buildShareText(`Daily Quiz — ${theme.theme}`, finalScore, emojiRow, `${correct}/${questions.length} correct`);
+
+    // Save attempt
+    await saveAttempt(quizId, totalScore, 0, results, 'trivia');
 
     document.getElementById('quiz-container').innerHTML = `
       <div class="results-card">
         <div style="font-size:2rem;margin-bottom:0.5rem;">${theme.emoji}</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.1rem;text-transform:uppercase;color:var(--gold);">Quiz Complete!</div>
-        <div class="results-score">${totalScore.toLocaleString()}</div>
+        ${fire ? `<div style="font-size:0.8rem;color:#ff6400;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.25rem;">🔥 On Fire! +10% bonus applied</div>` : ''}
+        <div class="results-score">${finalScore.toLocaleString()}</div>
         <div class="results-label">${correct} of ${questions.length} correct</div>
         <div style="margin:1.25rem 0;font-size:1.5rem;letter-spacing:0.25rem;">${emojiRow}</div>
-        <div class="share-text" id="share-text">${shareText}</div>
-        <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
-          <button class="btn btn-primary" onclick="copyShare()">📋 Copy Result</button>
+        <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin-bottom:1rem;">
+          <button class="btn btn-primary" onclick="showShareModal(${JSON.stringify(shareText)})">📣 Share Result</button>
           <a href="/" class="btn btn-outline">Back to Games</a>
         </div>
       </div>
     `;
-  }
 
-  function copyShare() {
-    const txt = document.getElementById('share-text').textContent;
-    navigator.clipboard.writeText(txt).then(() => alert('Copied to clipboard!'));
+    // If not logged in, prompt to sign in
+    const user = await getCurrentUser();
+    if (!user) {
+      setTimeout(() => {
+        showPostGameAuthPrompt(quizId, finalScore, 'trivia', `Daily Quiz — ${theme.theme}`);
+      }, 600);
+    }
   }
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -283,7 +296,7 @@
       `;
       return;
     }
-    renderQuestion(0);
+    showCountdown(() => renderQuestion(0));
   });
 </script>
 </body>

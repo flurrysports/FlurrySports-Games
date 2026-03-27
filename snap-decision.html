@@ -139,10 +139,12 @@
 
   .flash-main {
     font-family:'Bebas Neue',sans-serif;
-    font-size:88px;
-    letter-spacing:4px;
+    font-size:clamp(36px, 12vw, 88px);
+    letter-spacing:clamp(1px, 1vw, 4px);
     line-height:1;
     text-align:center;
+    padding:0 1rem;
+    word-break:break-word;
   }
   .result-flash.correct .flash-main { color:#4caf50; }
   .result-flash.neutral-run .flash-main,
@@ -186,8 +188,8 @@
 
   .end-main {
     font-family:'Bebas Neue',sans-serif;
-    font-size:96px;
-    letter-spacing:5px;
+    font-size:clamp(48px, 14vw, 96px);
+    letter-spacing:clamp(2px, 1.5vw, 5px);
     line-height:1;
     margin-bottom:8px;
   }
@@ -366,6 +368,9 @@ function hasAttemptedLocally(id) {
   try { return JSON.parse(localStorage.getItem('fs_attempted') || '[]').includes(id); } catch(e) { return false; }
 }
 </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-config.js"></script>
+  <script>var supabase = (window.supabase || window.Supabase).createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
 </head>
 <body>
 
@@ -1481,6 +1486,7 @@ function resetGame() {
   clearInterval(timerInterval);
 }
 </script>
+<script src="/js/auth.js"></script>
 </body>
 </html>
 <script>

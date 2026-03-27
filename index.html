@@ -161,7 +161,7 @@
 <!-- FEATURED QUIZZES -->
 <div class="section">
   <div class="section-header">
-    <h2 class="section-title">All <span>Quizzes</span></h2>
+    <h2 class="section-title">All <span>Games</span></h2>
     <a href="/quizzes.html" class="btn btn-ghost btn-sm">View All →</a>
   </div>
   <div class="quiz-grid" id="featured-quizzes">
@@ -209,14 +209,20 @@
 <script src="/js/auth.js"></script>
 <script>
   // ─── DATE ─────────────────────────────────────────────────────
-  const today = new Date();
+  const now = new Date();
+  const isDSTNow = now.getTimezoneOffset() < Math.max(new Date(now.getFullYear(),0,1).getTimezoneOffset(), new Date(now.getFullYear(),6,1).getTimezoneOffset());
+  const pacificOff = isDSTNow ? -7*60 : -8*60;
+  const today = new Date(now.getTime() + pacificOff*60000);
   document.getElementById('today-date').textContent = today.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
 
   // ─── DATE SEED (consistent per day) ───────────────────────────
   function dateSeed(offset = 0) {
-    const d = new Date();
-    d.setDate(d.getDate() + offset);
-    return parseInt(d.toISOString().slice(0,10).replace(/-/g,''));
+    const now = new Date();
+    now.setDate(now.getDate() + offset);
+    const isDST = now.getTimezoneOffset() < Math.max(new Date(now.getFullYear(),0,1).getTimezoneOffset(), new Date(now.getFullYear(),6,1).getTimezoneOffset());
+    const off = isDST ? -7*60 : -8*60;
+    const pacific = new Date(now.getTime() + off*60000);
+    return parseInt(pacific.toISOString().slice(0,10).replace(/-/g,''));
   }
 
   function seededRandom(seed) {
@@ -510,7 +516,7 @@
             <span class="lb-username">${u.username}</span>
           </div>
           <span class="lb-score">${u.total.toLocaleString()}</span>
-          <span class="lb-quizzes">${u.count}</span>
+          <span class="lb-games">${u.count} game${u.count!==1?'s':''}</span>
         </div>
       `).join('')}
     `;

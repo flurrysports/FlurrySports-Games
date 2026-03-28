@@ -225,7 +225,7 @@
   function dateSeed(offsetDays) {
     const d = new Date();
     if (offsetDays) d.setUTCDate(d.getUTCDate() + offsetDays);
-    return parseInt(getPacificDateStr(d).replace(/-/g,'')) + 166;
+    return parseInt(getPacificDateStr(d).replace(/-/g,''));
   }
   const now = new Date();
   const pacMs = getPacificOffsetMinutes(now) * 60000;
@@ -323,14 +323,13 @@
 
   const QUIZ_THEMES_HOME = [
     'NFL Legends','NBA History','Super Bowl Trivia','NFL Draft','NBA Awards',
-    'Sports Records','Fantasy Football','MLB History','NHL History','College Football'
+    'Sports Records','Fantasy Football','MLB History','NHL History','College Football',
+    'NFL Playoff History','NBA Championship History','NFL MVPs','Heisman Winners'
   ];
 
   function getDailyQuiz() {
     const seed = dateSeed();
-    const rng = seededRandom(seed);
-    const themeIdx = Math.floor(rng() * QUIZ_THEMES_HOME.length);
-    const themeName = QUIZ_THEMES_HOME[themeIdx];
+    const themeName = QUIZ_THEMES_HOME[(seed + 3) % QUIZ_THEMES_HOME.length];
     return { theme: themeName, id: 'daily-quiz-' + seed };
   }
 
@@ -359,18 +358,49 @@
     { name:"Shai Gilgeous-Alexander", pos:"PG", team:"Oklahoma City Thunder", college:"Kentucky", drafted:"2018 · 1st Round · 11th Pick", clues:["Originally drafted by Charlotte, traded to OKC via LA Clippers","Won the 2024-25 NBA MVP award","Led OKC to the best record in the NBA","From Canada, known as 'SGA'"] },
   ];
 
-  // Player names only - full data lives in whos-that-player.html
-  const HOME_NFL = ['Patrick Mahomes','Josh Allen','Justin Jefferson',"Ja'Marr Chase",'Lamar Jackson',
-    'CeeDee Lamb','Travis Kelce','Jalen Hurts','Brock Purdy','Tyreek Hill'];
-  const HOME_NBA = ['Stephen Curry','Nikola Jokic','Giannis Antetokounmpo','Luka Doncic','Jayson Tatum',
-    'Joel Embiid','Ja Morant','Anthony Edwards','Shai Gilgeous-Alexander','LeBron James','Kevin Durant','Devin Booker'];
+  // Player names for home tile (same shuffle order as whos-that-player.html)
+  const HOME_NFL = ['Patrick Mahomes','Josh Allen','Lamar Jackson','Jalen Hurts','Joe Burrow',
+    'Justin Herbert','Dak Prescott','Tua Tagovailoa','Geno Smith','Brock Purdy',
+    'CeeDee Lamb','Justin Jefferson','Tyreek Hill','Davante Adams','Stefon Diggs',
+    'A.J. Brown',"Ja'Marr Chase",'Cooper Kupp','Amari Cooper','DeAndre Hopkins',
+    'Travis Kelce','Sam LaPorta','Mark Andrews','George Kittle','Kyle Pitts',
+    'Derrick Henry','Christian McCaffrey','Nick Chubb','Saquon Barkley','Breece Hall',
+    "De'Von Achane",'Josh Jacobs','Tony Pollard','Micah Parsons','Myles Garrett',
+    'Nick Bosa','Maxx Crosby','T.J. Watt','Sauce Gardner','Patrick Surtain II',
+    'Trevon Diggs','Roquan Smith','Fred Warner','Jalen Ramsey','Zack Martin',
+    'Quenton Nelson','Darius Leonard','Demario Davis','Dalvin Cook','Austin Ekeler'];
+  const HOME_NBA = ['LeBron James','Stephen Curry','Kevin Durant','Giannis Antetokounmpo','Nikola Jokic',
+    'Luka Doncic','Joel Embiid','Jayson Tatum','Shai Gilgeous-Alexander','Devin Booker',
+    'Anthony Edwards','Ja Morant','Damian Lillard','Kawhi Leonard','Paul George',
+    'Jimmy Butler','Bam Adebayo','Karl-Anthony Towns','Rudy Gobert','Draymond Green',
+    'Klay Thompson','Kyrie Irving','James Harden','Zion Williamson','Brandon Ingram',
+    'Trae Young','Donovan Mitchell','Darius Garland','Evan Mobley','Jaren Jackson Jr.',
+    'Desmond Bane','Jaylen Brown','Pascal Siakam','OG Anunoby','Scottie Barnes',
+    'Victor Wembanyama','Cade Cunningham','Jalen Green','Alperen Sengun','Tyrese Haliburton',
+    "De'Aaron Fox",'Domantas Sabonis','Andrew Wiggins','CJ McCollum','Marcus Smart',
+    'Dejounte Murray','Tyler Herro','Russell Westbrook','Chris Paul','Jordan Poole'];
+  const WTP_BASE_DATE_HOME = '2026-03-28';
+
+  function shuffleHomePool(arr, seed) {
+    var a = arr.slice(), s = seed;
+    function rng() { s = (s * 9301 + 49297) % 233280; return s / 233280; }
+    for (var i = a.length-1; i > 0; i--) { var j = Math.floor(rng()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; }
+    return a;
+  }
+  var homeYearSeed = new Date().getUTCFullYear() * 1000;
+  var homeNFLShuffled = shuffleHomePool(HOME_NFL, homeYearSeed + 1);
+  var homeNBAShuffled = shuffleHomePool(HOME_NBA, homeYearSeed + 2);
 
   function getDailyPlayer() {
     const seed = dateSeed();
-    const rng = seededRandom(seed + 7); // offset so it differs from quiz
-    const useNFL = rng() > 0.5;
-    const pool = useNFL ? HOME_NFL : HOME_NBA;
-    const idx = Math.floor(rng() * pool.length);
+    const d = new Date();
+    const offset = d.getTime() + getPacificOffsetMinutes(d) * 60000;
+    const pacDate = new Date(offset).toISOString().slice(0,10);
+    const jan1 = new Date(pacDate.slice(0,4) + '-01-01T00:00:00Z');
+    const doy = Math.floor((new Date(pacDate + 'T00:00:00Z') - jan1) / 86400000);
+    const useNFL = (doy % 2 === 0);
+    const pool = useNFL ? homeNFLShuffled : homeNBAShuffled;
+    const idx = Math.floor(doy / 2) % pool.length;
     return { name: pool[idx], league: useNFL ? 'NFL' : 'NBA', id: 'wtp-' + seed };
   }
 

@@ -73,7 +73,7 @@ function getPacificOffsetMinutes(d) {
 function dateSeed() {
   var d = new Date();
   var pac = new Date(d.getTime() + getPacificOffsetMinutes(d)*60000);
-  return parseInt(pac.toISOString().slice(0,10).replace(/-/g,'')) + 166;
+  return parseInt(pac.toISOString().slice(0,10).replace(/-/g,''));
 }
 function seededRandom(seed) {
   var s = seed;
@@ -91,8 +91,40 @@ var QUIZ_THEMES = [
   { theme:'Fantasy Football',   emoji:'🎯', questions: q_fantasy },
   { theme:'MLB History',        emoji:'⚾', questions: q_mlb },
   { theme:'NHL History',        emoji:'🏒', questions: q_nhl },
-  { theme:'College Football',   emoji:'🎓', questions: q_college },
+  { theme:'College Football',         emoji:'🎓', questions: q_college },
+  { theme:'NFL Playoff History',      emoji:'🏈', questions: q_nfl_playoffs },
+  { theme:'NBA Championship History', emoji:'🏀', questions: q_nba_champs },
+  { theme:'NFL MVPs',                 emoji:'🏆', questions: q_nfl_mvps },
+  { theme:'Heisman Winners',          emoji:'🎓', questions: q_heisman },
 ];
+function q_nfl_playoffs() { return [
+  {q:"Who did the Eagles beat in Super Bowl LII?",o:["New England Patriots","Kansas City Chiefs","Los Angeles Rams","Pittsburgh Steelers"],c:0},
+  {q:"Which team had the Immaculate Reception play in 1972?",o:["Oakland Raiders","Pittsburgh Steelers","Miami Dolphins","Dallas Cowboys"],c:1},
+  {q:"Who holds the NFL record for most postseason TD passes?",o:["Tom Brady","Joe Montana","Peyton Manning","Aaron Rodgers"],c:0},
+  {q:"Which team came back from 28-3 down in Super Bowl LI?",o:["Atlanta Falcons","New England Patriots","Seattle Seahawks","Denver Broncos"],c:1},
+  {q:"Who scored the game-winning TD in Super Bowl XLIII?",o:["Larry Fitzgerald","Santonio Holmes","Hines Ward","Plaxico Burress"],c:1},
+]; }
+function q_nba_champs() { return [
+  {q:"Which team won the 2023 NBA Championship?",o:["Boston Celtics","Golden State Warriors","Miami Heat","Denver Nuggets"],c:3},
+  {q:"How many titles did the Chicago Bulls win in the 1990s?",o:["4","5","6","7"],c:2},
+  {q:"Who was the 2023 NBA Finals MVP?",o:["Jamal Murray","Nikola Jokic","Aaron Gordon","Michael Porter Jr."],c:1},
+  {q:"Which team has the most NBA championships of all time?",o:["Los Angeles Lakers","Chicago Bulls","Boston Celtics","Golden State Warriors"],c:2},
+  {q:"The Warriors won how many titles from 2015-2022?",o:["3","4","5","6"],c:1},
+]; }
+function q_nfl_mvps() { return [
+  {q:"Who has won the most NFL MVP awards?",o:["Tom Brady","Peyton Manning","Brett Favre","Patrick Mahomes"],c:1},
+  {q:"Which position has won the most NFL MVPs historically?",o:["Running Back","Wide Receiver","Quarterback","Tight End"],c:2},
+  {q:"Patrick Mahomes won his first MVP in which season?",o:["2017","2018","2019","2020"],c:1},
+  {q:"Who won NFL MVP in the 2022 season?",o:["Josh Allen","Patrick Mahomes","Justin Jefferson","Jalen Hurts"],c:1},
+  {q:"Lamar Jackson won back-to-back MVPs in which years?",o:["2018 & 2019","2019 & 2020","2022 & 2023","2023 & 2024"],c:3},
+]; }
+function q_heisman() { return [
+  {q:"Who won the Heisman Trophy in 2023?",o:["Bo Nix","Drake Maye","Jayden Daniels","Michael Penix Jr."],c:2},
+  {q:"Which school has produced the most Heisman winners?",o:["Ohio State","Notre Dame","USC","Alabama"],c:2},
+  {q:"Who was the first player to win the Heisman Trophy twice?",o:["Archie Griffin","Barry Sanders","Tim Tebow","Marcus Allen"],c:0},
+  {q:"Lamar Jackson won the Heisman at which school?",o:["Alabama","Florida","Louisville","Clemson"],c:2},
+  {q:"Tim Tebow won the Heisman playing for which school?",o:["Florida","Alabama","LSU","Georgia"],c:0},
+]; }
 function q_nfl_legends() { return [
   {q:"How many Super Bowl titles did Tom Brady win?",o:["5","6","7","8"],c:2},
   {q:"Jerry Rice won most of his Super Bowls with which team?",o:["Dallas Cowboys","San Francisco 49ers","Oakland Raiders","Green Bay Packers"],c:1},
@@ -167,7 +199,7 @@ function q_college() { return [
 // ── Build today's quiz ───────────────────────────────────
 var seed    = dateSeed();
 var rng     = seededRandom(seed);
-var theme   = QUIZ_THEMES[Math.floor(rng() * QUIZ_THEMES.length)];
+var theme   = QUIZ_THEMES[(seed + 3) % QUIZ_THEMES.length];
 var qs      = theme.questions();
 var quizId  = 'daily-quiz-' + seed;
 
@@ -269,7 +301,7 @@ async function showResults(stored) {
   if (!isReplay) {
     saveResult({ correct:correct, emojiRow:emojiRow, finalScore:finalScore });
     markAttemptedLocally(quizId);
-    await saveAttempt(quizId, totalScore, 0, results, 'trivia');
+    saveAttempt(quizId, totalScore, 0, results, 'trivia');
   }
 
   var pctHtml = '';
@@ -291,15 +323,15 @@ async function showResults(stored) {
       '<div class="results-label">' + correct + ' of ' + qs.length + ' correct</div>' +
       '<div style="margin:1rem 0;font-size:1.5rem;letter-spacing:0.2rem;">' + emojiRow + '</div>' +
       pctHtml +
-      buildShareSection('Daily Quiz — ' + theme.theme, finalScore, correct + '/' + qs.length + ' correct') +
-      '<div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin:1rem 0;">' +
+      '<div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin:1.25rem 0;">' +
+        '<button class="btn btn-primary" onclick="showShareModal(window._lastShareText)">📣 Share Result</button>' +
         '<a href="/" class="btn btn-outline">Back to Games</a>' +
       '</div>' +
       '<div style="border-top:1px solid var(--card-border);padding-top:1.25rem;margin-top:0.5rem;">' +
-        '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray);margin-bottom:0.75rem;">Try Today&#39;s Other Games</div>' +
+        '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray);margin-bottom:0.75rem;">Try Today\'s Other Games</div>' +
         '<div class="other-games">' +
           '<a href="/snap-decision.html" class="other-game-btn">🏈 Snap Decision</a>' +
-          '<a href="/whos-that-player.html" class="other-game-btn">❓ Who&#39;s That, Player?</a>' +
+          '<a href="/whos-that-player.html" class="other-game-btn">❓ Who\'s That, Player?</a>' +
         '</div>' +
       '</div>' +
     '</div>';
@@ -331,10 +363,10 @@ document.addEventListener('DOMContentLoaded', function() {
           '<a href="/" class="btn btn-primary">Back to Games</a>' +
         '</div>' +
         '<div style="border-top:1px solid var(--card-border);padding-top:1.25rem;margin-top:0.5rem;">' +
-          '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray);margin-bottom:0.75rem;">Try Today&#39;s Other Games</div>' +
+          '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray);margin-bottom:0.75rem;">Try Today\'s Other Games</div>' +
           '<div class="other-games">' +
             '<a href="/snap-decision.html" class="other-game-btn">🏈 Snap Decision</a>' +
-            '<a href="/whos-that-player.html" class="other-game-btn">❓ Who&#39;s That, Player?</a>' +
+            '<a href="/whos-that-player.html" class="other-game-btn">❓ Who\'s That, Player?</a>' +
           '</div>' +
         '</div>' +
       '</div>';

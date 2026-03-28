@@ -291,8 +291,8 @@ async function showResults(stored) {
       '<div class="results-label">' + correct + ' of ' + qs.length + ' correct</div>' +
       '<div style="margin:1rem 0;font-size:1.5rem;letter-spacing:0.2rem;">' + emojiRow + '</div>' +
       pctHtml +
-      '<div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin:1.25rem 0;">' +
-        '<button class="btn btn-primary" onclick="showShareModal(window._lastShareText)">📣 Share Result</button>' +
+      buildShareSection('Daily Quiz — ' + theme.theme, finalScore, correct + '/' + qs.length + ' correct') +
+      '<div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin:1rem 0;">' +
         '<a href="/" class="btn btn-outline">Back to Games</a>' +
       '</div>' +
       '<div style="border-top:1px solid var(--card-border);padding-top:1.25rem;margin-top:0.5rem;">' +

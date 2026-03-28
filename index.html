@@ -161,7 +161,7 @@
 <!-- FEATURED QUIZZES -->
 <div class="section">
   <div class="section-header">
-    <h2 class="section-title">All <span>Games</span></h2>
+    <h2 class="section-title">All </h2>
     <a href="/quizzes.html" class="btn btn-ghost btn-sm">View All →</a>
   </div>
   <div class="quiz-grid" id="featured-quizzes">
@@ -202,7 +202,7 @@
 
 <!-- FOOTER -->
 <footer>
-  <img src="/images/logo-wordmark.png" alt="FlurrySports">
+  <a href="https://flurrysports.org/"><img src="/images/logo-wordmark.png" alt="FlurrySports"></a>
   <p>© 2026 <a href="/">FlurrySports</a>. All rights reserved. · New games drop every single day.</p>
 </footer>
 
@@ -484,7 +484,7 @@
   // ─── LEADERBOARD ──────────────────────────────────────────────
   async function loadHomeLeaderboard() {
     const container = document.getElementById('home-leaderboard');
-    const { data, error } = await supabase.from('attempts').select('user_id, score, quiz_id').not('user_id', 'is', null);
+    const { data, error } = await supabase.from('attempts').select('user_id, score, quiz_id, cookie_id');
     if (error) { container.innerHTML = `<p style="text-align:center;padding:2rem;color:var(--gray);">Could not load leaderboard.</p>`; return; }
     if (!data || data.length === 0) { container.innerHTML = `<p style="text-align:center;padding:2rem;color:var(--gray);">No scores yet — be the first!</p>`; return; }
     const userIds = [...new Set(data.map(a => a.user_id).filter(Boolean))];
@@ -494,21 +494,22 @@
     const seenUserQuiz = new Set();
     const userScores = {};
     data.forEach(a => {
-      if (!a.user_id) return;
-      const key = `${a.user_id}__${a.quiz_id}`;
+      const uid = a.user_id || ('guest_' + a.cookie_id);
+      if (!uid) return;
+      const key = uid + '__' + a.quiz_id;
       if (seenUserQuiz.has(key)) return;
       seenUserQuiz.add(key);
-      const username = profileMap[a.user_id] || 'Player';
-      if (!userScores[a.user_id]) userScores[a.user_id] = { username, total: 0, count: 0 };
-      userScores[a.user_id].total += a.score;
-      userScores[a.user_id].count++;
+      const username = a.user_id ? (profileMap[a.user_id] || 'Player') : 'Guest';
+      if (!userScores[uid]) userScores[uid] = { username, total: 0, count: 0 };
+      userScores[uid].total += a.score;
+      userScores[uid].count++;
     });
     const sorted = Object.values(userScores).sort((a, b) => b.total - a.total).slice(0, 5);
     if (sorted.length === 0) { container.innerHTML = `<p style="text-align:center;padding:2rem;color:var(--gray);">No scores yet — be the first!</p>`; return; }
     const medals = ['🥇','🥈','🥉'];
     const rankClass = ['top-1','top-2','top-3','',''];
     container.innerHTML = `
-      <div class="lb-row header"><span>Rank</span><span>Player</span><span>Score</span><span>Games</span></div>
+      <div class="lb-row header"><span>Rank</span><span>Player</span><span>Score</span></div>
       ${sorted.map((u, i) => `
         <div class="lb-row ${rankClass[i] || ''}">
           <span class="lb-rank">${medals[i] || i+1}</span>
@@ -517,7 +518,7 @@
             <span class="lb-username">${u.username}</span>
           </div>
           <span class="lb-score">${u.total.toLocaleString()}</span>
-          <span class="lb-games">${u.count} game${u.count!==1?'s':''}</span>
+
         </div>
       `).join('')}
     `;

@@ -1498,7 +1498,6 @@ function updateScore() {
 }
 
 async function showTouchdown(isReplay) {
-  markAttemptedLocally('snap-decision-v1');
   document.getElementById('gameScreen').classList.remove('active');
   const tdScreen = document.getElementById('tdScreen');
   tdScreen.style.display = 'block';
@@ -1509,6 +1508,7 @@ async function showTouchdown(isReplay) {
   // Store result immediately
   if (!isReplay) {
     storeSnapResult({ type:'td', score: finalScore, playHistory, decisionTimes });
+    markAttemptedLocally('snap-decision-v1');
   }
 
   document.getElementById('tdScore').textContent = finalScore.toLocaleString();
@@ -1536,24 +1536,19 @@ async function showTouchdown(isReplay) {
     }
   } catch(e) {}
 
-  // Share text
-  const shareEmoji = playHistory.map(h => h==='correct'?'✅':h==='neutral'?'🟡':'❌').join('');
-  window._lastShareText = buildShareText('Snap Decision', finalScore, shareEmoji, `${playHistory.filter(h=>h==='correct').length}/4 correct reads`);
-
-  // Add share button
-  const shareBtn = document.createElement('button');
-  shareBtn.className = 'btn-secondary';
-  shareBtn.style.cssText = 'background:transparent;border:1px solid #0a2a0a;border-radius:8px;padding:11px 40px;font-family:Barlow Condensed,sans-serif;font-size:12px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;width:100%;max-width:420px;color:#2a5a2a;margin-bottom:10px;display:block;';
-  shareBtn.textContent = '📣 Share Result';
-  shareBtn.onclick = () => showShareModal(window._lastShareText);
+  // Share section - unified style
+  const correctReads = playHistory.filter(h=>h==='correct').length;
+  const shareDiv = document.createElement('div');
+  shareDiv.style.cssText = 'width:100%;max-width:440px;';
+  shareDiv.innerHTML = buildShareSection('Snap Decision', finalScore, correctReads + '/4 correct reads');
   const primaryBtn = document.querySelector('#tdScreen .btn-primary');
-  if (primaryBtn) primaryBtn.after(shareBtn);
+  if (primaryBtn) primaryBtn.after(shareDiv);
 
   // Other games
   const otherDiv = document.createElement('div');
-  otherDiv.style.cssText = 'border-top:1px solid #0a2a0a;padding-top:1rem;margin-top:0.5rem;width:100%;max-width:420px;text-align:center;';
-  otherDiv.innerHTML = '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:#1a3a1a;margin-bottom:0.625rem;">Try Today&#39;s Other Games</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:0.625rem;"><a href="/daily-quiz.html" style="background:rgba(76,175,80,0.05);border:1px solid #1a3a1a;border-radius:8px;padding:0.75rem;text-decoration:none;color:#2a5a2a;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;text-align:center;">🎯 Daily Quiz</a><a href="/whos-that-player.html" style="background:rgba(76,175,80,0.05);border:1px solid #1a3a1a;border-radius:8px;padding:0.75rem;text-decoration:none;color:#2a5a2a;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;text-align:center;">❓ Who&#39;s That, Player?</a></div>';
-  if (shareBtn.parentNode) shareBtn.after(otherDiv);
+  otherDiv.style.cssText = 'border-top:1px solid #0a2a0a;padding-top:1rem;margin-top:0.75rem;width:100%;max-width:420px;text-align:center;';
+  otherDiv.innerHTML = '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:#1a3a1a;margin-bottom:0.5rem;">Try Today&#39;s Other Games</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;"><a href="/daily-quiz.html" style="background:rgba(76,175,80,0.05);border:1px solid #1a3a1a;border-radius:8px;padding:0.625rem;text-decoration:none;color:#2a5a2a;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.8rem;text-transform:uppercase;text-align:center;">🎯 Daily Quiz</a><a href="/whos-that-player.html" style="background:rgba(76,175,80,0.05);border:1px solid #1a3a1a;border-radius:8px;padding:0.625rem;text-decoration:none;color:#2a5a2a;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.8rem;text-transform:uppercase;text-align:center;">❓ Who&#39;s That, Player?</a></div>';
+  if (shareDiv.parentNode) shareDiv.after(otherDiv);
 
   if (!isReplay) {
     await saveAttempt('snap-decision-v1', score, 0, { plays: playHistory, decisionTimes }, 'snap_decision');
@@ -1565,7 +1560,6 @@ async function showTouchdown(isReplay) {
 }
 
 async function showLoss(headline, desc, badge, isReplay) {
-  markAttemptedLocally('snap-decision-v1');
   document.getElementById('gameScreen').classList.remove('active');
   const lossScreen = document.getElementById('lossScreen');
   lossScreen.style.display = 'block';
@@ -1573,6 +1567,7 @@ async function showLoss(headline, desc, badge, isReplay) {
   // Store result immediately
   if (!isReplay) {
     storeSnapResult({ type:'loss', score, playHistory, currentPlay, headline, desc, badge });
+    markAttemptedLocally('snap-decision-v1');
   }
 
   document.getElementById('lossMain').textContent = headline;
@@ -1587,18 +1582,16 @@ async function showLoss(headline, desc, badge, isReplay) {
   // Share
   const shareEmoji = playHistory.map(h => h==='correct'?'✅':h==='neutral'?'🟡':'❌').join('');
   window._lastLossShareText = buildShareText('Snap Decision', score, shareEmoji, `Fell on play ${currentPlay+1} of 4`);
-  const shareBtn = document.createElement('button');
-  shareBtn.style.cssText = 'background:transparent;border:1px solid #2a0808;border-radius:8px;padding:11px 40px;font-family:Barlow Condensed,sans-serif;font-size:12px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;width:100%;max-width:400px;color:#5a2020;margin-bottom:10px;display:block;';
-  shareBtn.textContent = '📣 Share Result';
-  shareBtn.onclick = () => showShareModal(window._lastLossShareText);
+  const lossShareDiv = document.createElement('div');
+  lossShareDiv.style.cssText = 'width:100%;max-width:400px;';
+  lossShareDiv.innerHTML = buildShareSection('Snap Decision', score, 'Fell on play ' + (currentPlay+1) + ' of 4');
   const lossPrimaryBtn = document.querySelector('#lossScreen .btn-primary');
-  if (lossPrimaryBtn) lossPrimaryBtn.after(shareBtn);
+  if (lossPrimaryBtn) lossPrimaryBtn.after(lossShareDiv);
 
-  // Other games
   const otherDiv = document.createElement('div');
-  otherDiv.style.cssText = 'border-top:1px solid #2a0808;padding-top:1rem;margin-top:0.5rem;width:100%;max-width:400px;text-align:center;';
-  otherDiv.innerHTML = '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:#3a1a1a;margin-bottom:0.625rem;">Try Today&#39;s Other Games</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:0.625rem;"><a href="/daily-quiz.html" style="background:rgba(192,57,43,0.05);border:1px solid #2a0808;border-radius:8px;padding:0.75rem;text-decoration:none;color:#5a2020;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;text-align:center;">🎯 Daily Quiz</a><a href="/whos-that-player.html" style="background:rgba(192,57,43,0.05);border:1px solid #2a0808;border-radius:8px;padding:0.75rem;text-decoration:none;color:#5a2020;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;text-align:center;">❓ Who&#39;s That, Player?</a></div>';
-  if (shareBtn.parentNode) shareBtn.after(otherDiv);
+  otherDiv.style.cssText = 'border-top:1px solid #2a0808;padding-top:1rem;margin-top:0.75rem;width:100%;max-width:400px;text-align:center;';
+  otherDiv.innerHTML = '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:#3a1a1a;margin-bottom:0.5rem;">Try Today&#39;s Other Games</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;"><a href="/daily-quiz.html" style="background:rgba(192,57,43,0.05);border:1px solid #2a0808;border-radius:8px;padding:0.625rem;text-decoration:none;color:#5a2020;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.8rem;text-transform:uppercase;text-align:center;">🎯 Daily Quiz</a><a href="/whos-that-player.html" style="background:rgba(192,57,43,0.05);border:1px solid #2a0808;border-radius:8px;padding:0.625rem;text-decoration:none;color:#5a2020;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.8rem;text-transform:uppercase;text-align:center;">❓ Who&#39;s That, Player?</a></div>';
+  if (lossShareDiv.parentNode) lossShareDiv.after(otherDiv);
 
   if (!isReplay) {
     await saveAttempt('snap-decision-v1', score, 0, { plays: playHistory }, 'snap_decision');

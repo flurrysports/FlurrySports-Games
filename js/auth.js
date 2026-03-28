@@ -283,6 +283,34 @@ function shareScore(quizTitle, score, quizUrl) {
   };
 }
 
+
+// ─── UNIFIED SHARE SECTION (matches quiz.html style) ─────────────
+function buildShareSection(gameTitle, score, extraLine) {
+  const msg = 'I scored ' + score.toLocaleString() + ' pts on ' + gameTitle + ' — FlurrySports Games! Can you beat me? https://flurrysportsgames.pages.dev';
+  const encoded = encodeURIComponent(msg);
+  window._shareLinks = {
+    sms: 'sms:?body=' + encoded,
+    facebook: 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent('https://flurrysportsgames.pages.dev') + '&quote=' + encoded,
+    x: 'https://twitter.com/intent/tweet?text=' + encoded
+  };
+  return '<div class="share-section">' +
+    '<div class="share-title">Challenge your friends!</div>' +
+    '<div class="share-buttons">' +
+      '<button class="share-btn share-sms" onclick="triggerShare(\'sms\')">💬 Text</button>' +
+      '<button class="share-btn share-fb" onclick="triggerShare(\'facebook\')">📘 Facebook</button>' +
+      '<button class="share-btn share-x" onclick="triggerShare(\'x\')">𝕏 Post</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function triggerShare(platform) {
+  if (!window._shareLinks) return;
+  const url = window._shareLinks[platform];
+  if (!url) return;
+  if (platform === 'sms') window.location.href = url;
+  else window.open(url, '_blank', 'noopener');
+}
+
 function buildShareText(gameTitle, score, emoji, extraLine) {
   const base = `FlurrySports · ${gameTitle}\n${emoji}\nScore: ${score.toLocaleString()} pts${extraLine ? '\n' + extraLine : ''}\nPlay at flurrysportsgames.pages.dev`;
   return base;

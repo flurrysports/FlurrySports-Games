@@ -49,7 +49,7 @@
 
     /* Full table */
     .lb-table-card { background:var(--card-bg); border:1px solid var(--card-border); border-radius:16px; overflow:hidden; margin-bottom:1.5rem; }
-    .lb-row { display:grid; grid-template-columns:48px 1fr auto auto; gap:0.75rem; padding:0.875rem 1.25rem; border-bottom:1px solid var(--card-border); align-items:center; }
+    .lb-row { display:grid; grid-template-columns:48px 1fr auto; gap:0.75rem; padding:0.875rem 1.25rem; border-bottom:1px solid var(--card-border); align-items:center; }
     .lb-row:last-child { border-bottom:none; }
     .lb-row.header { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:0.75rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--gray); background:rgba(255,255,255,0.02); padding:0.6rem 1.25rem; }
     .lb-row.top-1 { background:rgba(245,197,24,0.05); }
@@ -59,7 +59,7 @@
     .lb-rank { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:1.1rem; text-align:center; }
     .lb-user { display:flex; align-items:center; gap:0.75rem; min-width:0; }
     .lb-avatar { width:32px; height:32px; border-radius:50%; background:rgba(245,197,24,0.15); border:1px solid rgba(245,197,24,0.3); display:flex; align-items:center; justify-content:center; font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:0.85rem; color:var(--gold); flex-shrink:0; }
-    .lb-username { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .lb-username { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:0.95rem; word-break:break-all; overflow-wrap:anywhere; }
     .lb-score { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:1.1rem; color:var(--gold); text-align:right; white-space:nowrap; }
     .lb-games { font-size:0.8rem; color:var(--gray); text-align:right; white-space:nowrap; }
     .my-rank-section { margin-bottom:2rem; }
@@ -122,7 +122,7 @@
 </div>
 
 <footer>
-  <img src="/images/logo-icon-blue.png" alt="FlurrySports" style="height:48px;width:auto;">
+  <a href="https://flurrysports.org/"><img src="/images/logo-icon-blue.png" alt="FlurrySports" style="height:80px;width:auto;"></a>
   <p>© 2026 <a href="/">FlurrySports</a>. All rights reserved.</p>
 </footer>
 
@@ -153,7 +153,8 @@
 
     // Fetch all attempts — filter by quiz_id prefix on client side
     // quiz_id patterns: 'daily-quiz-*' = trivia, 'snap-decision-*' = snap, 'wtp-*' = whos that player
-    let query = supabase.from('attempts').select('user_id, score, quiz_id, created_at').not('user_id', 'is', null);
+    // Include all attempts (including guests - they appear as "Guest")
+    let query = supabase.from('attempts').select('user_id, score, quiz_id, created_at, cookie_id');
 
     if (currentTime === 'weekly') {
       const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -190,18 +191,19 @@
     const profileMap = {};
     (profiles || []).forEach(p => { profileMap[p.id] = p.username; });
 
-    // Aggregate scores — one attempt per user per game
+    // Aggregate scores — one attempt per identity per game
     const seenUserGame = new Set();
     const userMap = {};
     data.forEach(a => {
-      if (!a.user_id) return;
-      const key = `${a.user_id}__${a.quiz_id}`;
+      const uid = a.user_id || ('guest_' + a.cookie_id);
+      if (!uid) return;
+      const key = uid + '__' + a.quiz_id;
       if (seenUserGame.has(key)) return;
       seenUserGame.add(key);
-      const username = profileMap[a.user_id] || 'Anonymous';
-      if (!userMap[a.user_id]) userMap[a.user_id] = { uid: a.user_id, username, total: 0, count: 0 };
-      userMap[a.user_id].total += a.score;
-      userMap[a.user_id].count++;
+      const username = a.user_id ? (profileMap[a.user_id] || 'Player') : 'Guest';
+      if (!userMap[uid]) userMap[uid] = { uid, username, total: 0, count: 0 };
+      userMap[uid].total += a.score;
+      userMap[uid].count++;
     });
 
     const sorted = Object.values(userMap).sort((a, b) => b.total - a.total);
@@ -223,7 +225,7 @@
     const medals = ['🥇','🥈','🥉'];
     const rankClasses = ['top-1','top-2','top-3'];
     document.getElementById('lb-table').innerHTML = `
-      <div class="lb-row header"><span>Rank</span><span>Player</span><span>Score</span><span>${gameLabel}</span></div>
+      <div class="lb-row header"><span>Rank</span><span>Player</span><span>Score</span></div>
       ${top25.map((u, i) => `
         <div class="lb-row ${rankClasses[i] || ''}">
           <span class="lb-rank">${medals[i] || (i+1)}</span>
@@ -232,7 +234,6 @@
             <span class="lb-username">${u.username}</span>
           </div>
           <span class="lb-score">${u.total.toLocaleString()}</span>
-          <span class="lb-games">${u.count}</span>
         </div>
       `).join('')}
     `;
@@ -254,7 +255,6 @@
               <span class="lb-username">${me.username} <span style="color:var(--gold);font-size:0.75rem;">(You)</span></span>
             </div>
             <span class="lb-score">${me.total.toLocaleString()}</span>
-            <span class="lb-games">${me.count}</span>
           </div>
         `;
       } else {

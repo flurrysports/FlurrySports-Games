@@ -175,6 +175,9 @@
       const wtpRows  = rawData.filter(a => (a.quiz_id||'').startsWith('wtp-'));
       const quizRows = rawData.filter(a => (a.quiz_id||'').startsWith('daily-quiz-'));
       console.log('  snap rows:', snapRows.length, 'wtp rows:', wtpRows.length, 'quiz rows:', quizRows.length);
+      // Show all unique quiz_ids so we can see what's actually in the DB
+      const uniqueIds = [...new Set(rawData.map(a => a.quiz_id))];
+      console.log('  All quiz_ids in DB:', uniqueIds);
     }
 
     // Filter by category using quiz_id prefix

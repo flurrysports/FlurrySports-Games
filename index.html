@@ -7,9 +7,10 @@
   <meta name="description" content="Play daily sports games with FlurrySports. New games every day covering NFL, NBA, trivia, and more.">
   <link rel="icon" type="image/png" href="/images/logo-crown.png">
   <link rel="stylesheet" href="/css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
   <script src="/js/supabase-config.js"></script>
-  <script>var supabase = (window.supabase || window.Supabase).createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
+  <script>var _supa = window.supabase || window.Supabase || {};
+  var supabase = (_supa.createClient || function(){ throw new Error('Supabase SDK not loaded'); }).call(_supa, SUPABASE_URL, SUPABASE_ANON_KEY);</script>
   <style>
     /* ─── TODAY'S GAMES SECTION ─── */
     .todays-games-section {
@@ -514,7 +515,7 @@
   // ─── LEADERBOARD ──────────────────────────────────────────────
   async function loadHomeLeaderboard() {
     const container = document.getElementById('home-leaderboard');
-    const { data, error } = await supabase.from('attempts').select('user_id, score, quiz_id, cookie_id');
+    const { data, error } = await supabase.from('attempts').select('user_id, score, quiz_id, cookie_id').range(0, 9999);
     if (error) { container.innerHTML = `<p style="text-align:center;padding:2rem;color:var(--gray);">Could not load leaderboard.</p>`; return; }
     if (!data || data.length === 0) { container.innerHTML = `<p style="text-align:center;padding:2rem;color:var(--gray);">No scores yet — be the first!</p>`; return; }
     const userIds = [...new Set(data.map(a => a.user_id).filter(Boolean))];
@@ -524,15 +525,14 @@
     const seenUserQuiz = new Set();
     const userScores = {};
     data.forEach(a => {
-      const uid = a.user_id || ('guest_' + a.cookie_id);
-      if (!uid) return;
-      const key = uid + '__' + a.quiz_id;
+      if (!a.user_id) return; // guests not shown on leaderboard
+      const key = a.user_id + '__' + a.quiz_id;
       if (seenUserQuiz.has(key)) return;
       seenUserQuiz.add(key);
-      const username = a.user_id ? (profileMap[a.user_id] || 'Player') : 'Guest';
-      if (!userScores[uid]) userScores[uid] = { username, total: 0, count: 0 };
-      userScores[uid].total += a.score;
-      userScores[uid].count++;
+      const username = profileMap[a.user_id] || 'Player';
+      if (!userScores[a.user_id]) userScores[a.user_id] = { username, total: 0, count: 0 };
+      userScores[a.user_id].total += a.score;
+      userScores[a.user_id].count++;
     });
     const sorted = Object.values(userScores).sort((a, b) => b.total - a.total).slice(0, 5);
     if (sorted.length === 0) { container.innerHTML = `<p style="text-align:center;padding:2rem;color:var(--gray);">No scores yet — be the first!</p>`; return; }

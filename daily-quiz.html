@@ -6,9 +6,10 @@
   <title>Daily Quiz — FlurrySports Games</title>
   <link rel="icon" type="image/png" href="/images/logo-crown.png">
   <link rel="stylesheet" href="/css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
   <script src="/js/supabase-config.js"></script>
-  <script>var supabase = (window.supabase || window.Supabase).createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
+  <script>var _supa = window.supabase || window.Supabase || {};
+  var supabase = (_supa.createClient || function(){ throw new Error('Supabase SDK not loaded'); }).call(_supa, SUPABASE_URL, SUPABASE_ANON_KEY);</script>
   <style>
     .quiz-shell { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; position: relative; z-index: 1; }
     .q-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: 2rem; margin-bottom: 1.5rem; }
@@ -208,7 +209,17 @@ function saveResult(data) {
   try { localStorage.setItem('fs_r_' + quizId, JSON.stringify(data)); } catch(e) {}
 }
 function loadResult() {
-  try { return JSON.parse(localStorage.getItem('fs_r_' + quizId)); } catch(e) { return null; }
+  try {
+    // Check current key first
+    var r = localStorage.getItem('fs_r_' + quizId);
+    if (r) return JSON.parse(r);
+    // Fallback: check old key format (with +166 salt) for backward compatibility
+    var oldKey = 'fs_r_daily-quiz-' + (seed + 166);
+    var r2 = localStorage.getItem(oldKey);
+    if (r2) return JSON.parse(r2);
+    // Also check hasAttemptedLocally with old salted quizId
+    return null;
+  } catch(e) { return null; }
 }
 
 // ── Game state ───────────────────────────────────────────
@@ -301,7 +312,7 @@ async function showResults(stored) {
   if (!isReplay) {
     saveResult({ correct:correct, emojiRow:emojiRow, finalScore:finalScore });
     markAttemptedLocally(quizId);
-    saveAttempt(quizId, totalScore, 0, results, 'trivia');
+    await saveAttempt(quizId, totalScore, 0, results, 'trivia');
   }
 
   var pctHtml = '';
@@ -310,9 +321,7 @@ async function showResults(stored) {
     if (pct !== null) pctHtml = '<div class="percentile-badge">Better than ' + pct + '% of players today</div>';
   } catch(e) {}
 
-  window._lastShareText = buildShareText(
-    'Daily Quiz — ' + theme.theme, finalScore, emojiRow, correct + '/' + qs.length + ' correct'
-  );
+  // share section built inline via buildShareSection
 
   document.getElementById('quiz-container').innerHTML =
     '<div class="results-card">' +
@@ -323,8 +332,8 @@ async function showResults(stored) {
       '<div class="results-label">' + correct + ' of ' + qs.length + ' correct</div>' +
       '<div style="margin:1rem 0;font-size:1.5rem;letter-spacing:0.2rem;">' + emojiRow + '</div>' +
       pctHtml +
-      '<div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin:1.25rem 0;">' +
-        '<button class="btn btn-primary" onclick="showShareModal(window._lastShareText)">📣 Share Result</button>' +
+      buildShareSection('Daily Quiz — ' + theme.theme, finalScore, correct + '/' + qs.length + ' correct') +
+      '<div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin:0.75rem 0;">' +
         '<a href="/" class="btn btn-outline">Back to Games</a>' +
       '</div>' +
       '<div style="border-top:1px solid var(--card-border);padding-top:1.25rem;margin-top:0.5rem;">' +
@@ -353,7 +362,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (stored) { showResults(stored); return; }
 
   // If locally marked as attempted but no stored result (old play)
-  if (hasAttemptedLocally(quizId)) {
+  if (hasAttemptedLocally(quizId) || hasAttemptedLocally('daily-quiz-' + (seed + 166))) {
     document.getElementById('quiz-container').innerHTML =
       '<div class="results-card">' +
         '<div style="font-size:2rem;margin-bottom:1rem;">✅</div>' +

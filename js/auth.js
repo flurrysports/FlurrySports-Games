@@ -64,23 +64,34 @@ async function hasAttemptedQuiz(gameId) {
 // ─── SAVE ATTEMPT ─────────────────────────────────────────────────
 // game_type: 'trivia' | 'snap_decision' | 'whos_that_player'
 async function saveAttempt(gameId, score, timeTakenSeconds, answers, gameType) {
-  const { data: { user } } = await supabase.auth.getUser();
-  const cookieId = getCookieId();
-  const { fire } = getStreakDisplay();
-  const finalScore = fire ? Math.round(score * 1.10) : score;
-  const attemptData = {
-    quiz_id: gameId,
-    score: finalScore,
-    time_taken_seconds: timeTakenSeconds,
-    answers: answers,
-    cookie_id: cookieId
-  };
-  if (user) attemptData.user_id = user.id;
-  const { data, error } = await supabase.from('attempts').insert(attemptData).select().single();
-  if (error) { console.error('Save attempt error:', error); return null; }
-  markAttemptedLocally(gameId);
-  updateStreak();
-  return data;
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    const cookieId = getCookieId();
+    const { fire } = getStreakDisplay();
+    const finalScore = fire ? Math.round(score * 1.10) : score;
+    // Simplify answers to plain JSON-safe object
+    let safeAnswers = null;
+    try { safeAnswers = JSON.parse(JSON.stringify(answers)); } catch(e) {}
+    const attemptData = {
+      quiz_id: gameId,
+      score: finalScore,
+      cookie_id: cookieId
+    };
+    if (safeAnswers !== null) attemptData.answers = safeAnswers;
+    if (timeTakenSeconds) attemptData.time_taken_seconds = timeTakenSeconds;
+    if (user) attemptData.user_id = user.id;
+    const { data, error } = await supabase.from('attempts').insert(attemptData).select().single();
+    if (error) {
+      console.error('Save attempt error:', error.message, error.details, error.hint);
+      return null;
+    }
+    markAttemptedLocally(gameId);
+    updateStreak();
+    return data;
+  } catch(e) {
+    console.error('saveAttempt exception:', e);
+    return null;
+  }
 }
 
 // ─── SAVE PENDING SCORE (for post-game sign-up) ────────────────────

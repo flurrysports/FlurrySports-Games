@@ -6,9 +6,10 @@
   <title>Who's That, Player? — FlurrySports Games</title>
   <link rel="icon" type="image/png" href="/images/logo-crown.png">
   <link rel="stylesheet" href="/css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
   <script src="/js/supabase-config.js"></script>
-  <script>var supabase = (window.supabase || window.Supabase).createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
+  <script>var _supa = window.supabase || window.Supabase || {};
+  var supabase = (_supa.createClient || function(){ throw new Error('Supabase SDK not loaded'); }).call(_supa, SUPABASE_URL, SUPABASE_ANON_KEY);</script>
   <style>
     .wtp-shell { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; position: relative; z-index: 1; }
     .wtp-hero {
@@ -335,7 +336,15 @@ function getPacificOffsetMinutes(d) {
     try { localStorage.setItem('fs_wtp_' + player.id, JSON.stringify(data)); } catch(e) {}
   }
   function loadWTPResult() {
-    try { return JSON.parse(localStorage.getItem('fs_wtp_' + player.id)); } catch(e) { return null; }
+    try {
+      var r = localStorage.getItem('fs_wtp_' + player.id);
+      if (r) return JSON.parse(r);
+      // Fallback: check old key with +166 salt
+      var oldId = 'wtp-' + (parseInt(player.id.replace('wtp-','')) + 166);
+      var r2 = localStorage.getItem('fs_wtp_' + oldId);
+      if (r2) return JSON.parse(r2);
+      return null;
+    } catch(e) { return null; }
   }
 
   function renderGame() {
@@ -603,7 +612,7 @@ function getPacificOffsetMinutes(d) {
       showResult(stored.correct, stored.finalPts || 0, true, stored);
       return;
     }
-    if (hasAttemptedLocally(player.id)) {
+    if (hasAttemptedLocally(player.id) || hasAttemptedLocally('wtp-' + (parseInt(player.id.replace('wtp-','')) + 166))) {
       // Played before this update — no stored data, show fallback
       showResult(false, 0, true, { correct: false, finalPts: 0, noData: true });
       return;

@@ -495,25 +495,54 @@
   // ─── MANAGE QUIZZES ────────────────────────────────────────────
   async function loadManageQuizzes() {
     const container = document.getElementById('manage-list');
-    const { data: quizzes, error } = await supabase.from('quizzes').select('*').order('created_at', { ascending: false });
+    const [{ data: quizzes, error }, { data: attemptCounts }] = await Promise.all([
+      supabase.from('quizzes').select('*').order('created_at', { ascending: false }),
+      supabase.from('attempts').select('quiz_id')
+    ]);
     if (error || !quizzes) { container.innerHTML = '<p style="color:var(--error)">Failed to load.</p>'; return; }
     if (quizzes.length === 0) { container.innerHTML = '<p style="color:var(--gray)">No quizzes yet. Add your first one!</p>'; return; }
-    container.innerHTML = quizzes.map(q => `
-      <div class="quiz-list-item">
-        <div style="flex:1;">
-          <h4>${q.title}</h4>
-          <div style="font-size:0.8rem;color:var(--gray);margin-top:0.2rem;">${q.type === 'multiple_choice' ? '🎯 Multiple Choice' : '📋 Rankings'} ${q.theme ? `· ${q.theme}` : ''} ${q.timer_seconds ? `· ${formatTime(q.timer_seconds)} timer` : ''}</div>
-        </div>
-        <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
-          <span style="font-size:0.75rem;padding:0.2rem 0.6rem;border-radius:4px;${q.is_active ? 'background:rgba(0,214,143,0.15);color:var(--success);' : 'background:rgba(255,77,109,0.1);color:var(--error);'}">${q.is_active ? 'Active' : 'Hidden'}</span>
-          <button class="btn btn-ghost btn-sm" onclick="toggleQuiz('${q.id}', ${q.is_active})">${q.is_active ? 'Hide' : 'Show'}</button>
-          <button class="btn btn-outline btn-sm" onclick="editQuiz('${q.id}')">✏️ Edit</button>
-          <a class="btn btn-ghost btn-sm" href="/quiz.html?id=${q.id}" target="_blank">Preview</a>
-          <button class="btn btn-sm" style="background:rgba(255,77,109,0.15);color:var(--error);border:1px solid rgba(255,77,109,0.3);" onclick="deleteQuiz('${q.id}')">Delete</button>
-        </div>
-      </div>
-    `).join('');
+
+    // Build play count map
+    const playMap = {};
+    (attemptCounts || []).forEach(a => {
+      if (a.quiz_id) playMap[a.quiz_id] = (playMap[a.quiz_id] || 0) + 1;
+    });
+
+    // Store quiz data globally so button handlers can access by id
+    window._adminQuizzes = quizzes;
+    container.innerHTML = quizzes.map(q => {
+      const plays = playMap[q.id] || 0;
+      const activeStyle = q.is_active
+        ? 'background:rgba(0,214,143,0.15);color:var(--success);'
+        : 'background:rgba(255,77,109,0.1);color:var(--error);';
+      return [
+        '<div class="quiz-list-item">',
+          '<div style="flex:1;">',
+            '<h4>', q.title, '</h4>',
+            '<div style="font-size:0.8rem;color:var(--gray);margin-top:0.2rem;">',
+              (q.type === 'multiple_choice' ? '🎯 Multiple Choice' : '📋 Rankings'),
+              (q.theme ? ' · ' + q.theme : ''),
+              (q.timer_seconds ? ' · ' + formatTime(q.timer_seconds) + ' timer' : ''),
+            '</div>',
+            '<div style="font-size:0.78rem;color:var(--gold);margin-top:0.3rem;font-family:Barlow Condensed,sans-serif;font-weight:700;">',
+              plays.toLocaleString(), ' play', (plays !== 1 ? 's' : ''),
+            '</div>',
+          '</div>',
+          '<div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">',
+            '<span style="font-size:0.75rem;padding:0.2rem 0.6rem;border-radius:4px;', activeStyle, '">', (q.is_active ? 'Active' : 'Hidden'), '</span>',
+            '<button class="btn btn-ghost btn-sm" data-qid="', q.id, '" data-active="', q.is_active, '" onclick="toggleQuizById(this)">', (q.is_active ? 'Hide' : 'Show'), '</button>',
+            '<button class="btn btn-outline btn-sm" data-qid="', q.id, '" onclick="editQuizById(this)">✏️ Edit</button>',
+            '<a class="btn btn-ghost btn-sm" href="/quiz.html?id=', q.id, '" target="_blank">Preview</a>',
+            '<button class="btn btn-sm" style="background:rgba(255,77,109,0.15);color:var(--error);border:1px solid rgba(255,77,109,0.3);" data-qid="', q.id, '" onclick="deleteQuizById(this)">Delete</button>',
+          '</div>',
+        '</div>'
+      ].join('');
+    }).join('');
   }
+
+  function toggleQuizById(btn) { const id = btn.dataset.qid; const active = btn.dataset.active === 'true'; toggleQuiz(id, active); }
+  function editQuizById(btn) { editQuiz(btn.dataset.qid); }
+  function deleteQuizById(btn) { deleteQuiz(btn.dataset.qid); }
 
   async function toggleQuiz(id, current) {
     await supabase.from('quizzes').update({ is_active: !current }).eq('id', id);
@@ -690,14 +719,11 @@
         '</tbody></table>';
     }
 
-    // Quiz plays table (regular quizzes by UUID)
-    const { data: allAttemptsForQuiz } = await supabase
-      .from('attempts')
-      .select('quiz_id, score')
-      .not('quiz_id', 'like', 'daily-quiz-%')
-      .not('quiz_id', 'like', 'wtp-%')
-      .not('quiz_id', 'like', 'snap-decision%')
-      .range(0, 9999);
+    // Quiz plays table - filter client-side from allAttempts already fetched
+    const allAttemptsForQuiz = (allAttempts || []).filter(a => {
+      const id = (a.quiz_id || '');
+      return !id.startsWith('daily-quiz-') && !id.startsWith('wtp-') && !id.startsWith('snap-decision');
+    });
 
     const { data: allQuizzes } = await supabase.from('quizzes').select('id, title');
     const quizTitleMap = {};

@@ -357,14 +357,17 @@ function showShareModal(shareText) {
 
 // ─── COUNTDOWN OVERLAY ────────────────────────────────────────────
 function showCountdown(onComplete) {
-  // Remove any existing overlay
   let overlay = document.getElementById('countdown-overlay');
   if (overlay) overlay.remove();
 
-  // Create overlay matching quiz.html style (light blue numbers)
   overlay = document.createElement('div');
   overlay.id = 'countdown-overlay';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(8,12,46,0.97);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;';
+
+  // Snow canvas — identical to quiz.html
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:absolute;inset:0;pointer-events:none;';
+  overlay.appendChild(canvas);
 
   const numEl = document.createElement('div');
   numEl.id = 'countdown-num';
@@ -387,6 +390,35 @@ function showCountdown(onComplete) {
     document.head.appendChild(s);
   }
 
+  // Snow effect — same as quiz.html
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+  const flakes = Array.from({ length: 130 }, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 4 + 1,
+    speed: Math.random() * 1.5 + 0.5,
+    drift: Math.random() * 0.8 - 0.4,
+    opacity: Math.random() * 0.6 + 0.3
+  }));
+  let snowAnimId = null;
+  function drawSnow() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    flakes.forEach(f => {
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(200,230,255,' + f.opacity + ')';
+      ctx.fill();
+      f.y += f.speed; f.x += f.drift;
+      if (f.y > canvas.height) { f.y = -5; f.x = Math.random() * canvas.width; }
+      if (f.x > canvas.width) f.x = 0;
+      if (f.x < 0) f.x = canvas.width;
+    });
+    snowAnimId = requestAnimationFrame(drawSnow);
+  }
+  drawSnow();
+
   let count = 3;
   function tick() {
     if (count > 0) {
@@ -394,7 +426,7 @@ function showCountdown(onComplete) {
       numEl.style.color = '#a8d8f0';
       numEl.style.textShadow = '0 0 80px rgba(168,216,240,0.7)';
       numEl.style.animation = 'none';
-      numEl.offsetHeight; // reflow
+      numEl.offsetHeight;
       numEl.style.animation = 'countPulse 1s ease-in-out forwards';
       count--;
       setTimeout(tick, 1000);
@@ -407,6 +439,7 @@ function showCountdown(onComplete) {
       numEl.style.animation = 'countPulse 0.6s ease-in-out forwards';
       labelEl.textContent = "LET'S GO!";
       labelEl.style.color = 'var(--gold)';
+      if (snowAnimId) cancelAnimationFrame(snowAnimId);
       setTimeout(function() { overlay.remove(); onComplete(); }, 700);
     }
   }

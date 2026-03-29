@@ -434,7 +434,7 @@ function hasAttemptedLocally(id) {
     <div class="start-subtitle">Read the defense. Call the play.</div>
     <div class="start-rules">
       <div class="rules-title">How to Play</div>
-      <div class="rule-item">You have <strong>3.5 seconds</strong> to read the defense and call the right play</div>
+      <div class="rule-item">You have <strong>4 seconds</strong> to read the defense and call the right play</div>
       <div class="rule-item">Drive through <strong>4 downs</strong> — score a touchdown to win</div>
       <div class="rule-item"><strong style="color:var(--green)">Correct play</strong> = points based on your decision speed</div>
       <div class="rule-item"><strong style="color:var(--yellow)">Neutral play</strong> = no points, but the drive continues (plays 1-3)</div>
@@ -506,7 +506,7 @@ function hasAttemptedLocally(id) {
   </div>
 
   <div class="plays-section">
-    <div class="plays-label">Choose your play — <span style="color:var(--gold)">3.5 seconds</span></div>
+    <div class="plays-label">Choose your play — <span style="color:var(--gold)">4 seconds</span></div>
     <div class="plays-grid" id="playsGrid"></div>
   </div>
 </div>
@@ -731,7 +731,7 @@ const PLAYS = [
 let currentPlay = 0;
 let score = 0;
 let timerInterval = null;
-let timeLeft = 3.5;
+let timeLeft = 4;
 let playStartTime = 0;
 let playHistory = [];
 let decisionTimes = [];
@@ -1293,7 +1293,7 @@ function buildHBStretchCard(svg) {
 
 const POINT_TABLE = [1000, 800, 600, 400];
 const TD_BONUS = 1500;
-const TIMER_DURATION = 3.5;
+const TIMER_DURATION = 4;
 
 function calcPoints(playIdx, decisionTime) {
   const max = POINT_TABLE[playIdx];

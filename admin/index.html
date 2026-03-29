@@ -262,24 +262,54 @@
 
     <!-- ── STATS ── -->
     <div id="section-stats" class="hidden">
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem;">
+      <!-- Top stat cards -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.5rem;">
         <div class="admin-card" style="text-align:center;padding:1.25rem;">
           <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2.5rem;color:var(--gold);" id="stat-q">—</div>
           <div style="font-size:0.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.1em;">Quizzes</div>
         </div>
         <div class="admin-card" style="text-align:center;padding:1.25rem;">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2.5rem;color:var(--gold);" id="stat-a">—</div>
-          <div style="font-size:0.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.1em;">Attempts</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2.5rem;color:var(--gold);" id="stat-u">—</div>
+          <div style="font-size:0.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.1em;">Accounts</div>
         </div>
         <div class="admin-card" style="text-align:center;padding:1.25rem;">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2.5rem;color:var(--gold);" id="stat-u">—</div>
-          <div style="font-size:0.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.1em;">Users</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2.5rem;color:var(--gold);" id="stat-a">—</div>
+          <div style="font-size:0.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.1em;">Total Attempts</div>
         </div>
         <div class="admin-card" style="text-align:center;padding:1.25rem;">
           <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2.5rem;color:var(--gold);" id="stat-w">—</div>
           <div style="font-size:0.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.1em;">This Week</div>
         </div>
       </div>
+
+      <!-- Daily Games Section -->
+      <div class="admin-card" style="margin-bottom:1.5rem;">
+        <h2 style="margin-bottom:1.25rem;">Daily Games</h2>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;">
+          <div style="background:rgba(255,255,255,0.03);border:1px solid var(--card-border);border-radius:10px;padding:1rem;text-align:center;">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;color:var(--gold);" id="stat-dq">—</div>
+            <div style="font-size:0.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.1em;">Daily Quiz Plays</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.03);border:1px solid var(--card-border);border-radius:10px;padding:1rem;text-align:center;">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;color:var(--gold);" id="stat-wtp">—</div>
+            <div style="font-size:0.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.1em;">Who's That Player Plays</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.03);border:1px solid var(--card-border);border-radius:10px;padding:1rem;text-align:center;">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;color:var(--gold);" id="stat-snap">—</div>
+            <div style="font-size:0.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.1em;">Snap Decision Plays</div>
+          </div>
+        </div>
+        <h3 style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray);margin-bottom:0.75rem;">Attempts by Day (last 14 days)</h3>
+        <div id="daily-by-day"><div class="spinner"></div></div>
+      </div>
+
+      <!-- Quiz plays table -->
+      <div class="admin-card" style="margin-bottom:1.5rem;">
+        <h2 style="margin-bottom:1.25rem;">Quiz Plays</h2>
+        <div id="quiz-plays-table"><div class="spinner"></div></div>
+      </div>
+
+      <!-- Recent attempts -->
       <div class="admin-card">
         <h2>Recent Attempts</h2>
         <div id="recent-attempts"><div class="spinner"></div></div>
@@ -589,6 +619,8 @@
   // ─── STATS ─────────────────────────────────────────────────────
   async function loadStats() {
     const oneWeekAgo = new Date(Date.now() - 7*24*60*60*1000).toISOString();
+
+    // Top-level counts
     const [{ count: qc }, { count: ac }, { count: uc }, { count: wc }] = await Promise.all([
       supabase.from('quizzes').select('*', { count: 'exact', head: true }),
       supabase.from('attempts').select('*', { count: 'exact', head: true }),
@@ -600,20 +632,117 @@
     document.getElementById('stat-u').textContent = (uc || 0).toLocaleString();
     document.getElementById('stat-w').textContent = (wc || 0).toLocaleString();
 
+    // Fetch all attempts for daily game breakdown
+    const { data: allAttempts } = await supabase
+      .from('attempts')
+      .select('quiz_id, created_at')
+      .range(0, 9999);
+
+    if (allAttempts) {
+      const dqRows   = allAttempts.filter(a => (a.quiz_id||'').startsWith('daily-quiz-'));
+      const wtpRows  = allAttempts.filter(a => (a.quiz_id||'').startsWith('wtp-'));
+      const snapRows = allAttempts.filter(a => (a.quiz_id||'').startsWith('snap-decision'));
+      document.getElementById('stat-dq').textContent   = dqRows.length.toLocaleString();
+      document.getElementById('stat-wtp').textContent  = wtpRows.length.toLocaleString();
+      document.getElementById('stat-snap').textContent = snapRows.length.toLocaleString();
+
+      // By-day table for last 14 days
+      const dailyRows = [...dqRows, ...wtpRows, ...snapRows];
+      const dayMap = {};
+      const now = new Date();
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date(now); d.setDate(d.getDate() - i);
+        const key = d.toISOString().slice(0,10);
+        dayMap[key] = { quiz: 0, wtp: 0, snap: 0 };
+      }
+      dailyRows.forEach(a => {
+        const day = (a.created_at||'').slice(0,10);
+        if (!dayMap[day]) return;
+        if ((a.quiz_id||'').startsWith('daily-quiz-')) dayMap[day].quiz++;
+        else if ((a.quiz_id||'').startsWith('wtp-')) dayMap[day].wtp++;
+        else if ((a.quiz_id||'').startsWith('snap-')) dayMap[day].snap++;
+      });
+      const dayKeys = Object.keys(dayMap).sort();
+      const tbStyle = 'width:100%;border-collapse:collapse;font-size:0.85rem;';
+      const thStyle = 'padding:0.5rem 0.75rem;text-align:left;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gray);border-bottom:1px solid var(--card-border);';
+      const tdStyle = 'padding:0.5rem 0.75rem;border-bottom:1px solid rgba(255,255,255,0.04);';
+      const numStyle = 'padding:0.5rem 0.75rem;border-bottom:1px solid rgba(255,255,255,0.04);text-align:right;font-family:Barlow Condensed,sans-serif;font-weight:700;color:var(--gold);';
+      document.getElementById('daily-by-day').innerHTML =
+        '<table style="' + tbStyle + '">' +
+        '<thead><tr>' +
+        '<th style="' + thStyle + '">Date</th>' +
+        '<th style="' + thStyle + 'text-align:right;">Daily Quiz</th>' +
+        '<th style="' + thStyle + 'text-align:right;">Who&#39;s That Player</th>' +
+        '<th style="' + thStyle + 'text-align:right;">Snap Decision</th>' +
+        '<th style="' + thStyle + 'text-align:right;">Total</th>' +
+        '</tr></thead><tbody>' +
+        dayKeys.map(day => {
+          const r = dayMap[day];
+          const total = r.quiz + r.wtp + r.snap;
+          return '<tr>' +
+            '<td style="' + tdStyle + '">' + day + '</td>' +
+            '<td style="' + numStyle + '">' + (r.quiz || '—') + '</td>' +
+            '<td style="' + numStyle + '">' + (r.wtp || '—') + '</td>' +
+            '<td style="' + numStyle + '">' + (r.snap || '—') + '</td>' +
+            '<td style="' + numStyle + '">' + (total || '—') + '</td>' +
+            '</tr>';
+        }).join('') +
+        '</tbody></table>';
+    }
+
+    // Quiz plays table (regular quizzes by UUID)
+    const { data: allAttemptsForQuiz } = await supabase
+      .from('attempts')
+      .select('quiz_id, score')
+      .not('quiz_id', 'like', 'daily-quiz-%')
+      .not('quiz_id', 'like', 'wtp-%')
+      .not('quiz_id', 'like', 'snap-decision%')
+      .range(0, 9999);
+
+    const { data: allQuizzes } = await supabase.from('quizzes').select('id, title');
+    const quizTitleMap = {};
+    (allQuizzes || []).forEach(q => { quizTitleMap[q.id] = q.title; });
+
+    if (allAttemptsForQuiz) {
+      const quizCounts = {};
+      allAttemptsForQuiz.forEach(a => {
+        if (!quizCounts[a.quiz_id]) quizCounts[a.quiz_id] = 0;
+        quizCounts[a.quiz_id]++;
+      });
+      const sorted = Object.entries(quizCounts).sort((a,b) => b[1]-a[1]);
+      const tbStyle = 'width:100%;border-collapse:collapse;font-size:0.85rem;';
+      const thStyle = 'padding:0.5rem 0.75rem;text-align:left;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gray);border-bottom:1px solid var(--card-border);';
+      const tdStyle = 'padding:0.5rem 0.75rem;border-bottom:1px solid rgba(255,255,255,0.04);';
+      const numStyle = 'padding:0.5rem 0.75rem;border-bottom:1px solid rgba(255,255,255,0.04);text-align:right;font-family:Barlow Condensed,sans-serif;font-weight:700;color:var(--gold);';
+      document.getElementById('quiz-plays-table').innerHTML = sorted.length === 0
+        ? '<p style="color:var(--gray)">No quiz plays yet.</p>'
+        : '<table style="' + tbStyle + '">' +
+          '<thead><tr><th style="' + thStyle + '">Quiz</th><th style="' + thStyle + 'text-align:right;">Plays</th></tr></thead>' +
+          '<tbody>' + sorted.map(([id, count]) =>
+            '<tr><td style="' + tdStyle + '">' + (quizTitleMap[id] || id.slice(0,8)+'…') + '</td>' +
+            '<td style="' + numStyle + '">' + count + '</td></tr>'
+          ).join('') + '</tbody></table>';
+    }
+
+    // Recent attempts
     const { data: recent } = await supabase
       .from('attempts')
-      .select('score, created_at, profiles(username), quizzes(title)')
+      .select('quiz_id, score, created_at, profiles(username)')
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(15);
 
     const container = document.getElementById('recent-attempts');
     if (!recent || recent.length === 0) { container.innerHTML = '<p style="color:var(--gray)">No attempts yet.</p>'; return; }
-    container.innerHTML = recent.map(a => `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:0.65rem 0;border-bottom:1px solid var(--card-border);font-size:0.9rem;">
-        <span><strong>${a.profiles?.username || 'Guest'}</strong> — ${a.quizzes?.title || 'Unknown quiz'}</span>
-        <span style="color:var(--gold);font-family:'Barlow Condensed',sans-serif;font-weight:800;">${a.score} pts</span>
-      </div>
-    `).join('');
+    container.innerHTML = recent.map(a => {
+      const qid = a.quiz_id || '';
+      const label = qid.startsWith('daily-quiz-') ? 'Daily Quiz (' + qid.replace('daily-quiz-','') + ')' :
+                    qid.startsWith('wtp-') ? "Who&#39;s That Player (" + qid.replace('wtp-','') + ')' :
+                    qid.startsWith('snap-decision') ? 'Snap Decision' : qid.slice(0,8)+'…';
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.65rem 0;border-bottom:1px solid var(--card-border);font-size:0.85rem;">' +
+        '<div><strong>' + (a.profiles?.username || 'Guest') + '</strong><span style="color:var(--gray);margin-left:0.5rem;">' + label + '</span></div>' +
+        '<span style="color:var(--gold);font-family:Barlow Condensed,sans-serif;font-weight:800;">' + a.score + ' pts</span>' +
+        '</div>';
+    }).join('');
   }
 
   // ─── INIT ──────────────────────────────────────────────────────

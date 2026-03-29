@@ -238,6 +238,39 @@
     // Check if attempted (may require network)
     const already = await hasAttemptedQuiz(quizId);
     if (already) {
+      // Try to fetch their score from Supabase to show results screen
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: attempt } = await supabase.from('attempts')
+            .select('score, answers, created_at')
+            .eq('quiz_id', quizId)
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+          if (attempt) {
+            // Build a stored result from the DB data and show results
+            const fakeStored = {
+              score: attempt.score,
+              title: quiz ? quiz.title : quizId,
+              questionCount: 5,
+              correct: attempt.answers ? (Array.isArray(attempt.answers) ? attempt.answers.filter(a => a.isCorrect).length : 0) : 0,
+              answers: Array.isArray(attempt.answers) ? attempt.answers : [],
+              fireActive: false
+            };
+            // Load quiz title if we don't have it yet
+            if (!quiz) {
+              const { data: qdata } = await supabase.from('quizzes').select('title').eq('id', quizId).single();
+              if (qdata) fakeStored.title = qdata.title;
+            }
+            document.getElementById('quiz-loading').classList.add('hidden');
+            await showStoredResult(quizId, fakeStored);
+            return;
+          }
+        }
+      } catch(e) {}
+      // Fallback: show already-attempted wall
       document.getElementById('quiz-loading').classList.add('hidden');
       document.getElementById('already-attempted').classList.remove('hidden');
       return;

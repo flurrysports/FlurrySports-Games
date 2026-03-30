@@ -1317,8 +1317,8 @@ function storeSnapResult(data) {
   try { localStorage.setItem('fs_snap_result_v1', JSON.stringify(data)); } catch(e) {}
 }
 
-function startGame() {
-  // If already played, show stored result instead of replaying
+async function startGame() {
+  // 1. Check localStorage first
   const stored = getSnapStoredResult();
   if (stored && hasAttemptedLocally('snap-decision-v1')) {
     document.getElementById('startScreen').style.display = 'none';
@@ -1335,6 +1335,30 @@ function startGame() {
     }
     return;
   }
+  // 2. Check Supabase for cross-device replay
+  try {
+    const user = await getCurrentUser();
+    if (user) {
+      const { data: prev } = await supabase.from('attempts')
+        .select('score, created_at')
+        .eq('quiz_id', 'snap-decision-v1')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      if (prev) {
+        const rebuilt = { type: 'td', score: prev.score, playHistory: [], decisionTimes: [] };
+        storeSnapResult(rebuilt);
+        markAttemptedLocally('snap-decision-v1');
+        document.getElementById('startScreen').style.display = 'none';
+        score = prev.score;
+        playHistory = [];
+        decisionTimes = [];
+        showTouchdown(true);
+        return;
+      }
+    }
+  } catch(e) {}
   document.getElementById('startScreen').style.display = 'none';
   currentPlay = 0;
   score = 0;

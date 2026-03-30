@@ -362,15 +362,41 @@ async function showResults(stored) {
 }
 
 // ── Init ─────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
   updateNavAuth();
-  testSupabaseConnection(); // diagnostic - logs result to console
+  testSupabaseConnection();
 
-  // If we have a stored result — show it immediately, no Supabase needed
+  // 1. Check localStorage first — instant, no network needed
   var stored = loadResult();
   if (stored) { showResults(stored); return; }
 
-  // If locally marked as attempted but no stored result (old play)
+  // 2. Check Supabase for a previous attempt (cross-device replay)
+  try {
+    var user = await getCurrentUser();
+    if (user) {
+      var { data: prev } = await supabase.from('attempts')
+        .select('score, created_at')
+        .eq('quiz_id', quizId)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      if (prev) {
+        // Rebuild a stored result from DB data and cache it locally
+        var rebuilt = {
+          correct: 0,
+          emojiRow: '—',
+          finalScore: prev.score
+        };
+        saveResult(rebuilt);
+        markAttemptedLocally(quizId);
+        showResults(rebuilt);
+        return;
+      }
+    }
+  } catch(e) {}
+
+  // 3. Locally flagged as attempted but nothing retrievable
   if (hasAttemptedLocally(quizId) || hasAttemptedLocally('daily-quiz-' + (seed + 166))) {
     document.getElementById('quiz-container').innerHTML =
       '<div class="results-card">' +

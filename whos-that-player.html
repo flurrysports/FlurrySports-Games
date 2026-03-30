@@ -612,19 +612,43 @@ function getPacificOffsetMinutes(d) {
     }
   }
 
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', async function() {
     updateNavAuth();
+
+    // 1. Check localStorage first
     var stored = loadWTPResult();
     if (stored) {
-      // Has stored result — always show end screen
       showResult(stored.correct, stored.finalPts || 0, true, stored);
       return;
     }
+
+    // 2. Check Supabase for cross-device replay
+    try {
+      var user = await getCurrentUser();
+      if (user) {
+        var { data: prev } = await supabase.from('attempts')
+          .select('score, created_at')
+          .eq('quiz_id', player.id)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        if (prev) {
+          var rebuilt = { correct: prev.score > 0, finalPts: prev.score, cluesUsed: 5, guessesUsed: 0 };
+          saveWTPResult(rebuilt);
+          markAttemptedLocally(player.id);
+          showResult(rebuilt.correct, rebuilt.finalPts, true, rebuilt);
+          return;
+        }
+      }
+    } catch(e) {}
+
+    // 3. Locally flagged as attempted
     if (hasAttemptedLocally(player.id) || hasAttemptedLocally('wtp-' + (parseInt(player.id.replace('wtp-','')) + 166))) {
-      // Played before this update — no stored data, show fallback
       showResult(false, 0, true, { correct: false, finalPts: 0, noData: true });
       return;
     }
+
     renderGame();
   });
 

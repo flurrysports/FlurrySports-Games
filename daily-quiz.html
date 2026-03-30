@@ -301,20 +301,27 @@ async function showResults(stored) {
 document.addEventListener('DOMContentLoaded', function() {
   updateNavAuth();
 
-  // Check localStorage for today's result — instant, no network
+  console.log('DQ Init: seed=' + seed + ' storageKey=' + storageKey);
+  console.log('DQ localStorage keys:', Object.keys(localStorage).filter(function(k){return k.startsWith('dq_') || k.startsWith('fs_r_') || k.startsWith('fs_attempted');}).join(', '));
+
   var stored = loadResult();
+  console.log('DQ loadResult:', stored ? 'FOUND score=' + stored.finalScore : 'NULL');
+
   if (stored) {
+    console.log('DQ: showing replay screen');
     showResults(stored);
     return;
   }
 
-  // If they played today (marked) but result missing, show score 0 with share
-  if (hasPlayed()) {
+  var played = hasPlayed();
+  console.log('DQ hasPlayed:', played);
+
+  if (played) {
     showResults({ correct: 0, emojiRow: '—', finalScore: 0 });
     return;
   }
 
-  // Fresh play
+  console.log('DQ: fresh play - showing countdown');
   showCountdown(function() { renderQ(0); });
 });
 </script>

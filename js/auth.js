@@ -50,14 +50,16 @@ function getTodayString() {
 // ─── CHECK IF USER ATTEMPTED A GAME ───────────────────────────────
 async function hasAttemptedQuiz(gameId) {
   if (hasAttemptedLocally(gameId)) return true;
-  const cookieId = getCookieId();
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: byCookie } = await supabase.from('attempts').select('id').eq('quiz_id', gameId).eq('cookie_id', cookieId).limit(1);
-  if (byCookie && byCookie.length > 0) { markAttemptedLocally(gameId); return true; }
-  if (user) {
-    const { data: byUser } = await supabase.from('attempts').select('id').eq('quiz_id', gameId).eq('user_id', user.id).limit(1);
-    if (byUser && byUser.length > 0) { markAttemptedLocally(gameId); return true; }
-  }
+  try {
+    const cookieId = getCookieId();
+    const user = await getCurrentUser();
+    const { data: byCookie } = await supabase.from('attempts').select('id').eq('quiz_id', gameId).eq('cookie_id', cookieId).limit(1);
+    if (byCookie && byCookie.length > 0) { markAttemptedLocally(gameId); return true; }
+    if (user) {
+      const { data: byUser } = await supabase.from('attempts').select('id').eq('quiz_id', gameId).eq('user_id', user.id).limit(1);
+      if (byUser && byUser.length > 0) { markAttemptedLocally(gameId); return true; }
+    }
+  } catch(e) {}
   return false;
 }
 

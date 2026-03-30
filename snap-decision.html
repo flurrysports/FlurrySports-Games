@@ -408,10 +408,9 @@ function hasAttemptedLocally(id) {
   try { return JSON.parse(localStorage.getItem('fs_attempted') || '[]').includes(id); } catch(e) { return false; }
 }
 </script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="/js/supabase-config.js"></script>
-  <script>var _supa = window.supabase || window.Supabase || {};
-  var supabase = (_supa.createClient || function(){ throw new Error('Supabase SDK not loaded'); }).call(_supa, SUPABASE_URL, SUPABASE_ANON_KEY);</script>
+  <script>var supabase = (window.supabase || window.Supabase).createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
 </head>
 <body>
 

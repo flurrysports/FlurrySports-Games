@@ -229,9 +229,10 @@
     return parseInt(getPacificDateStr(d).replace(/-/g,''));
   }
   const now = new Date();
-  const pacMs = getPacificOffsetMinutes(now) * 60000;
-  const today = new Date(now.getTime() + pacMs);
-  document.getElementById('today-date').textContent = today.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+  // Use Pacific date string directly to avoid browser timezone skewing the displayed date
+  const pacDateStr = getPacificDateStr(now); // e.g. '2026-03-30'
+  const pacDateObj = new Date(pacDateStr + 'T12:00:00Z'); // noon UTC = unambiguous for all timezones
+  document.getElementById('today-date').textContent = pacDateObj.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric', timeZone:'UTC' });
 
   function seededRandom(seed) {
     let s = seed;

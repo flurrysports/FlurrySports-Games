@@ -65,11 +65,11 @@ async function hasAttemptedQuiz(gameId) {
 // game_type: 'trivia' | 'snap_decision' | 'whos_that_player'
 async function saveAttempt(gameId, score, timeTakenSeconds, answers, gameType) {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    // Use getCurrentUser() which has its own error handling
+    const user = await getCurrentUser();
     const cookieId = getCookieId();
     const { fire } = getStreakDisplay();
     const finalScore = fire ? Math.round(score * 1.10) : score;
-    // Simplify answers to plain JSON-safe object
     let safeAnswers = null;
     try { safeAnswers = JSON.parse(JSON.stringify(answers)); } catch(e) {}
     const attemptData = {
@@ -80,11 +80,13 @@ async function saveAttempt(gameId, score, timeTakenSeconds, answers, gameType) {
     if (safeAnswers !== null) attemptData.answers = safeAnswers;
     if (timeTakenSeconds) attemptData.time_taken_seconds = timeTakenSeconds;
     if (user) attemptData.user_id = user.id;
+    console.log('Saving attempt:', gameId, 'score:', finalScore, 'user:', user ? user.id : 'guest');
     const { data, error } = await supabase.from('attempts').insert(attemptData).select().single();
     if (error) {
       console.error('Save attempt error:', error.message, error.details, error.hint);
       return null;
     }
+    console.log('Attempt saved successfully:', data.id);
     markAttemptedLocally(gameId);
     updateStreak();
     return data;
@@ -154,8 +156,13 @@ function showToast(msg, type = 'default') {
 
 // ─── AUTH STATE ───────────────────────────────────────────────────
 async function getCurrentUser() {
-  const { data: { user } } = await supabase.auth.getUser();
-  return user;
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
+  } catch(e) {
+    // Supabase auth not ready yet — return null silently
+    return null;
+  }
 }
 
 async function signUp(email, password, username) {

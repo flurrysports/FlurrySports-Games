@@ -340,19 +340,20 @@ function getPacificOffsetMinutes(d) {
   function leagueColor() { return player.league === 'NFL' ? '#e8a020' : '#3498db'; }
   function leagueBg() { return player.league === 'NFL' ? 'rgba(232,160,32,0.15)' : 'rgba(52,152,219,0.15)'; }
 
+  // Date-based storage keys — survive any seed formula changes
+  var wtpDateKey = 'wtp_result_' + dateSeed();
+  var wtpPlayedKey = 'wtp_played_' + dateSeed();
   function saveWTPResult(data) {
-    try { localStorage.setItem('fs_wtp_' + player.id, JSON.stringify(data)); } catch(e) {}
+    try { localStorage.setItem(wtpDateKey, JSON.stringify(data)); } catch(e) {}
   }
   function loadWTPResult() {
-    try {
-      var r = localStorage.getItem('fs_wtp_' + player.id);
-      if (r) return JSON.parse(r);
-      // Fallback: check old key with +166 salt
-      var oldId = 'wtp-' + (parseInt(player.id.replace('wtp-','')) + 166);
-      var r2 = localStorage.getItem('fs_wtp_' + oldId);
-      if (r2) return JSON.parse(r2);
-      return null;
-    } catch(e) { return null; }
+    try { return JSON.parse(localStorage.getItem(wtpDateKey)); } catch(e) { return null; }
+  }
+  function markWTPPlayed() {
+    try { localStorage.setItem(wtpPlayedKey, '1'); } catch(e) {}
+  }
+  function hasWTPPlayed() {
+    return localStorage.getItem(wtpPlayedKey) === '1';
   }
 
   function renderGame() {
@@ -505,16 +506,26 @@ function getPacificOffsetMinutes(d) {
       markAttemptedLocally(player.id);
       showResult(true, pointsAvailable);
     } else {
-      // Check for partial last name
-      if (lastName.startsWith(guess) && guess.length >= 3) {
-        feedback.textContent = "Getting warmer — try the full name!";
-        feedback.className = 'guess-feedback close-guess';
-      } else {
-        feedback.textContent = `Not quite — try again!`;
-        feedback.className = 'guess-feedback wrong-guess';
-      }
+      // Wrong guess — reveal next clue (or end game if on last clue)
       input.value = '';
-      setTimeout(() => { if (feedback) feedback.textContent = ''; }, 2500);
+      if (revealedClues >= 5) {
+        // On last clue — wrong guess = loss
+        gameOver = true;
+        feedback.textContent = 'Out of clues — the answer was ' + player.name + '!';
+        feedback.className = 'guess-feedback wrong-guess';
+        setTimeout(function() { showResult(false, 0); }, 1500);
+      } else {
+        // Reveal next clue automatically
+        feedback.textContent = 'Wrong — revealing next clue!';
+        feedback.className = 'guess-feedback wrong-guess';
+        setTimeout(function() {
+          if (feedback) feedback.textContent = '';
+          revealedClues++;
+          pointsAvailable = POINT_VALUES[revealedClues - 1];
+          renderClues();
+          updateRevealBtn();
+        }, 1000);
+      }
     }
   }
 

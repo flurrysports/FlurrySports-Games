@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quizzes — FlurrySports Trivia</title>
+  <link rel="icon" type="image/png" href="/images/logo-crown.png">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/supabase-config.js"></script>
+<script>var supabase = (window.supabase || window.Supabase).createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="/"><img src="/images/logo-yeti-orange.png" alt="FlurrySports" style="height:48px;width:auto;"></a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="/quizzes.html" class="active">Quizzes</a></li>
+    <li><a href="/leaderboard.html">Leaderboard</a></li>
+  </ul>
+  <div class="nav-actions" id="nav-actions">
+    <button class="btn btn-ghost btn-sm" onclick="openModal('login')">Log In</button>
+    <button class="btn btn-primary btn-sm" onclick="openModal('signup')">Sign Up</button>
+  </div>
+</nav>
+
+<div class="section" style="padding-top:2.5rem;">
+  <div class="section-header">
+    <h2 class="section-title">All <span>Quizzes</span></h2>
+  </div>
+
+  <!-- Filters -->
+  <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.75rem;align-items:center;">
+    <select class="form-select" id="filter-type" style="width:auto;padding:0.5rem 1rem;" onchange="applyFilters()">
+      <option value="">All Types</option>
+      <option value="multiple_choice">Multiple Choice</option>
+      <option value="rankings">Rankings Fill-In</option>
+    </select>
+    <select class="form-select" id="filter-theme" style="width:auto;padding:0.5rem 1rem;" onchange="applyFilters()">
+      <option value="">All Sports</option>
+    </select>
+    <input class="form-input" id="filter-search" style="width:220px;padding:0.5rem 1rem;" placeholder="🔍 Search quizzes..." oninput="applyFilters()">
+  </div>
+
+  <div class="quiz-grid" id="quizzes-grid">
+    <div class="spinner"></div>
+  </div>
+
+  <div id="no-results" class="hidden" style="text-align:center;padding:3rem;color:var(--gray);">
+    <p style="font-size:1.1rem;">No quizzes match your filters.</p>
+  </div>
+</div>
+
+<footer>
+  <a href="https://flurrysports.org/"><img src="/images/logo-icon-blue.png" alt="FlurrySports" style="height:80px;width:auto;"></a>
+  <p>© 2026 <a href="/">FlurrySports</a>. All rights reserved.</p>
+</footer>
+
+<script src="/js/auth.js"></script>
+<script>
+  let allQuizzes = [];
+  let attemptedIds = new Set();
+
+  async function loadQuizzes() {
+    const { data: quizzes, error } = await supabase
+      .from('quizzes')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+
+    if (error) { document.getElementById('quizzes-grid').innerHTML = '<p style="color:var(--error)">Failed to load quizzes.</p>'; return; }
+    allQuizzes = quizzes || [];
+
+    // Populate theme filter
+    const themes = [...new Set(allQuizzes.map(q => q.theme).filter(Boolean))];
+    const themeSelect = document.getElementById('filter-theme');
+    themes.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; themeSelect.appendChild(o); });
+
+    // Load user's attempted quizzes
+    const user = await getCurrentUser();
+    const cookieId = getCookieId();
+    const query = user
+      ? supabase.from('attempts').select('quiz_id').eq('user_id', user.id)
+      : supabase.from('attempts').select('quiz_id').eq('cookie_id', cookieId);
+    const { data: attempts } = await query;
+    attemptedIds = new Set((attempts || []).map(a => a.quiz_id));
+
+    renderQuizzes(allQuizzes);
+  }
+
+  function applyFilters() {
+    const type = document.getElementById('filter-type').value;
+    const theme = document.getElementById('filter-theme').value;
+    const search = document.getElementById('filter-search').value.toLowerCase();
+    const filtered = allQuizzes.filter(q => {
+      if (type && q.type !== type) return false;
+      if (theme && q.theme !== theme) return false;
+      if (search && !q.title.toLowerCase().includes(search) && !(q.description||'').toLowerCase().includes(search)) return false;
+      return true;
+    });
+    renderQuizzes(filtered);
+  }
+
+  function renderQuizzes(quizzes) {
+    const grid = document.getElementById('quizzes-grid');
+    const noResults = document.getElementById('no-results');
+    if (quizzes.length === 0) {
+      grid.innerHTML = '';
+      noResults.classList.remove('hidden');
+      return;
+    }
+    noResults.classList.add('hidden');
+    grid.innerHTML = quizzes.map(q => {
+      const attempted = attemptedIds.has(q.id);
+      return `
+        <a href="/quiz.html?id=${q.id}" class="card quiz-card" style="position:relative;">
+          ${attempted ? `<div style="position:absolute;top:0.75rem;right:0.75rem;background:rgba(0,214,143,0.15);border:1px solid rgba(0,214,143,0.3);color:var(--success);font-size:0.72rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.2rem 0.6rem;border-radius:4px;">Completed</div>` : ''}
+          <div class="quiz-card-inner">
+            <span class="quiz-type-badge ${q.type === 'multiple_choice' ? 'badge-mc' : 'badge-rankings'}">
+              ${q.type === 'multiple_choice' ? '🎯 Multiple Choice' : '📋 Rankings'}
+            </span>
+            <h3>${q.title}</h3>
+            <p>${q.description || 'Test your sports knowledge!'}</p>
+            <div class="quiz-meta">
+              ${q.theme ? `<span>🏷️ ${q.theme}</span>` : ''}
+              ${q.timer_seconds ? `<span>⏱️ ${formatTime(q.timer_seconds)}</span>` : ''}
+            </div>
+          </div>
+        </a>
+      `;
+    }).join('');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    updateNavAuth();
+    loadQuizzes();
+  });
+</script>
+</body>
+</html>

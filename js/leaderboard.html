@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaderboard — FlurrySports Games</title>
+  <link rel="icon" type="image/png" href="/images/logo-crown.png">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="/js/supabase-config.js"></script>
+  <script>
+  (function() {
+    var _lib = window.supabase || window.Supabase;
+    if (!_lib) { console.error('Supabase CDN failed to load'); return; }
+    var _create = _lib.createClient || (_lib.default && _lib.default.createClient);
+    if (!_create) { console.error('createClient not found on Supabase object. Keys:', Object.keys(_lib)); return; }
+    window.supabase = _create(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('Supabase client created:', typeof window.supabase);
+  })();
+</script>
+  <style>
+    .lb-shell { max-width: 900px; margin: 0 auto; padding: 2.5rem 1.5rem; position: relative; z-index: 1; }
+    .lb-hero { text-align: center; margin-bottom: 2.5rem; }
+    .lb-hero img { height: 80px; margin-bottom: 1rem; }
+    .lb-hero h1 { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:clamp(2rem,6vw,3.5rem); text-transform:uppercase; line-height:1; }
+    .lb-hero p { color:var(--gray-light); margin-top:0.5rem; }
+
+    /* Time tabs */
+    .time-tabs { display:flex; gap:0.5rem; justify-content:center; margin-bottom:1.5rem; }
+    .time-tab { padding:0.4rem 1.25rem; border-radius:20px; border:1px solid var(--card-border); background:transparent; color:var(--gray); font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:0.9rem; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; transition:var(--transition); }
+    .time-tab.active { background:var(--gold); color:var(--navy-dark); border-color:var(--gold); }
+
+    /* Category tabs */
+    .cat-tabs { display:flex; gap:0.5rem; flex-wrap:wrap; justify-content:center; margin-bottom:1.75rem; }
+    .cat-tab { padding:0.5rem 1rem; border-radius:8px; border:1px solid var(--card-border); background:var(--card-bg); color:var(--gray-light); font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:0.85rem; letter-spacing:0.06em; text-transform:uppercase; cursor:pointer; transition:var(--transition); display:flex; align-items:center; gap:0.4rem; }
+    .cat-tab:hover { border-color:rgba(245,197,24,0.3); color:var(--white); }
+    .cat-tab.active { border-color:var(--gold); color:var(--gold); background:rgba(245,197,24,0.08); }
+
+    /* Top 3 podium */
+    .podium { display:grid; grid-template-columns:1fr 1.15fr 1fr; gap:1rem; margin-bottom:2rem; align-items:end; }
+    .podium-slot { text-align:center; }
+    .podium-card { border-radius:16px; padding:1.25rem 1rem; border:1px solid var(--card-border); }
+    .podium-card.rank-1 { background:linear-gradient(135deg,rgba(245,197,24,0.15),rgba(245,197,24,0.05)); border-color:rgba(245,197,24,0.4); }
+    .podium-card.rank-2 { background:linear-gradient(135deg,rgba(192,192,192,0.1),rgba(192,192,192,0.03)); border-color:rgba(192,192,192,0.3); }
+    .podium-card.rank-3 { background:linear-gradient(135deg,rgba(205,127,50,0.1),rgba(205,127,50,0.03)); border-color:rgba(205,127,50,0.3); }
+    .podium-medal { font-size:2rem; margin-bottom:0.5rem; display:block; }
+    .podium-avatar { width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:1.4rem; margin:0 auto 0.5rem; }
+    .podium-card.rank-1 .podium-avatar { background:rgba(245,197,24,0.2); color:var(--gold); border:2px solid var(--gold); }
+    .podium-card.rank-2 .podium-avatar { background:rgba(192,192,192,0.15); color:#c0c0c0; border:2px solid rgba(192,192,192,0.4); }
+    .podium-card.rank-3 .podium-avatar { background:rgba(205,127,50,0.15); color:#cd7f32; border:2px solid rgba(205,127,50,0.4); }
+    .podium-name { font-family:'Barlow Condensed',sans-serif; font-weight:800; font-size:1rem; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .podium-score { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:1.4rem; color:var(--gold); }
+    .podium-meta { font-size:0.75rem; color:var(--gray); }
+    .podium-bar { height:8px; border-radius:4px 4px 0 0; margin-top:0.75rem; }
+    .podium-card.rank-1 .podium-bar { background:var(--gold); }
+    .podium-card.rank-2 .podium-bar { background:#c0c0c0; }
+    .podium-card.rank-3 .podium-bar { background:#cd7f32; }
+
+    /* Full table */
+    .lb-table-card { background:var(--card-bg); border:1px solid var(--card-border); border-radius:16px; overflow:hidden; margin-bottom:1.5rem; }
+    .lb-row { display:grid; grid-template-columns:48px 1fr auto; gap:0.75rem; padding:0.875rem 1.25rem; border-bottom:1px solid var(--card-border); align-items:center; }
+    .lb-row:last-child { border-bottom:none; }
+    .lb-row.header { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:0.75rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--gray); background:rgba(255,255,255,0.02); padding:0.6rem 1.25rem; }
+    .lb-row.top-1 { background:rgba(245,197,24,0.05); }
+    .lb-row.top-2 { background:rgba(192,192,192,0.03); }
+    .lb-row.top-3 { background:rgba(205,127,50,0.03); }
+    .lb-row.my-row { background:rgba(245,197,24,0.06); border-left:3px solid var(--gold); }
+    .lb-rank { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:1.1rem; text-align:center; }
+    .lb-user { display:flex; align-items:center; gap:0.75rem; min-width:0; }
+    .lb-avatar { width:32px; height:32px; border-radius:50%; background:rgba(245,197,24,0.15); border:1px solid rgba(245,197,24,0.3); display:flex; align-items:center; justify-content:center; font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:0.85rem; color:var(--gold); flex-shrink:0; }
+    .lb-username { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:0.95rem; word-break:break-all; overflow-wrap:anywhere; }
+    .lb-score { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:1.1rem; color:var(--gold); text-align:right; white-space:nowrap; }
+    .lb-games { font-size:0.8rem; color:var(--gray); text-align:right; white-space:nowrap; }
+    .my-rank-section { margin-bottom:2rem; }
+    .my-rank-section h3 { font-family:'Barlow Condensed',sans-serif; font-weight:800; font-size:1.2rem; text-transform:uppercase; margin-bottom:0.75rem; }
+    @media (max-width:480px) {
+      .podium { grid-template-columns:1fr 1fr 1fr; gap:0.5rem; }
+      .podium-score { font-size:1.1rem; }
+      .podium-name { font-size:0.8rem; }
+    }
+  </style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="/"><img src="/images/logo-yeti-orange.png" alt="FlurrySports" style="height:48px;width:auto;"></a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="/quizzes.html">Quizzes</a></li>
+    <li><a href="/leaderboard.html" class="active">Leaderboard</a></li>
+  </ul>
+  <div class="nav-actions" id="nav-actions">
+    <button class="btn btn-ghost btn-sm" onclick="openModal('login')">Log In</button>
+    <button class="btn btn-primary btn-sm" onclick="openModal('signup')">Sign Up</button>
+  </div>
+</nav>
+
+<div class="lb-shell">
+  <div class="lb-hero">
+    <img src="/images/logo-crown.png" alt="Crown">
+    <h1>Leader<span style="color:var(--gold);">board</span></h1>
+    <p>Top sports minds competing for the crown 👑</p>
+  </div>
+
+  <!-- Time tabs -->
+  <div class="time-tabs">
+    <button class="time-tab active" id="time-alltime" onclick="setTime('alltime')">All-Time</button>
+    <button class="time-tab" id="time-weekly" onclick="setTime('weekly')">This Week</button>
+  </div>
+
+  <!-- Category tabs -->
+  <div class="cat-tabs">
+    <button class="cat-tab active" id="cat-overall" onclick="setCat('overall')">🏆 Overall</button>
+    <button class="cat-tab" id="cat-trivia" onclick="setCat('trivia')">🎯 Trivia</button>
+    <button class="cat-tab" id="cat-snap" onclick="setCat('snap_decision')">🏈 Snap Decision</button>
+    <button class="cat-tab" id="cat-wtp" onclick="setCat('whos_that_player')">❓ Who's That, Player?</button>
+  </div>
+
+  <!-- Top 3 podium (overall only) -->
+  <div id="podium-section"></div>
+
+  <!-- Full table -->
+  <div class="lb-table-card">
+    <div id="lb-table"><div class="spinner" style="margin:2rem auto;"></div></div>
+  </div>
+
+  <!-- My rank -->
+  <div id="my-rank-section" class="my-rank-section hidden">
+    <h3>Your Standing</h3>
+    <div class="lb-table-card"><div id="my-rank-row"></div></div>
+  </div>
+</div>
+
+<footer>
+  <a href="https://flurrysports.org/"><img src="/images/logo-icon-blue.png" alt="FlurrySports" style="height:80px;width:auto;"></a>
+  <p>© 2026 <a href="/">FlurrySports</a>. All rights reserved.</p>
+</footer>
+
+<script src="/js/auth.js"></script>
+<script>
+  let currentTime = 'alltime';
+  let currentCat = 'overall';
+
+  function setTime(t) {
+    currentTime = t;
+    document.getElementById('time-alltime').classList.toggle('active', t === 'alltime');
+    document.getElementById('time-weekly').classList.toggle('active', t === 'weekly');
+    loadLeaderboard();
+  }
+
+  function setCat(c) {
+    currentCat = c;
+    ['overall','trivia','snap_decision','whos_that_player'].forEach(x => {
+      const btn = document.getElementById(`cat-${x === 'overall' ? 'overall' : x === 'trivia' ? 'trivia' : x === 'snap_decision' ? 'snap' : 'wtp'}`);
+      if (btn) btn.classList.toggle('active', x === c);
+    });
+    loadLeaderboard();
+  }
+
+  async function loadLeaderboard() {
+    document.getElementById('lb-table').innerHTML = '<div class="spinner" style="margin:2rem auto;"></div>';
+    document.getElementById('podium-section').innerHTML = '';
+
+    // Fetch all attempts — filter by quiz_id prefix on client side
+    // quiz_id patterns: 'daily-quiz-*' = trivia, 'snap-decision-*' = snap, 'wtp-*' = whos that player
+    // Include all attempts (including guests - they appear as "Guest")
+    let query = supabase.from('attempts').select('user_id, score, quiz_id, created_at, cookie_id').range(0, 9999);
+
+    if (currentTime === 'weekly') {
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      query = query.gte('created_at', oneWeekAgo);
+    }
+
+    const { data: rawData, error } = await query;
+
+    if (error) {
+      console.error('Leaderboard fetch error:', error);
+      document.getElementById('lb-table').innerHTML = `<p style="padding:2rem;color:var(--error);">Failed to load: ${error.message}</p>`;
+      return;
+    }
+    console.log('Leaderboard raw data:', rawData ? rawData.length + ' rows' : 'null', 'category:', currentCat);
+    if (rawData) {
+      const snapRows = rawData.filter(a => (a.quiz_id||'').startsWith('snap-'));
+      const wtpRows  = rawData.filter(a => (a.quiz_id||'').startsWith('wtp-'));
+      const quizRows = rawData.filter(a => (a.quiz_id||'').startsWith('daily-quiz-'));
+      console.log('  snap rows:', snapRows.length, 'wtp rows:', wtpRows.length, 'quiz rows:', quizRows.length);
+      // Show all unique quiz_ids so we can see what's actually in the DB
+      const uniqueIds = [...new Set(rawData.map(a => a.quiz_id))];
+      console.log('  All quiz_ids in DB:', uniqueIds);
+    }
+
+    // Filter by category using quiz_id prefix
+    let data = rawData || [];
+    if (currentCat !== 'overall') {
+      data = data.filter(a => {
+        const id = (a.quiz_id || '').toLowerCase();
+        if (currentCat === 'trivia') return id.startsWith('daily-quiz-') || (!id.startsWith('snap-') && !id.startsWith('wtp-'));
+        if (currentCat === 'snap_decision') return id.startsWith('snap-decision');
+        if (currentCat === 'whos_that_player') return id.startsWith('wtp-');
+        return true;
+      });
+    }
+
+    if (!data || data.length === 0) {
+      document.getElementById('lb-table').innerHTML = `<p style="text-align:center;padding:3rem;color:var(--gray);">No scores yet for this period.</p>`;
+      return;
+    }
+
+    // Fetch profiles
+    const userIds = [...new Set(data.map(a => a.user_id).filter(Boolean))];
+    const { data: profiles } = await supabase.from('profiles').select('id, username').in('id', userIds);
+    const profileMap = {};
+    (profiles || []).forEach(p => { profileMap[p.id] = p.username; });
+
+    // Aggregate scores — logged-in users only, one attempt per user per game
+    const seenUserGame = new Set();
+    const userMap = {};
+    data.forEach(a => {
+      if (!a.user_id) return; // guests not shown on leaderboard
+      const key = a.user_id + '__' + a.quiz_id;
+      if (seenUserGame.has(key)) return;
+      seenUserGame.add(key);
+      const username = profileMap[a.user_id] || 'Player';
+      if (!userMap[a.user_id]) userMap[a.user_id] = { uid: a.user_id, username, total: 0, count: 0 };
+      userMap[a.user_id].total += a.score;
+      userMap[a.user_id].count++;
+    });
+
+    const sorted = Object.values(userMap).sort((a, b) => b.total - a.total);
+    const top25 = sorted.slice(0, 25);
+
+    // Render podium for overall
+    if (currentCat === 'overall' && top25.length > 0) {
+      renderPodium(top25.slice(0, 3));
+    }
+
+    // Game label
+    const gameLabel = { overall: 'Games', trivia: 'Trivia Games', snap_decision: 'Snap Decision Games', whos_that_player: "Who's That, Player?" }[currentCat] || 'Games';
+
+    if (top25.length === 0) {
+      document.getElementById('lb-table').innerHTML = `<p style="text-align:center;padding:3rem;color:var(--gray);">No scores yet.</p>`;
+      return;
+    }
+
+    const medals = ['🥇','🥈','🥉'];
+    const rankClasses = ['top-1','top-2','top-3'];
+    document.getElementById('lb-table').innerHTML = `
+      <div class="lb-row header"><span>Rank</span><span>Player</span><span>Score</span></div>
+      ${top25.map((u, i) => `
+        <div class="lb-row ${rankClasses[i] || ''}">
+          <span class="lb-rank">${medals[i] || (i+1)}</span>
+          <div class="lb-user">
+            <div class="lb-avatar">${u.username.charAt(0).toUpperCase()}</div>
+            <span class="lb-username">${u.username}</span>
+          </div>
+          <span class="lb-score">${u.total.toLocaleString()}</span>
+        </div>
+      `).join('')}
+    `;
+
+    // My rank
+    const user = await getCurrentUser();
+    if (user) {
+      const myIdx = sorted.findIndex(u => u.uid === user.id);
+      const mySection = document.getElementById('my-rank-section');
+      const myRow = document.getElementById('my-rank-row');
+      mySection.classList.remove('hidden');
+      if (myIdx >= 0) {
+        const me = sorted[myIdx];
+        myRow.innerHTML = `
+          <div class="lb-row my-row">
+            <span class="lb-rank" style="color:var(--gold);">${medals[myIdx] || getOrdinal(myIdx+1)}</span>
+            <div class="lb-user">
+              <div class="lb-avatar" style="border-color:var(--gold);">${me.username.charAt(0).toUpperCase()}</div>
+              <span class="lb-username">${me.username} <span style="color:var(--gold);font-size:0.75rem;">(You)</span></span>
+            </div>
+            <span class="lb-score">${me.total.toLocaleString()}</span>
+          </div>
+        `;
+      } else {
+        myRow.innerHTML = `<p style="text-align:center;padding:1.25rem;color:var(--gray);">You haven't played yet. <a href="/" style="color:var(--gold);">Play today's games!</a></p>`;
+      }
+    }
+  }
+
+  function renderPodium(top3) {
+    const order = [1, 0, 2]; // 2nd, 1st, 3rd visual order for podium
+    const medals = ['🥇','🥈','🥉'];
+    const rankColors = ['var(--gold)','#c0c0c0','#cd7f32'];
+    const heights = ['60%','100%','45%'];
+
+    document.getElementById('podium-section').innerHTML = `
+      <div class="podium" style="margin-bottom:2rem;">
+        ${order.map(i => {
+          const u = top3[i];
+          if (!u) return '<div></div>';
+          return `
+            <div class="podium-slot">
+              <div class="podium-card rank-${i+1}">
+                <span class="podium-medal">${medals[i]}</span>
+                <div class="podium-avatar">${u.username.charAt(0).toUpperCase()}</div>
+                <div class="podium-name">${u.username}</div>
+                <div class="podium-score">${u.total.toLocaleString()}</div>
+                <div class="podium-meta">${u.count} game${u.count!==1?'s':''}</div>
+                <div class="podium-bar"></div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    updateNavAuth();
+    loadLeaderboard();
+  });
+</script>
+</body>
+</html>

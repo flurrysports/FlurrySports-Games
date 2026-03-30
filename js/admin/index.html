@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — FlurrySports Trivia</title>
+  <link rel="icon" type="image/png" href="/images/logo-crown.png">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/supabase-config.js"></script>
+<script>var supabase = (window.supabase || window.Supabase).createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
+  <style>
+    .admin-sidebar {
+      width: 260px;
+      flex-shrink: 0;
+      background: var(--card-bg);
+      border-right: 1px solid var(--card-border);
+      min-height: calc(100vh - 68px);
+      padding: 1.5rem 1rem;
+    }
+    .admin-main {
+      flex: 1;
+      padding: 2rem;
+      max-width: 900px;
+    }
+    .admin-layout {
+      display: flex;
+      position: relative;
+      z-index: 1;
+    }
+    .sidebar-nav { list-style: none; }
+    .sidebar-nav li { margin-bottom: 0.25rem; }
+    .sidebar-nav a {
+      display: block;
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      text-decoration: none;
+      color: var(--gray-light);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .sidebar-nav a:hover, .sidebar-nav a.active {
+      background: rgba(245,197,24,0.1);
+      color: var(--gold);
+    }
+    .sidebar-section {
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--gray);
+      padding: 0.5rem 1rem;
+      margin-top: 1rem;
+      margin-bottom: 0.25rem;
+    }
+    .admin-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .admin-card h2 {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 900;
+      font-size: 1.5rem;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      color: var(--gold);
+    }
+    .question-block {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      position: relative;
+    }
+    .question-block .remove-q {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: rgba(255,77,109,0.15);
+      border: none;
+      color: var(--error);
+      border-radius: 6px;
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .choices-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .quiz-list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 1rem;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--card-border);
+      margin-bottom: 0.6rem;
+      gap: 1rem;
+    }
+    .quiz-list-item h4 {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 800;
+      font-size: 1.05rem;
+      text-transform: uppercase;
+    }
+    .rankings-answers-help {
+      font-size: 0.82rem;
+      color: var(--gray);
+      margin-top: 0.35rem;
+      line-height: 1.5;
+    }
+    @media (max-width: 768px) {
+      .admin-layout { flex-direction: column; }
+      .admin-sidebar { width: 100%; min-height: auto; border-right: none; border-bottom: 1px solid var(--card-border); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ADMIN LOCK SCREEN -->
+<div id="admin-lock" style="position:fixed;inset:0;z-index:1000;background:var(--dark-bg);display:flex;align-items:center;justify-content:center;padding:1rem;">
+  <div style="background:var(--card-bg);border:1px solid var(--card-border);border-radius:20px;padding:2.5rem;width:100%;max-width:400px;text-align:center;">
+    <img src="/images/logo-icon-gold.png" style="height:80px;margin-bottom:1.25rem;">
+    <h2 style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;text-transform:uppercase;margin-bottom:0.5rem;">Admin Panel</h2>
+    <p style="color:var(--gray);margin-bottom:1.75rem;font-size:0.9rem;">Sign in with your admin Supabase account to continue.</p>
+    <div class="form-group" style="text-align:left;">
+      <label class="form-label">Email</label>
+      <input class="form-input" id="lock-email" type="email" placeholder="admin@example.com" autocomplete="email">
+    </div>
+    <div class="form-group" style="text-align:left;">
+      <label class="form-label">Password</label>
+      <input class="form-input" id="lock-password" type="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div class="form-error hidden" id="lock-error" style="margin-bottom:1rem;"></div>
+    <!-- Also accept a simple admin password -->
+    <div class="form-group" style="text-align:left;">
+      <label class="form-label">OR Admin Password</label>
+      <input class="form-input" id="lock-admin-pw" type="password" placeholder="Admin site password">
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="handleAdminLogin()">Enter Admin Panel</button>
+    <p style="margin-top:1rem;font-size:0.8rem;color:var(--gray);">
+      Set <code style="color:var(--gold);">ADMIN_PASSWORD</code> in <code style="color:var(--gold);">js/supabase-config.js</code>
+    </p>
+  </div>
+</div>
+
+<nav>
+  <a class="nav-logo" href="/"><img src="/images/logo-yeti-orange.png" alt="FlurrySports" style="height:48px;width:auto;"></a>
+  <div style="display:flex;align-items:center;gap:0.75rem;">
+    <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;color:var(--gold);text-transform:uppercase;letter-spacing:0.08em;">🔒 Admin</span>
+    <button class="btn btn-ghost btn-sm" onclick="adminLogout()">Exit</button>
+  </div>
+</nav>
+
+<div class="admin-layout">
+  <!-- SIDEBAR -->
+  <aside class="admin-sidebar">
+    <img src="/images/logo-icon-gold.png" style="height:56px;display:block;margin:0 auto 1.5rem;">
+    <div class="sidebar-section">Quizzes</div>
+    <ul class="sidebar-nav">
+      <li><a onclick="showSection('add-quiz')" class="active" id="nav-add-quiz">➕ Add New Quiz</a></li>
+      <li><a onclick="showSection('manage-quizzes')" id="nav-manage-quizzes">📋 Manage Quizzes</a></li>
+    </ul>
+    <div class="sidebar-section">Stats</div>
+    <ul class="sidebar-nav">
+      <li><a onclick="showSection('stats')" id="nav-stats">📊 Overview</a></li>
+    </ul>
+    <div class="sidebar-section">Links</div>
+    <ul class="sidebar-nav">
+      <li><a href="/" target="_blank">🏠 View Site</a></li>
+      <li><a href="/leaderboard.html" target="_blank">🏆 Leaderboard</a></li>
+    </ul>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="admin-main">
+
+    <!-- ── ADD QUIZ ── -->
+    <div id="section-add-quiz">
+      <div class="admin-card">
+        <h2>Add New Quiz</h2>
+
+        <div class="form-group">
+          <label class="form-label">Quiz Title *</label>
+          <input class="form-input" id="q-title" type="text" placeholder="e.g. NBA Finals MVPs Quiz">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-textarea" id="q-desc" placeholder="Brief description shown on the quiz card..."></textarea>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+          <div class="form-group">
+            <label class="form-label">Quiz Type *</label>
+            <select class="form-select" id="q-type" onchange="onTypeChange()">
+              <option value="multiple_choice">Multiple Choice</option>
+              <option value="rankings">Rankings Fill-In</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Theme / Sport</label>
+            <input class="form-input" id="q-theme" type="text" placeholder="e.g. NBA, NFL, General">
+          </div>
+          <div class="form-group">
+            <label class="form-label" id="timer-label">Time Per Question (seconds)</label>
+            <input class="form-input" id="q-timer" type="number" placeholder="e.g. 15 (optional)">
+            <div style="font-size:0.78rem;color:var(--gray);margin-top:0.35rem;" id="timer-help">Each question gets this many seconds. Leave blank for no timer.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MC Questions -->
+      <div id="mc-section" class="admin-card">
+        <h2>Questions</h2>
+        <div id="mc-questions-list"></div>
+        <button class="btn btn-outline" onclick="addMCQuestion()">➕ Add Question</button>
+      </div>
+
+      <!-- Rankings Section -->
+      <div id="rankings-section" class="admin-card hidden">
+        <h2>Rankings Challenge</h2>
+        <div class="form-group">
+          <label class="form-label">Challenge Question / Prompt *</label>
+          <input class="form-input" id="rank-prompt" type="text" placeholder="e.g. Name the Top 10 NBA Scorers of All Time">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Answers (one per line, in correct order) *</label>
+          <textarea class="form-textarea" id="rank-answers" placeholder="Kareem Abdul-Jabbar&#10;LeBron James&#10;Karl Malone&#10;Kobe Bryant&#10;Michael Jordan" style="min-height:180px;"></textarea>
+          <p class="rankings-answers-help">Enter one name per line in ranked order. Players can answer with full name or last name only.</p>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:1rem;">
+        <button class="btn btn-primary btn-lg" onclick="saveQuiz()">💾 Save Quiz</button>
+        <button class="btn btn-ghost" onclick="resetForm()">Reset</button>
+      </div>
+      <div id="save-message" class="hidden" style="margin-top:1rem;padding:1rem;border-radius:8px;font-weight:600;"></div>
+    </div>
+
+    <!-- ── MANAGE QUIZZES ── -->
+    <div id="section-manage-quizzes" class="hidden">
+      <div class="admin-card">
+        <h2>All Quizzes</h2>
+        <div id="manage-list"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- ── STATS ── -->
+    <div id="section-stats" class="hidden">
+      <!-- Top stat cards -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.5rem;">
+        <div class="admin-card" style="text-align:center;padding:1.25rem;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2.5rem;color:var(--gold);" id="stat-q">—</div>
+          <div style="font-size:0.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.1em;">Quizzes</div>
+        </div>
+        <div class="admin-card" style="text-align:center;padding:1.25rem;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2.5rem;color:var(--gold);" id="stat-u">—</div>
+          <div style="font-size:0.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.1em;">Accounts</div>
+        </div>
+        <div class="admin-card" style="text-align:center;padding:1.25rem;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2.5rem;color:var(--gold);" id="stat-a">—</div>
+          <div style="font-size:0.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.1em;">Total Attempts</div>
+        </div>
+        <div class="admin-card" style="text-align:center;padding:1.25rem;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2.5rem;color:var(--gold);" id="stat-w">—</div>
+          <div style="font-size:0.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.1em;">This Week</div>
+        </div>
+      </div>
+
+      <!-- Daily Games Section -->
+      <div class="admin-card" style="margin-bottom:1.5rem;">
+        <h2 style="margin-bottom:1.25rem;">Daily Games</h2>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;">
+          <div style="background:rgba(255,255,255,0.03);border:1px solid var(--card-border);border-radius:10px;padding:1rem;text-align:center;">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;color:var(--gold);" id="stat-dq">—</div>
+            <div style="font-size:0.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.1em;">Daily Quiz Plays</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.03);border:1px solid var(--card-border);border-radius:10px;padding:1rem;text-align:center;">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;color:var(--gold);" id="stat-wtp">—</div>
+            <div style="font-size:0.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.1em;">Who's That Player Plays</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.03);border:1px solid var(--card-border);border-radius:10px;padding:1rem;text-align:center;">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;color:var(--gold);" id="stat-snap">—</div>
+            <div style="font-size:0.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.1em;">Snap Decision Plays</div>
+          </div>
+        </div>
+        <h3 style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray);margin-bottom:0.75rem;">Attempts by Day (last 14 days)</h3>
+        <div id="daily-by-day"><div class="spinner"></div></div>
+      </div>
+
+      <!-- Quiz plays table -->
+      <div class="admin-card" style="margin-bottom:1.5rem;">
+        <h2 style="margin-bottom:1.25rem;">Quiz Plays</h2>
+        <div id="quiz-plays-table"><div class="spinner"></div></div>
+      </div>
+
+      <!-- Recent attempts -->
+      <div class="admin-card">
+        <h2>Recent Attempts</h2>
+        <div id="recent-attempts"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="/js/auth.js"></script>
+<script>
+  // ─── ADMIN SIMPLE PASSWORD (set this!) ─────────────────────────
+  // You can set this directly here OR load from supabase-config.js
+  // For production, use Supabase Auth admin roles instead.
+  const ADMIN_PASSWORD = 'flurryadmin2025'; // ← CHANGE THIS
+
+  let mcQCount = 0;
+
+  // ─── LOCK SCREEN ──────────────────────────────────────────────
+  async function handleAdminLogin() {
+    const errEl = document.getElementById('lock-error');
+    errEl.classList.add('hidden');
+    const adminPw = document.getElementById('lock-admin-pw').value;
+    const email = document.getElementById('lock-email').value;
+    const password = document.getElementById('lock-password').value;
+
+    if (adminPw && adminPw === ADMIN_PASSWORD) {
+      sessionStorage.setItem('fs_admin', '1');
+      document.getElementById('admin-lock').style.display = 'none';
+      loadManageQuizzes();
+      loadStats();
+      return;
+    }
+
+    if (email && password) {
+      const { data, error } = await signIn(email, password);
+      if (error) { errEl.textContent = error.message; errEl.classList.remove('hidden'); return; }
+      sessionStorage.setItem('fs_admin', '1');
+      document.getElementById('admin-lock').style.display = 'none';
+      loadManageQuizzes();
+      loadStats();
+      return;
+    }
+
+    errEl.textContent = 'Please enter credentials.';
+    errEl.classList.remove('hidden');
+  }
+
+  function adminLogout() {
+    sessionStorage.removeItem('fs_admin');
+    window.location.href = '/';
+  }
+
+  // ─── NAVIGATION ───────────────────────────────────────────────
+  function showSection(name) {
+    ['add-quiz','manage-quizzes','stats'].forEach(s => {
+      document.getElementById(`section-${s}`).classList.add('hidden');
+      document.getElementById(`nav-${s}`)?.classList.remove('active');
+    });
+    document.getElementById(`section-${name}`).classList.remove('hidden');
+    document.getElementById(`nav-${name}`)?.classList.add('active');
+    if (name === 'manage-quizzes') loadManageQuizzes();
+    if (name === 'stats') loadStats();
+  }
+
+  // ─── QUIZ TYPE CHANGE ─────────────────────────────────────────
+  function onTypeChange() {
+    const type = document.getElementById('q-type').value;
+    document.getElementById('mc-section').classList.toggle('hidden', type !== 'multiple_choice');
+    document.getElementById('rankings-section').classList.toggle('hidden', type !== 'rankings');
+    const timerLabel = document.getElementById('timer-label');
+    const timerHelp = document.getElementById('timer-help');
+    const timerInput = document.getElementById('q-timer');
+    if (type === 'multiple_choice') {
+      timerLabel.textContent = 'Time Per Question (seconds)';
+      timerHelp.textContent = 'Each question gets this many seconds. Leave blank for no timer.';
+      timerInput.placeholder = 'e.g. 15 (optional)';
+    } else {
+      timerLabel.textContent = 'Total Quiz Timer (seconds)';
+      timerHelp.textContent = 'Total time allowed for the full rankings quiz. Leave blank for no timer.';
+      timerInput.placeholder = 'e.g. 60 (optional)';
+    }
+  }
+
+  // ─── ADD MC QUESTION ──────────────────────────────────────────
+  function addMCQuestion(data = null) {
+    const id = mcQCount++;
+    const div = document.createElement('div');
+    div.className = 'question-block';
+    div.id = `q-block-${id}`;
+    div.innerHTML = `
+      <button class="remove-q" onclick="document.getElementById('q-block-${id}').remove()">✕</button>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;color:var(--gold);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem;">Question ${id + 1}</div>
+      <div class="form-group">
+        <label class="form-label">Question Text *</label>
+        <input class="form-input q-text" type="text" value="${data?.question_text || ''}" placeholder="e.g. Who has the most NBA championships as a player?">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Answer Choices (the correct answer must match one exactly) *</label>
+        <div class="choices-grid">
+          <input class="form-input q-choice" type="text" placeholder="A: Choice" value="${data?.choices?.[0] || ''}">
+          <input class="form-input q-choice" type="text" placeholder="B: Choice" value="${data?.choices?.[1] || ''}">
+          <input class="form-input q-choice" type="text" placeholder="C: Choice" value="${data?.choices?.[2] || ''}">
+          <input class="form-input q-choice" type="text" placeholder="D: Choice" value="${data?.choices?.[3] || ''}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Correct Answer (must match a choice exactly) *</label>
+        <input class="form-input q-answer" type="text" value="${data?.answer || ''}" placeholder="e.g. Bill Russell">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Points Value</label>
+        <input class="form-input q-points" type="number" value="${data?.points || 100}" placeholder="100">
+      </div>
+    `;
+    document.getElementById('mc-questions-list').appendChild(div);
+  }
+
+  // ─── SAVE QUIZ ────────────────────────────────────────────────
+  async function saveQuiz() {
+    const msgEl = document.getElementById('save-message');
+    msgEl.classList.add('hidden');
+
+    const title = document.getElementById('q-title').value.trim();
+    const type = document.getElementById('q-type').value;
+    const desc = document.getElementById('q-desc').value.trim();
+    const theme = document.getElementById('q-theme').value.trim();
+    const timerVal = document.getElementById('q-timer').value;
+    const timerSec = timerVal ? parseInt(timerVal) : null;
+
+    if (!title) { alert('Quiz title is required.'); return; }
+
+    // Insert quiz
+    const { data: quizData, error: quizErr } = await supabase.from('quizzes').insert({
+      title, description: desc || null, type, theme: theme || null, timer_seconds: timerSec
+    }).select().single();
+
+    if (quizErr) { msgEl.style.background = 'rgba(255,77,109,0.1)'; msgEl.style.color = 'var(--error)'; msgEl.textContent = 'Error saving quiz: ' + quizErr.message; msgEl.classList.remove('hidden'); return; }
+
+    // Insert questions
+    if (type === 'multiple_choice') {
+      const blocks = document.querySelectorAll('.question-block');
+      const questionRows = [];
+      let valid = true;
+      blocks.forEach((block, i) => {
+        const text = block.querySelector('.q-text').value.trim();
+        const choices = [...block.querySelectorAll('.q-choice')].map(c => c.value.trim()).filter(Boolean);
+        const answer = block.querySelector('.q-answer').value.trim();
+        const points = parseInt(block.querySelector('.q-points').value) || 100;
+        if (!text || !answer || choices.length < 2) { valid = false; return; }
+        questionRows.push({ quiz_id: quizData.id, question_text: text, type: 'multiple_choice', choices, answer, points, sort_order: i });
+      });
+      if (!valid) { await supabase.from('quizzes').delete().eq('id', quizData.id); alert('Please fill all question fields (text, at least 2 choices, correct answer).'); return; }
+      if (questionRows.length === 0) { await supabase.from('quizzes').delete().eq('id', quizData.id); alert('Please add at least one question.'); return; }
+      await supabase.from('questions').insert(questionRows);
+    } else {
+      const prompt = document.getElementById('rank-prompt').value.trim();
+      const answersRaw = document.getElementById('rank-answers').value.trim();
+      if (!prompt || !answersRaw) { await supabase.from('quizzes').delete().eq('id', quizData.id); alert('Please fill in the prompt and answers.'); return; }
+      const answersArr = answersRaw.split('\n').map(l => l.trim()).filter(Boolean);
+      await supabase.from('questions').insert({ quiz_id: quizData.id, question_text: prompt, type: 'rankings', answer: JSON.stringify(answersArr), sort_order: 0 });
+    }
+
+    msgEl.style.background = 'rgba(0,214,143,0.1)';
+    msgEl.style.color = 'var(--success)';
+    msgEl.textContent = `✅ Quiz "${title}" saved successfully!`;
+    msgEl.classList.remove('hidden');
+    resetForm();
+  }
+
+  function resetForm() {
+    document.getElementById('q-title').value = '';
+    document.getElementById('q-desc').value = '';
+    document.getElementById('q-theme').value = '';
+    document.getElementById('q-timer').value = '';
+    document.getElementById('rank-prompt').value = '';
+    document.getElementById('rank-answers').value = '';
+    document.getElementById('mc-questions-list').innerHTML = '';
+    mcQCount = 0;
+    onTypeChange();
+  }
+
+  // ─── MANAGE QUIZZES ────────────────────────────────────────────
+  async function loadManageQuizzes() {
+    const container = document.getElementById('manage-list');
+    const [{ data: quizzes, error }, { data: attemptCounts }] = await Promise.all([
+      supabase.from('quizzes').select('*').order('created_at', { ascending: false }),
+      supabase.from('attempts').select('quiz_id')
+    ]);
+    if (error || !quizzes) { container.innerHTML = '<p style="color:var(--error)">Failed to load.</p>'; return; }
+    if (quizzes.length === 0) { container.innerHTML = '<p style="color:var(--gray)">No quizzes yet. Add your first one!</p>'; return; }
+
+    // Build play count map
+    const playMap = {};
+    (attemptCounts || []).forEach(a => {
+      if (a.quiz_id) playMap[a.quiz_id] = (playMap[a.quiz_id] || 0) + 1;
+    });
+
+    // Store quiz data globally so button handlers can access by id
+    window._adminQuizzes = quizzes;
+    container.innerHTML = quizzes.map(q => {
+      const plays = playMap[q.id] || 0;
+      const activeStyle = q.is_active
+        ? 'background:rgba(0,214,143,0.15);color:var(--success);'
+        : 'background:rgba(255,77,109,0.1);color:var(--error);';
+      return [
+        '<div class="quiz-list-item">',
+          '<div style="flex:1;">',
+            '<h4>', q.title, '</h4>',
+            '<div style="font-size:0.8rem;color:var(--gray);margin-top:0.2rem;">',
+              (q.type === 'multiple_choice' ? '🎯 Multiple Choice' : '📋 Rankings'),
+              (q.theme ? ' · ' + q.theme : ''),
+              (q.timer_seconds ? ' · ' + formatTime(q.timer_seconds) + ' timer' : ''),
+            '</div>',
+            '<div style="font-size:0.78rem;color:var(--gold);margin-top:0.3rem;font-family:Barlow Condensed,sans-serif;font-weight:700;">',
+              plays.toLocaleString(), ' play', (plays !== 1 ? 's' : ''),
+            '</div>',
+          '</div>',
+          '<div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">',
+            '<span style="font-size:0.75rem;padding:0.2rem 0.6rem;border-radius:4px;', activeStyle, '">', (q.is_active ? 'Active' : 'Hidden'), '</span>',
+            '<button class="btn btn-ghost btn-sm" data-qid="', q.id, '" data-active="', q.is_active, '" onclick="toggleQuizById(this)">', (q.is_active ? 'Hide' : 'Show'), '</button>',
+            '<button class="btn btn-outline btn-sm" data-qid="', q.id, '" onclick="editQuizById(this)">✏️ Edit</button>',
+            '<a class="btn btn-ghost btn-sm" href="/quiz.html?id=', q.id, '" target="_blank">Preview</a>',
+            '<button class="btn btn-sm" style="background:rgba(255,77,109,0.15);color:var(--error);border:1px solid rgba(255,77,109,0.3);" data-qid="', q.id, '" onclick="deleteQuizById(this)">Delete</button>',
+          '</div>',
+        '</div>'
+      ].join('');
+    }).join('');
+  }
+
+  function toggleQuizById(btn) { const id = btn.dataset.qid; const active = btn.dataset.active === 'true'; toggleQuiz(id, active); }
+  function editQuizById(btn) { editQuiz(btn.dataset.qid); }
+  function deleteQuizById(btn) { deleteQuiz(btn.dataset.qid); }
+
+  async function toggleQuiz(id, current) {
+    await supabase.from('quizzes').update({ is_active: !current }).eq('id', id);
+    loadManageQuizzes();
+  }
+
+  async function deleteQuiz(id) {
+    if (!confirm('Delete this quiz? This will also delete all questions. Existing attempt scores are preserved.')) return;
+    const { error } = await supabase.from('quizzes').delete().eq('id', id);
+    if (error) { showToast('Error deleting quiz: ' + error.message, 'error'); return; }
+    showToast('Quiz deleted.', 'success');
+    loadManageQuizzes();
+  }
+
+  async function editQuiz(id) {
+    const { data: quiz, error: qErr } = await supabase.from('quizzes').select('*').eq('id', id).single();
+    const { data: questions, error: qqErr } = await supabase.from('questions').select('*').eq('quiz_id', id).order('sort_order');
+    if (qErr || qqErr) { showToast('Failed to load quiz for editing.', 'error'); return; }
+
+    // Switch to add-quiz section and populate fields
+    showSection('add-quiz');
+
+    // Set mode to edit
+    window._editQuizId = id;
+    document.querySelector('.admin-card h2').textContent = 'Edit Quiz';
+
+    document.getElementById('q-title').value = quiz.title || '';
+    document.getElementById('q-desc').value = quiz.description || '';
+    document.getElementById('q-theme').value = quiz.theme || '';
+    document.getElementById('q-timer').value = quiz.timer_seconds || '';
+    document.getElementById('q-type').value = quiz.type;
+    onTypeChange();
+
+    if (quiz.type === 'multiple_choice') {
+      document.getElementById('mc-questions-list').innerHTML = '';
+      mcQCount = 0;
+      (questions || []).forEach(q => addMCQuestion(q));
+    } else {
+      document.getElementById('rank-prompt').value = questions?.[0]?.question_text || '';
+      let answers = [];
+      try { answers = JSON.parse(questions?.[0]?.answer || '[]'); } catch(e) {}
+      document.getElementById('rank-answers').value = answers.join('\n');
+    }
+
+    // Update save button
+    const saveBtn = document.querySelector('[onclick="saveQuiz()"]');
+    if (saveBtn) {
+      saveBtn.textContent = '💾 Update Quiz';
+      saveBtn.setAttribute('onclick', 'updateQuiz()');
+    }
+  }
+
+  async function updateQuiz() {
+    const id = window._editQuizId;
+    if (!id) { saveQuiz(); return; }
+
+    const title = document.getElementById('q-title').value.trim();
+    const type = document.getElementById('q-type').value;
+    const desc = document.getElementById('q-desc').value.trim();
+    const theme = document.getElementById('q-theme').value.trim();
+    const timerSec = document.getElementById('q-timer').value ? parseInt(document.getElementById('q-timer').value) : null;
+
+    if (!title) { alert('Quiz title is required.'); return; }
+
+    // Update quiz metadata only (don't touch attempts)
+    const { error: quizErr } = await supabase.from('quizzes').update({
+      title, description: desc || null, type, theme: theme || null, timer_seconds: timerSec
+    }).eq('id', id);
+
+    if (quizErr) { showToast('Error updating quiz: ' + quizErr.message, 'error'); return; }
+
+    // Replace questions (doesn't affect existing attempt scores - scores are stored in attempts table)
+    await supabase.from('questions').delete().eq('quiz_id', id);
+
+    if (type === 'multiple_choice') {
+      const blocks = document.querySelectorAll('.question-block');
+      const rows = [];
+      blocks.forEach((block, i) => {
+        const text = block.querySelector('.q-text').value.trim();
+        const choices = [...block.querySelectorAll('.q-choice')].map(c => c.value.trim()).filter(Boolean);
+        const answer = block.querySelector('.q-answer').value.trim();
+        const points = parseInt(block.querySelector('.q-points').value) || 100;
+        if (text && answer && choices.length >= 2) rows.push({ quiz_id: id, question_text: text, type: 'multiple_choice', choices, answer, points, sort_order: i });
+      });
+      if (rows.length > 0) await supabase.from('questions').insert(rows);
+    } else {
+      const prompt = document.getElementById('rank-prompt').value.trim();
+      const answersArr = document.getElementById('rank-answers').value.trim().split('\n').map(l => l.trim()).filter(Boolean);
+      if (prompt && answersArr.length > 0) await supabase.from('questions').insert({ quiz_id: id, question_text: prompt, type: 'rankings', answer: JSON.stringify(answersArr), sort_order: 0 });
+    }
+
+    showToast(`"${title}" updated successfully!`, 'success');
+    window._editQuizId = null;
+
+    // Reset button
+    const saveBtn = document.querySelector('[onclick="updateQuiz()"]');
+    if (saveBtn) { saveBtn.textContent = '💾 Save Quiz'; saveBtn.setAttribute('onclick', 'saveQuiz()'); }
+    document.querySelector('.admin-card h2').textContent = 'Add New Quiz';
+    resetForm();
+    showSection('manage-quizzes');
+  }
+
+  // ─── STATS ─────────────────────────────────────────────────────
+  async function loadStats() {
+    const oneWeekAgo = new Date(Date.now() - 7*24*60*60*1000).toISOString();
+
+    // Top-level counts
+    const [{ count: qc }, { count: ac }, { count: uc }, { count: wc }] = await Promise.all([
+      supabase.from('quizzes').select('*', { count: 'exact', head: true }),
+      supabase.from('attempts').select('*', { count: 'exact', head: true }),
+      supabase.from('profiles').select('*', { count: 'exact', head: true }),
+      supabase.from('attempts').select('*', { count: 'exact', head: true }).gte('created_at', oneWeekAgo)
+    ]);
+    document.getElementById('stat-q').textContent = qc || 0;
+    document.getElementById('stat-a').textContent = (ac || 0).toLocaleString();
+    document.getElementById('stat-u').textContent = (uc || 0).toLocaleString();
+    document.getElementById('stat-w').textContent = (wc || 0).toLocaleString();
+
+    // Fetch all attempts for daily game breakdown
+    const { data: allAttempts } = await supabase
+      .from('attempts')
+      .select('quiz_id, created_at')
+      .range(0, 9999);
+
+    if (allAttempts) {
+      const dqRows   = allAttempts.filter(a => (a.quiz_id||'').startsWith('daily-quiz-'));
+      const wtpRows  = allAttempts.filter(a => (a.quiz_id||'').startsWith('wtp-'));
+      const snapRows = allAttempts.filter(a => (a.quiz_id||'').startsWith('snap-decision'));
+      document.getElementById('stat-dq').textContent   = dqRows.length.toLocaleString();
+      document.getElementById('stat-wtp').textContent  = wtpRows.length.toLocaleString();
+      document.getElementById('stat-snap').textContent = snapRows.length.toLocaleString();
+
+      // By-day table for last 14 days
+      const dailyRows = [...dqRows, ...wtpRows, ...snapRows];
+      const dayMap = {};
+      const now = new Date();
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date(now); d.setDate(d.getDate() - i);
+        const key = d.toISOString().slice(0,10);
+        dayMap[key] = { quiz: 0, wtp: 0, snap: 0 };
+      }
+      dailyRows.forEach(a => {
+        const day = (a.created_at||'').slice(0,10);
+        if (!dayMap[day]) return;
+        if ((a.quiz_id||'').startsWith('daily-quiz-')) dayMap[day].quiz++;
+        else if ((a.quiz_id||'').startsWith('wtp-')) dayMap[day].wtp++;
+        else if ((a.quiz_id||'').startsWith('snap-')) dayMap[day].snap++;
+      });
+      const dayKeys = Object.keys(dayMap).sort();
+      const tbStyle = 'width:100%;border-collapse:collapse;font-size:0.85rem;';
+      const thStyle = 'padding:0.5rem 0.75rem;text-align:left;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gray);border-bottom:1px solid var(--card-border);';
+      const tdStyle = 'padding:0.5rem 0.75rem;border-bottom:1px solid rgba(255,255,255,0.04);';
+      const numStyle = 'padding:0.5rem 0.75rem;border-bottom:1px solid rgba(255,255,255,0.04);text-align:right;font-family:Barlow Condensed,sans-serif;font-weight:700;color:var(--gold);';
+      document.getElementById('daily-by-day').innerHTML =
+        '<table style="' + tbStyle + '">' +
+        '<thead><tr>' +
+        '<th style="' + thStyle + '">Date</th>' +
+        '<th style="' + thStyle + 'text-align:right;">Daily Quiz</th>' +
+        '<th style="' + thStyle + 'text-align:right;">Who&#39;s That Player</th>' +
+        '<th style="' + thStyle + 'text-align:right;">Snap Decision</th>' +
+        '<th style="' + thStyle + 'text-align:right;">Total</th>' +
+        '</tr></thead><tbody>' +
+        dayKeys.map(day => {
+          const r = dayMap[day];
+          const total = r.quiz + r.wtp + r.snap;
+          return '<tr>' +
+            '<td style="' + tdStyle + '">' + day + '</td>' +
+            '<td style="' + numStyle + '">' + (r.quiz || '—') + '</td>' +
+            '<td style="' + numStyle + '">' + (r.wtp || '—') + '</td>' +
+            '<td style="' + numStyle + '">' + (r.snap || '—') + '</td>' +
+            '<td style="' + numStyle + '">' + (total || '—') + '</td>' +
+            '</tr>';
+        }).join('') +
+        '</tbody></table>';
+    }
+
+    // Quiz plays table - filter client-side from allAttempts already fetched
+    const allAttemptsForQuiz = (allAttempts || []).filter(a => {
+      const id = (a.quiz_id || '');
+      return !id.startsWith('daily-quiz-') && !id.startsWith('wtp-') && !id.startsWith('snap-decision');
+    });
+
+    const { data: allQuizzes } = await supabase.from('quizzes').select('id, title');
+    const quizTitleMap = {};
+    (allQuizzes || []).forEach(q => { quizTitleMap[q.id] = q.title; });
+
+    if (allAttemptsForQuiz) {
+      const quizCounts = {};
+      allAttemptsForQuiz.forEach(a => {
+        if (!quizCounts[a.quiz_id]) quizCounts[a.quiz_id] = 0;
+        quizCounts[a.quiz_id]++;
+      });
+      const sorted = Object.entries(quizCounts).sort((a,b) => b[1]-a[1]);
+      const tbStyle = 'width:100%;border-collapse:collapse;font-size:0.85rem;';
+      const thStyle = 'padding:0.5rem 0.75rem;text-align:left;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gray);border-bottom:1px solid var(--card-border);';
+      const tdStyle = 'padding:0.5rem 0.75rem;border-bottom:1px solid rgba(255,255,255,0.04);';
+      const numStyle = 'padding:0.5rem 0.75rem;border-bottom:1px solid rgba(255,255,255,0.04);text-align:right;font-family:Barlow Condensed,sans-serif;font-weight:700;color:var(--gold);';
+      document.getElementById('quiz-plays-table').innerHTML = sorted.length === 0
+        ? '<p style="color:var(--gray)">No quiz plays yet.</p>'
+        : '<table style="' + tbStyle + '">' +
+          '<thead><tr><th style="' + thStyle + '">Quiz</th><th style="' + thStyle + 'text-align:right;">Plays</th></tr></thead>' +
+          '<tbody>' + sorted.map(([id, count]) =>
+            '<tr><td style="' + tdStyle + '">' + (quizTitleMap[id] || id.slice(0,8)+'…') + '</td>' +
+            '<td style="' + numStyle + '">' + count + '</td></tr>'
+          ).join('') + '</tbody></table>';
+    }
+
+    // Recent attempts
+    const { data: recent } = await supabase
+      .from('attempts')
+      .select('quiz_id, score, created_at, profiles(username)')
+      .order('created_at', { ascending: false })
+      .limit(15);
+
+    const container = document.getElementById('recent-attempts');
+    if (!recent || recent.length === 0) { container.innerHTML = '<p style="color:var(--gray)">No attempts yet.</p>'; return; }
+    container.innerHTML = recent.map(a => {
+      const qid = a.quiz_id || '';
+      const label = qid.startsWith('daily-quiz-') ? 'Daily Quiz (' + qid.replace('daily-quiz-','') + ')' :
+                    qid.startsWith('wtp-') ? "Who&#39;s That Player (" + qid.replace('wtp-','') + ')' :
+                    qid.startsWith('snap-decision') ? 'Snap Decision' : qid.slice(0,8)+'…';
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.65rem 0;border-bottom:1px solid var(--card-border);font-size:0.85rem;">' +
+        '<div><strong>' + (a.profiles?.username || 'Guest') + '</strong><span style="color:var(--gray);margin-left:0.5rem;">' + label + '</span></div>' +
+        '<span style="color:var(--gold);font-family:Barlow Condensed,sans-serif;font-weight:800;">' + a.score + ' pts</span>' +
+        '</div>';
+    }).join('');
+  }
+
+  // ─── INIT ──────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    if (sessionStorage.getItem('fs_admin') === '1') {
+      document.getElementById('admin-lock').style.display = 'none';
+      loadManageQuizzes();
+      loadStats();
+    }
+    addMCQuestion(); // start with one empty question
+  });
+</script>
+</body>
+</html>

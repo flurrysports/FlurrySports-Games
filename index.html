@@ -448,7 +448,7 @@
     const wtpDone  = isWTPDone();
 
     grid.innerHTML =
-      '<div class="game-tile" onclick="location.href=\'/daily-quiz.html\'" style="cursor:pointer;">' +
+      '<div class="game-tile">' +
         '<div class="game-tile-header">' +
           '<div class="game-tile-icon quiz">' + quizEmoji + '</div>' +
           '<div><div class="game-tile-name" style="color:var(--gold);">Daily Quiz</div>' +
@@ -459,12 +459,12 @@
           '<div class="game-tile-desc">5 sports trivia questions on today&#39;s theme. Faster correct answers score more!</div>' +
         '</div>' +
         '<div class="game-tile-footer"><span class="game-tile-meta">⏱️ 15s per question</span>' +
-          (quizDone ? '<a href="/daily-quiz.html" style="text-decoration:none;"><span class="game-completed-badge" style="cursor:pointer;">✓ Completed — View Score</span></a>' :
+          (quizDone ? '<a href="/daily-quiz.html" class="btn btn-outline btn-sm" style="border-color:var(--success);color:var(--success);">✓ View Score</a>' :
             '<a href="/daily-quiz.html" class="btn btn-primary btn-sm">Play Now →</a>') +
         '</div>' +
       '</div>' +
 
-      '<div class="game-tile" onclick="location.href=\'/snap-decision.html\'" style="cursor:pointer;">' +
+      '<div class="game-tile">' +
         '<div class="game-tile-header">' +
           '<div class="game-tile-icon snap">🏈</div>' +
           '<div><div class="game-tile-name" style="color:#4caf50;">Snap Decision</div>' +
@@ -475,12 +475,12 @@
           '<div class="game-tile-desc">Read 4 defensive looks and call the right play each time. 4 seconds per snap.</div>' +
         '</div>' +
         '<div class="game-tile-footer"><span class="game-tile-meta">⏱️ 4s per snap · 4 Downs</span>' +
-          (snapDone ? '<a href="/snap-decision.html" style="text-decoration:none;"><span class="game-completed-badge" style="cursor:pointer;">✓ Completed — View Score</span></a>' :
+          (snapDone ? '<a href="/snap-decision.html" class="btn btn-outline btn-sm" style="border-color:var(--success);color:var(--success);">✓ View Score</a>' :
             '<a href="/snap-decision.html" class="btn btn-sm" style="background:#4caf50;color:#030f03;font-family:Barlow Condensed,sans-serif;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;border-radius:8px;padding:0.4rem 0.9rem;text-decoration:none;">Play Now →</a>') +
         '</div>' +
       '</div>' +
 
-      '<div class="game-tile" onclick="location.href=\'/whos-that-player.html\'" style="cursor:pointer;">' +
+      '<div class="game-tile">' +
         '<div class="game-tile-header">' +
           '<div class="game-tile-icon wtp">❓</div>' +
           '<div><div class="game-tile-name" style="color:#3498db;">Who&#39;s That, Player?</div>' +
@@ -491,7 +491,7 @@
           '<div class="game-tile-desc">5 clues revealed one at a time. Guess early for more points.</div>' +
         '</div>' +
         '<div class="game-tile-footer"><span class="game-tile-meta">Up to 5 clues · ' + dailyPlayer.league + '</span>' +
-          (wtpDone ? '<a href="/whos-that-player.html" style="text-decoration:none;"><span class="game-completed-badge" style="cursor:pointer;">✓ Completed — View Score</span></a>' :
+          (wtpDone ? '<a href="/whos-that-player.html" class="btn btn-outline btn-sm" style="border-color:var(--success);color:var(--success);">✓ View Score</a>' :
             '<a href="/whos-that-player.html" class="btn btn-sm" style="background:#1a4a6a;color:#3498db;border:1px solid #1a5a8a;font-family:Barlow Condensed,sans-serif;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;border-radius:8px;padding:0.4rem 0.9rem;text-decoration:none;">Play Now →</a>') +
         '</div>' +
       '</div>';

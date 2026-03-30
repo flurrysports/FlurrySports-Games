@@ -129,13 +129,40 @@ function saveResult(data) {
   try { localStorage.setItem(storageKey, JSON.stringify(data)); } catch(e) {}
 }
 function loadResult() {
-  try { return JSON.parse(localStorage.getItem(storageKey)); } catch(e) { return null; }
+  try {
+    // Check new key first
+    var r = localStorage.getItem(storageKey);
+    if (r) return JSON.parse(r);
+    // Fallback: check ALL old key formats this quiz may have been stored under
+    var oldKeys = [
+      'fs_r_daily-quiz-' + seed,          // no-salt key
+      'fs_r_daily-quiz-' + (seed + 166),  // +166 salt key
+      'fs_r_daily-quiz-' + (seed + 56),   // other salt attempts
+      'fs_result_daily-quiz-' + seed,     // alternate prefix
+    ];
+    for (var i = 0; i < oldKeys.length; i++) {
+      var r2 = localStorage.getItem(oldKeys[i]);
+      if (r2) {
+        // Migrate to new key
+        localStorage.setItem(storageKey, r2);
+        return JSON.parse(r2);
+      }
+    }
+    return null;
+  } catch(e) { return null; }
 }
 function markPlayed() {
   try { localStorage.setItem('dq_played_' + seed, '1'); } catch(e) {}
 }
 function hasPlayed() {
-  return localStorage.getItem('dq_played_' + seed) === '1';
+  if (localStorage.getItem('dq_played_' + seed) === '1') return true;
+  // Also check old fs_attempted array
+  try {
+    var attempted = JSON.parse(localStorage.getItem('fs_attempted') || '[]');
+    return attempted.includes('daily-quiz-' + seed) || 
+           attempted.includes('daily-quiz-' + (seed + 166)) ||
+           attempted.includes('daily-quiz-' + (seed + 56));
+  } catch(e) { return false; }
 }
 
 // ── Game state ───────────────────────────────────────────

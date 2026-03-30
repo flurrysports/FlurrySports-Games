@@ -347,13 +347,33 @@ function getPacificOffsetMinutes(d) {
     try { localStorage.setItem(wtpDateKey, JSON.stringify(data)); } catch(e) {}
   }
   function loadWTPResult() {
-    try { return JSON.parse(localStorage.getItem(wtpDateKey)); } catch(e) { return null; }
+    try {
+      var r = localStorage.getItem(wtpDateKey);
+      if (r) return JSON.parse(r);
+      // Check all old key formats
+      var seed = dateSeed();
+      var oldKeys = [
+        'fs_wtp_wtp-' + seed,
+        'fs_wtp_wtp-' + (seed + 166),
+        'fs_wtp_wtp-' + (seed + 56),
+      ];
+      for (var i = 0; i < oldKeys.length; i++) {
+        var r2 = localStorage.getItem(oldKeys[i]);
+        if (r2) { localStorage.setItem(wtpDateKey, r2); return JSON.parse(r2); }
+      }
+      return null;
+    } catch(e) { return null; }
   }
   function markWTPPlayed() {
     try { localStorage.setItem(wtpPlayedKey, '1'); } catch(e) {}
   }
   function hasWTPPlayed() {
-    return localStorage.getItem(wtpPlayedKey) === '1';
+    if (localStorage.getItem(wtpPlayedKey) === '1') return true;
+    try {
+      var seed = dateSeed();
+      var attempted = JSON.parse(localStorage.getItem('fs_attempted') || '[]');
+      return attempted.includes('wtp-' + seed) || attempted.includes('wtp-' + (seed + 166));
+    } catch(e) { return false; }
   }
 
   function renderGame() {

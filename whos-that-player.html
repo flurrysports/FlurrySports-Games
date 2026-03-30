@@ -8,7 +8,16 @@
   <link rel="stylesheet" href="/css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="/js/supabase-config.js"></script>
-  <script>var supabase = (window.supabase || window.Supabase).createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
+  <script>
+  (function() {
+    var _lib = window.supabase || window.Supabase;
+    if (!_lib) { console.error('Supabase CDN failed to load'); return; }
+    var _create = _lib.createClient || (_lib.default && _lib.default.createClient);
+    if (!_create) { console.error('createClient not found on Supabase object. Keys:', Object.keys(_lib)); return; }
+    window.supabase = _create(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('Supabase client created:', typeof window.supabase);
+  })();
+</script>
   <style>
     .wtp-shell { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; position: relative; z-index: 1; }
     .wtp-hero {

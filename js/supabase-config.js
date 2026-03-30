@@ -1,2 +1,2 @@
 const SUPABASE_URL = 'https://sseikmeeiwfhousepsbs.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_tDpWI4W9gqJcyNfcGOULGg_6wuLSoou';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzZWlrbWVlaXdmaG91c2Vwc2JzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNTUxMjcsImV4cCI6MjA4OTYzMTEyN30.2FeemS88FQa4_terX5XIoxkgpY2v3iYC6hiZAIxToTg';

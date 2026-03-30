@@ -67,7 +67,6 @@ async function hasAttemptedQuiz(gameId) {
 // game_type: 'trivia' | 'snap_decision' | 'whos_that_player'
 async function saveAttempt(gameId, score, timeTakenSeconds, answers, gameType) {
   try {
-    // Use getCurrentUser() which has its own error handling
     const user = await getCurrentUser();
     const cookieId = getCookieId();
     const { fire } = getStreakDisplay();
@@ -82,18 +81,20 @@ async function saveAttempt(gameId, score, timeTakenSeconds, answers, gameType) {
     if (safeAnswers !== null) attemptData.answers = safeAnswers;
     if (timeTakenSeconds) attemptData.time_taken_seconds = timeTakenSeconds;
     if (user) attemptData.user_id = user.id;
-    console.log('Saving attempt:', gameId, 'score:', finalScore, 'user:', user ? user.id : 'guest');
+    console.log('Saving attempt:', gameId, 'score:', finalScore, 'user:', user ? user.id : 'guest', 'supabase type:', typeof supabase, 'has from:', typeof supabase.from);
     const { data, error } = await supabase.from('attempts').insert(attemptData).select().single();
     if (error) {
-      console.error('Save attempt error:', error.message, error.details, error.hint);
+      console.error('SAVE FAILED:', error.message, '| code:', error.code, '| details:', error.details, '| hint:', error.hint);
+      showToast('Score save failed: ' + error.message, 'error');
       return null;
     }
-    console.log('Attempt saved successfully:', data.id);
+    console.log('Attempt saved OK, id:', data.id);
     markAttemptedLocally(gameId);
     updateStreak();
     return data;
   } catch(e) {
-    console.error('saveAttempt exception:', e);
+    console.error('saveAttempt threw:', e.message, e);
+    showToast('Score save error: ' + e.message, 'error');
     return null;
   }
 }
@@ -154,6 +155,32 @@ function showToast(msg, type = 'default') {
   toast.className = `toast ${type}`;
   setTimeout(() => toast.classList.add('show'), 10);
   setTimeout(() => toast.classList.remove('show'), 3500);
+}
+
+
+// ─── SUPABASE CONNECTIVITY TEST ──────────────────────────────────
+async function testSupabaseConnection() {
+  try {
+    if (typeof supabase === 'undefined') {
+      console.error('SUPABASE: variable is undefined');
+      return false;
+    }
+    if (typeof supabase.from !== 'function') {
+      console.error('SUPABASE: .from() is not a function. supabase is:', typeof supabase, Object.keys(supabase).slice(0,5));
+      return false;
+    }
+    // Try a lightweight query
+    const { error } = await supabase.from('quizzes').select('id').limit(1);
+    if (error) {
+      console.error('SUPABASE: test query failed:', error.message, error.code);
+      return false;
+    }
+    console.log('SUPABASE: connection OK');
+    return true;
+  } catch(e) {
+    console.error('SUPABASE: test threw:', e.message);
+    return false;
+  }
 }
 
 // ─── AUTH STATE ───────────────────────────────────────────────────

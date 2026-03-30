@@ -11,13 +11,10 @@
   <script>
   (function() {
     var _lib = window.supabase || window.Supabase;
-    if (!_lib) { console.error('Supabase CDN failed to load'); return; }
-    var _create = _lib.createClient || (_lib.default && _lib.default.createClient);
-    if (!_create) { console.error('createClient not found on Supabase object. Keys:', Object.keys(_lib)); return; }
-    window.supabase = _create(SUPABASE_URL, SUPABASE_ANON_KEY);
-    console.log('Supabase client created:', typeof window.supabase);
+    var _create = _lib && (_lib.createClient || (_lib.default && _lib.default.createClient));
+    if (_create) window.supabase = _create(SUPABASE_URL, SUPABASE_ANON_KEY);
   })();
-</script>
+  </script>
   <style>
     .quiz-shell { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; position: relative; z-index: 1; }
     .q-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: 2rem; margin-bottom: 1.5rem; }
@@ -59,10 +56,7 @@
     <li><a href="/quizzes.html">Quizzes</a></li>
     <li><a href="/leaderboard.html">Leaderboard</a></li>
   </ul>
-  <div class="nav-actions" id="nav-actions">
-    <button class="btn btn-ghost btn-sm" onclick="openModal('login')">Log In</button>
-    <button class="btn btn-primary btn-sm" onclick="openModal('signup')">Sign Up</button>
-  </div>
+  <div class="nav-actions" id="nav-actions"></div>
 </nav>
 <div class="quiz-shell">
   <div style="margin-bottom:1.5rem;">
@@ -72,12 +66,12 @@
 </div>
 <script src="/js/auth.js"></script>
 <script>
-// ── Pacific time seed ────────────────────────────────────
+// ── Pacific seed (plain date, no salt) ───────────────────
 function getPacificOffsetMinutes(d) {
   var y = d.getUTCFullYear();
-  var dstStart = new Date(Date.UTC(y, 2, 14 - (new Date(Date.UTC(y,2,1)).getUTCDay()+6)%7, 10));
-  var dstEnd   = new Date(Date.UTC(y,10,  7 - (new Date(Date.UTC(y,10,1)).getUTCDay()+6)%7, 9));
-  return (d >= dstStart && d < dstEnd) ? -420 : -480;
+  var ds = new Date(Date.UTC(y,2,14-(new Date(Date.UTC(y,2,1)).getUTCDay()+6)%7,10));
+  var de = new Date(Date.UTC(y,10,7-(new Date(Date.UTC(y,10,1)).getUTCDay()+6)%7,9));
+  return (d>=ds && d<de) ? -420 : -480;
 }
 function dateSeed() {
   var d = new Date();
@@ -89,167 +83,80 @@ function seededRandom(seed) {
   return function() { s=(s*9301+49297)%233280; return s/233280; };
 }
 
-// ── Quiz data ────────────────────────────────────────────
+// ── Quiz questions ────────────────────────────────────────
 var QUIZ_THEMES = [
-  { theme:'NFL Legends',        emoji:'🏈', questions: q_nfl_legends },
-  { theme:'NBA History',        emoji:'🏀', questions: q_nba_history },
-  { theme:'Super Bowl Trivia',  emoji:'🏆', questions: q_super_bowl },
-  { theme:'NFL Draft',          emoji:'📋', questions: q_nfl_draft },
-  { theme:'NBA Awards',         emoji:'⭐', questions: q_nba_awards },
-  { theme:'Sports Records',     emoji:'📊', questions: q_sports_records },
-  { theme:'Fantasy Football',   emoji:'🎯', questions: q_fantasy },
-  { theme:'MLB History',        emoji:'⚾', questions: q_mlb },
-  { theme:'NHL History',        emoji:'🏒', questions: q_nhl },
+  { theme:'NFL Legends',              emoji:'🏈', questions: q_nfl_legends },
+  { theme:'NBA History',              emoji:'🏀', questions: q_nba_history },
+  { theme:'Super Bowl Trivia',        emoji:'🏆', questions: q_super_bowl },
+  { theme:'NFL Draft',                emoji:'📋', questions: q_nfl_draft },
+  { theme:'NBA Awards',               emoji:'⭐', questions: q_nba_awards },
+  { theme:'Sports Records',           emoji:'📊', questions: q_sports_records },
+  { theme:'Fantasy Football',         emoji:'🎯', questions: q_fantasy },
+  { theme:'MLB History',              emoji:'⚾', questions: q_mlb },
+  { theme:'NHL History',              emoji:'🏒', questions: q_nhl },
   { theme:'College Football',         emoji:'🎓', questions: q_college },
   { theme:'NFL Playoff History',      emoji:'🏈', questions: q_nfl_playoffs },
   { theme:'NBA Championship History', emoji:'🏀', questions: q_nba_champs },
   { theme:'NFL MVPs',                 emoji:'🏆', questions: q_nfl_mvps },
   { theme:'Heisman Winners',          emoji:'🎓', questions: q_heisman },
 ];
-function q_nfl_playoffs() { return [
-  {q:"Who did the Eagles beat in Super Bowl LII?",o:["New England Patriots","Kansas City Chiefs","Los Angeles Rams","Pittsburgh Steelers"],c:0},
-  {q:"Which team had the Immaculate Reception play in 1972?",o:["Oakland Raiders","Pittsburgh Steelers","Miami Dolphins","Dallas Cowboys"],c:1},
-  {q:"Who holds the NFL record for most postseason TD passes?",o:["Tom Brady","Joe Montana","Peyton Manning","Aaron Rodgers"],c:0},
-  {q:"Which team came back from 28-3 down in Super Bowl LI?",o:["Atlanta Falcons","New England Patriots","Seattle Seahawks","Denver Broncos"],c:1},
-  {q:"Who scored the game-winning TD in Super Bowl XLIII?",o:["Larry Fitzgerald","Santonio Holmes","Hines Ward","Plaxico Burress"],c:1},
-]; }
-function q_nba_champs() { return [
-  {q:"Which team won the 2023 NBA Championship?",o:["Boston Celtics","Golden State Warriors","Miami Heat","Denver Nuggets"],c:3},
-  {q:"How many titles did the Chicago Bulls win in the 1990s?",o:["4","5","6","7"],c:2},
-  {q:"Who was the 2023 NBA Finals MVP?",o:["Jamal Murray","Nikola Jokic","Aaron Gordon","Michael Porter Jr."],c:1},
-  {q:"Which team has the most NBA championships of all time?",o:["Los Angeles Lakers","Chicago Bulls","Boston Celtics","Golden State Warriors"],c:2},
-  {q:"The Warriors won how many titles from 2015-2022?",o:["3","4","5","6"],c:1},
-]; }
-function q_nfl_mvps() { return [
-  {q:"Who has won the most NFL MVP awards?",o:["Tom Brady","Peyton Manning","Brett Favre","Patrick Mahomes"],c:1},
-  {q:"Which position has won the most NFL MVPs historically?",o:["Running Back","Wide Receiver","Quarterback","Tight End"],c:2},
-  {q:"Patrick Mahomes won his first MVP in which season?",o:["2017","2018","2019","2020"],c:1},
-  {q:"Who won NFL MVP in the 2022 season?",o:["Josh Allen","Patrick Mahomes","Justin Jefferson","Jalen Hurts"],c:1},
-  {q:"Lamar Jackson won back-to-back MVPs in which years?",o:["2018 & 2019","2019 & 2020","2022 & 2023","2023 & 2024"],c:3},
-]; }
-function q_heisman() { return [
-  {q:"Who won the Heisman Trophy in 2023?",o:["Bo Nix","Drake Maye","Jayden Daniels","Michael Penix Jr."],c:2},
-  {q:"Which school has produced the most Heisman winners?",o:["Ohio State","Notre Dame","USC","Alabama"],c:2},
-  {q:"Who was the first player to win the Heisman Trophy twice?",o:["Archie Griffin","Barry Sanders","Tim Tebow","Marcus Allen"],c:0},
-  {q:"Lamar Jackson won the Heisman at which school?",o:["Alabama","Florida","Louisville","Clemson"],c:2},
-  {q:"Tim Tebow won the Heisman playing for which school?",o:["Florida","Alabama","LSU","Georgia"],c:0},
-]; }
-function q_nfl_legends() { return [
-  {q:"How many Super Bowl titles did Tom Brady win?",o:["5","6","7","8"],c:2},
-  {q:"Jerry Rice won most of his Super Bowls with which team?",o:["Dallas Cowboys","San Francisco 49ers","Oakland Raiders","Green Bay Packers"],c:1},
-  {q:"Who holds the NFL record for most career rushing yards?",o:["Emmitt Smith","Barry Sanders","Walter Payton","Adrian Peterson"],c:0},
-  {q:"What year did the New Orleans Saints win their only Super Bowl?",o:["2008","2009","2010","2011"],c:2},
-  {q:"Which QB threw for 5 TDs in Super Bowl LV?",o:["Patrick Mahomes","Aaron Rodgers","Tom Brady","Josh Allen"],c:2},
-]; }
-function q_nba_history() { return [
-  {q:"How many NBA championships did Michael Jordan win with the Bulls?",o:["4","5","6","7"],c:2},
-  {q:"Who was the #1 pick in the 2003 NBA Draft?",o:["Carmelo Anthony","Dwyane Wade","Chris Bosh","LeBron James"],c:3},
-  {q:"Which team won the 2016 NBA title after being down 3-1?",o:["Golden State Warriors","Cleveland Cavaliers","Oklahoma City Thunder","Boston Celtics"],c:1},
-  {q:"Kobe Bryant played his entire career with which team?",o:["Chicago Bulls","Boston Celtics","Los Angeles Lakers","Orlando Magic"],c:2},
-  {q:"Who has won the most NBA MVP awards?",o:["LeBron James","Kareem Abdul-Jabbar","Michael Jordan","Bill Russell"],c:1},
-]; }
-function q_super_bowl() { return [
-  {q:"Which team has appeared in the most Super Bowls?",o:["Dallas Cowboys","New England Patriots","Pittsburgh Steelers","San Francisco 49ers"],c:1},
-  {q:"Score of the biggest Super Bowl blowout (Super Bowl XLVIII)?",o:["43-8","55-10","48-7","52-14"],c:0},
-  {q:"Who caught the 'Helmet Catch' in Super Bowl XLII?",o:["Plaxico Burress","Amani Toomer","David Tyree","Steve Smith"],c:2},
-  {q:"Which team overcame a 28-3 deficit to win the Super Bowl?",o:["New England Patriots","Los Angeles Rams","Seattle Seahawks","Kansas City Chiefs"],c:0},
-  {q:"How many Super Bowls have the Pittsburgh Steelers won?",o:["4","5","6","7"],c:2},
-]; }
-function q_nfl_draft() { return [
-  {q:"Mahomes was drafted in which round in 2017?",o:["1st","2nd","3rd","4th"],c:0},
-  {q:"Which team drafted Josh Allen in 2018?",o:["Kansas City Chiefs","Buffalo Bills","Cleveland Browns","Arizona Cardinals"],c:1},
-  {q:"Tom Brady was selected in which round of the 2000 Draft?",o:["4th","5th","6th","7th"],c:2},
-  {q:"Which position did the Bears take #1 overall in 2024?",o:["Wide Receiver","Quarterback","Offensive Tackle","Defensive End"],c:1},
-  {q:"Who was the #1 overall pick in the 2021 NFL Draft?",o:["Zach Wilson","Mac Jones","Trevor Lawrence","Justin Fields"],c:2},
-]; }
-function q_nba_awards() { return [
-  {q:"Who won the 2023-24 NBA MVP?",o:["Luka Doncic","Nikola Jokic","Giannis Antetokounmpo","Shai Gilgeous-Alexander"],c:1},
-  {q:"Who won the 2016 NBA Defensive Player of the Year?",o:["Rudy Gobert","Draymond Green","Kawhi Leonard","Avery Bradley"],c:1},
-  {q:"Who has won the most NBA scoring titles?",o:["Michael Jordan","LeBron James","Kobe Bryant","Kevin Durant"],c:0},
-  {q:"Who was the 2019 NBA Finals MVP?",o:["Kevin Durant","Klay Thompson","Kawhi Leonard","Steph Curry"],c:2},
-  {q:"Giannis won back-to-back MVPs in which seasons?",o:["2017-18 & 2018-19","2018-19 & 2019-20","2019-20 & 2020-21","2016-17 & 2017-18"],c:1},
-]; }
-function q_sports_records() { return [
-  {q:"Who holds the NFL record for most career passing TDs?",o:["Peyton Manning","Brett Favre","Tom Brady","Drew Brees"],c:2},
-  {q:"Who holds the NBA record for most points in a single game?",o:["Michael Jordan","Wilt Chamberlain","Kobe Bryant","LeBron James"],c:1},
-  {q:"How many consecutive games did Cal Ripken Jr. play?",o:["2,130","2,632","2,428","2,015"],c:1},
-  {q:"What is the NFL record for most receiving yards in a season?",o:["1,964","1,848","2,105","1,911"],c:0},
-  {q:"Who scored the most goals in a single NHL season?",o:["Mario Lemieux","Brett Hull","Wayne Gretzky","Jari Kurri"],c:2},
-]; }
-function q_fantasy() { return [
-  {q:"In standard PPR, how many points is a reception worth?",o:["0","0.5","1","1.5"],c:2},
-  {q:"Which passing milestone earns a QB a bonus in most formats?",o:["200 yards","300 yards","400 yards","100 yards"],c:1},
-  {q:"Which position typically has the highest fantasy pts per game?",o:["Wide Receiver","Running Back","Quarterback","Tight End"],c:2},
-  {q:"A defensive TD typically scores how many fantasy points?",o:["4","6","8","10"],c:1},
-  {q:"What does FAAB stand for?",o:["Free Agent Auction Budget","Fantasy All Around Base","Free Agency Allowance Bid","Fantasy All Access Bonus"],c:0},
-]; }
-function q_mlb() { return [
-  {q:"Who holds the all-time MLB record for career home runs?",o:["Babe Ruth","Hank Aaron","Barry Bonds","Alex Rodriguez"],c:2},
-  {q:"Which team has won the most World Series championships?",o:["Boston Red Sox","Los Angeles Dodgers","New York Yankees","St. Louis Cardinals"],c:2},
-  {q:"Who was the last player to hit .400 in a single MLB season?",o:["Joe DiMaggio","Ted Williams","Mickey Mantle","Stan Musial"],c:1},
-  {q:"Which city's team broke an 86-year World Series drought in 2004?",o:["Chicago","Boston","Cleveland","Detroit"],c:1},
-  {q:"How many balls equal a walk in MLB?",o:["3","4","5","6"],c:1},
-]; }
-function q_nhl() { return [
-  {q:"Who is the NHL's all-time leading scorer?",o:["Mario Lemieux","Gordie Howe","Wayne Gretzky","Jaromir Jagr"],c:2},
-  {q:"How many Stanley Cups have the Montreal Canadiens won?",o:["19","21","24","27"],c:2},
-  {q:"Wayne Gretzky played most of his career with which team?",o:["Edmonton Oilers","Los Angeles Kings","New York Rangers","St. Louis Blues"],c:0},
-  {q:"How many skaters (excluding goalie) are on the ice per team?",o:["4","5","6","7"],c:1},
-  {q:"What trophy is awarded to the NHL regular season MVP?",o:["Vezina Trophy","Norris Trophy","Hart Trophy","Conn Smythe Trophy"],c:2},
-]; }
-function q_college() { return [
-  {q:"Which school has the most Heisman Trophy winners?",o:["Ohio State","USC","Notre Dame","Alabama"],c:1},
-  {q:"Which coach has the most wins in college football history?",o:["Bear Bryant","Nick Saban","Bobby Bowden","Joe Paterno"],c:3},
-  {q:"What conference is the SEC?",o:["South Eastern Conference","Southern Elite Conference","Southeastern Conference","Southern Excellence Conference"],c:2},
-  {q:"Which team won the first CFP National Championship in 2015?",o:["Alabama","Florida State","Oregon","Ohio State"],c:3},
-  {q:"The Rose Bowl is located in which California city?",o:["Los Angeles","Pasadena","Anaheim","San Diego"],c:1},
-]; }
+function q_nfl_legends() { return [{q:"How many Super Bowl titles did Tom Brady win?",o:["5","6","7","8"],c:2},{q:"Jerry Rice won most of his Super Bowls with which team?",o:["Dallas Cowboys","San Francisco 49ers","Oakland Raiders","Green Bay Packers"],c:1},{q:"Who holds the NFL record for most career rushing yards?",o:["Emmitt Smith","Barry Sanders","Walter Payton","Adrian Peterson"],c:0},{q:"What year did the New Orleans Saints win their only Super Bowl?",o:["2008","2009","2010","2011"],c:2},{q:"Which QB threw for 5 TDs in Super Bowl LV?",o:["Patrick Mahomes","Aaron Rodgers","Tom Brady","Josh Allen"],c:2}]; }
+function q_nba_history() { return [{q:"How many NBA championships did Michael Jordan win with the Bulls?",o:["4","5","6","7"],c:2},{q:"Who was the #1 pick in the 2003 NBA Draft?",o:["Carmelo Anthony","Dwyane Wade","Chris Bosh","LeBron James"],c:3},{q:"Which team won the 2016 NBA title after being down 3-1?",o:["Golden State Warriors","Cleveland Cavaliers","Oklahoma City Thunder","Boston Celtics"],c:1},{q:"Kobe Bryant played his entire career with which team?",o:["Chicago Bulls","Boston Celtics","Los Angeles Lakers","Orlando Magic"],c:2},{q:"Who has won the most NBA MVP awards?",o:["LeBron James","Kareem Abdul-Jabbar","Michael Jordan","Bill Russell"],c:1}]; }
+function q_super_bowl() { return [{q:"Which team has appeared in the most Super Bowls?",o:["Dallas Cowboys","New England Patriots","Pittsburgh Steelers","San Francisco 49ers"],c:1},{q:"Score of the biggest Super Bowl blowout (Super Bowl XLVIII)?",o:["43-8","55-10","48-7","52-14"],c:0},{q:"Who caught the Helmet Catch in Super Bowl XLII?",o:["Plaxico Burress","Amani Toomer","David Tyree","Steve Smith"],c:2},{q:"Which team overcame a 28-3 deficit to win the Super Bowl?",o:["New England Patriots","Los Angeles Rams","Seattle Seahawks","Kansas City Chiefs"],c:0},{q:"How many Super Bowls have the Pittsburgh Steelers won?",o:["4","5","6","7"],c:2}]; }
+function q_nfl_draft() { return [{q:"Mahomes was drafted in which round in 2017?",o:["1st","2nd","3rd","4th"],c:0},{q:"Which team drafted Josh Allen in 2018?",o:["Kansas City Chiefs","Buffalo Bills","Cleveland Browns","Arizona Cardinals"],c:1},{q:"Tom Brady was selected in which round of the 2000 Draft?",o:["4th","5th","6th","7th"],c:2},{q:"Which position did the Bears take #1 overall in 2024?",o:["Wide Receiver","Quarterback","Offensive Tackle","Defensive End"],c:1},{q:"Who was the #1 overall pick in the 2021 NFL Draft?",o:["Zach Wilson","Mac Jones","Trevor Lawrence","Justin Fields"],c:2}]; }
+function q_nba_awards() { return [{q:"Who won the 2023-24 NBA MVP?",o:["Luka Doncic","Nikola Jokic","Giannis Antetokounmpo","Shai Gilgeous-Alexander"],c:1},{q:"Who won the 2016 NBA Defensive Player of the Year?",o:["Rudy Gobert","Draymond Green","Kawhi Leonard","Avery Bradley"],c:1},{q:"Who has won the most NBA scoring titles?",o:["Michael Jordan","LeBron James","Kobe Bryant","Kevin Durant"],c:0},{q:"Who was the 2019 NBA Finals MVP?",o:["Kevin Durant","Klay Thompson","Kawhi Leonard","Steph Curry"],c:2},{q:"Giannis won back-to-back MVPs in which seasons?",o:["2017-18 & 2018-19","2018-19 & 2019-20","2019-20 & 2020-21","2016-17 & 2017-18"],c:1}]; }
+function q_sports_records() { return [{q:"Who holds the NFL record for most career passing TDs?",o:["Peyton Manning","Brett Favre","Tom Brady","Drew Brees"],c:2},{q:"Who holds the NBA record for most points in a single game?",o:["Michael Jordan","Wilt Chamberlain","Kobe Bryant","LeBron James"],c:1},{q:"How many consecutive games did Cal Ripken Jr. play?",o:["2,130","2,632","2,428","2,015"],c:1},{q:"What is the NFL record for most receiving yards in a season?",o:["1,964","1,848","2,105","1,911"],c:0},{q:"Who scored the most goals in a single NHL season?",o:["Mario Lemieux","Brett Hull","Wayne Gretzky","Jari Kurri"],c:2}]; }
+function q_fantasy() { return [{q:"In standard PPR, how many points is a reception worth?",o:["0","0.5","1","1.5"],c:2},{q:"Which passing milestone earns a QB a bonus in most formats?",o:["200 yards","300 yards","400 yards","100 yards"],c:1},{q:"Which position typically has the highest fantasy pts per game?",o:["Wide Receiver","Running Back","Quarterback","Tight End"],c:2},{q:"A defensive TD typically scores how many fantasy points?",o:["4","6","8","10"],c:1},{q:"What does FAAB stand for?",o:["Free Agent Auction Budget","Fantasy All Around Base","Free Agency Allowance Bid","Fantasy All Access Bonus"],c:0}]; }
+function q_mlb() { return [{q:"Who holds the all-time MLB record for career home runs?",o:["Babe Ruth","Hank Aaron","Barry Bonds","Alex Rodriguez"],c:2},{q:"Which team has won the most World Series championships?",o:["Boston Red Sox","Los Angeles Dodgers","New York Yankees","St. Louis Cardinals"],c:2},{q:"Who was the last player to hit .400 in a single MLB season?",o:["Joe DiMaggio","Ted Williams","Mickey Mantle","Stan Musial"],c:1},{q:"Which city's team broke an 86-year World Series drought in 2004?",o:["Chicago","Boston","Cleveland","Detroit"],c:1},{q:"How many balls equal a walk in MLB?",o:["3","4","5","6"],c:1}]; }
+function q_nhl() { return [{q:"Who is the NHL's all-time leading scorer?",o:["Mario Lemieux","Gordie Howe","Wayne Gretzky","Jaromir Jagr"],c:2},{q:"How many Stanley Cups have the Montreal Canadiens won?",o:["19","21","24","27"],c:2},{q:"Wayne Gretzky played most of his career with which team?",o:["Edmonton Oilers","Los Angeles Kings","New York Rangers","St. Louis Blues"],c:0},{q:"How many skaters (excluding goalie) are on the ice per team?",o:["4","5","6","7"],c:1},{q:"What trophy is awarded to the NHL regular season MVP?",o:["Vezina Trophy","Norris Trophy","Hart Trophy","Conn Smythe Trophy"],c:2}]; }
+function q_college() { return [{q:"Which school has the most Heisman Trophy winners?",o:["Ohio State","USC","Notre Dame","Alabama"],c:1},{q:"Which coach has the most wins in college football history?",o:["Bear Bryant","Nick Saban","Bobby Bowden","Joe Paterno"],c:3},{q:"What conference is the SEC?",o:["South Eastern Conference","Southern Elite Conference","Southeastern Conference","Southern Excellence Conference"],c:2},{q:"Which team won the first CFP National Championship in 2015?",o:["Alabama","Florida State","Oregon","Ohio State"],c:3},{q:"The Rose Bowl is located in which California city?",o:["Los Angeles","Pasadena","Anaheim","San Diego"],c:1}]; }
+function q_nfl_playoffs() { return [{q:"Who did the Eagles beat in Super Bowl LII?",o:["New England Patriots","Kansas City Chiefs","Los Angeles Rams","Pittsburgh Steelers"],c:0},{q:"Which team had the Immaculate Reception play in 1972?",o:["Oakland Raiders","Pittsburgh Steelers","Miami Dolphins","Dallas Cowboys"],c:1},{q:"Who holds the NFL record for most postseason TD passes?",o:["Tom Brady","Joe Montana","Peyton Manning","Aaron Rodgers"],c:0},{q:"Which team came back from 28-3 down in Super Bowl LI?",o:["Atlanta Falcons","New England Patriots","Seattle Seahawks","Denver Broncos"],c:1},{q:"Who scored the game-winning TD in Super Bowl XLIII?",o:["Larry Fitzgerald","Santonio Holmes","Hines Ward","Plaxico Burress"],c:1}]; }
+function q_nba_champs() { return [{q:"Which team won the 2023 NBA Championship?",o:["Boston Celtics","Golden State Warriors","Miami Heat","Denver Nuggets"],c:3},{q:"How many titles did the Chicago Bulls win in the 1990s?",o:["4","5","6","7"],c:2},{q:"Who was the 2023 NBA Finals MVP?",o:["Jamal Murray","Nikola Jokic","Aaron Gordon","Michael Porter Jr."],c:1},{q:"Which team has the most NBA championships of all time?",o:["Los Angeles Lakers","Chicago Bulls","Boston Celtics","Golden State Warriors"],c:2},{q:"The Warriors won how many titles from 2015-2022?",o:["3","4","5","6"],c:1}]; }
+function q_nfl_mvps() { return [{q:"Who has won the most NFL MVP awards?",o:["Tom Brady","Peyton Manning","Brett Favre","Patrick Mahomes"],c:1},{q:"Which position has won the most NFL MVPs historically?",o:["Running Back","Wide Receiver","Quarterback","Tight End"],c:2},{q:"Patrick Mahomes won his first MVP in which season?",o:["2017","2018","2019","2020"],c:1},{q:"Who won NFL MVP in the 2022 season?",o:["Josh Allen","Patrick Mahomes","Justin Jefferson","Jalen Hurts"],c:1},{q:"Lamar Jackson won back-to-back MVPs in which years?",o:["2018 & 2019","2019 & 2020","2022 & 2023","2023 & 2024"],c:3}]; }
+function q_heisman() { return [{q:"Who won the Heisman Trophy in 2023?",o:["Bo Nix","Drake Maye","Jayden Daniels","Michael Penix Jr."],c:2},{q:"Which school has produced the most Heisman winners?",o:["Ohio State","Notre Dame","USC","Alabama"],c:2},{q:"Who was the first player to win the Heisman Trophy twice?",o:["Archie Griffin","Barry Sanders","Tim Tebow","Marcus Allen"],c:0},{q:"Lamar Jackson won the Heisman at which school?",o:["Alabama","Florida","Louisville","Clemson"],c:2},{q:"Tim Tebow won the Heisman playing for which school?",o:["Florida","Alabama","LSU","Georgia"],c:0}]; }
 
-// ── Build today's quiz ───────────────────────────────────
-var seed    = dateSeed();
-var rng     = seededRandom(seed);
-var theme   = QUIZ_THEMES[(seed + 3) % QUIZ_THEMES.length];
-var qs      = theme.questions();
-var quizId  = 'daily-quiz-' + seed;
+// ── Today's quiz ─────────────────────────────────────────
+var seed   = dateSeed();
+var theme  = QUIZ_THEMES[(seed + 3) % QUIZ_THEMES.length];
+var qs     = theme.questions();
+var quizId = 'daily-quiz-' + seed;
 
-// ── Local storage ────────────────────────────────────────
+// ── Storage: ONE key, ONE approach ───────────────────────
+// Key: 'dq_result_YYYYMMDD' — uses date string not quizId to survive seed formula changes
+var storageKey = 'dq_result_' + seed;
+
 function saveResult(data) {
-  try { localStorage.setItem('fs_r_' + quizId, JSON.stringify(data)); } catch(e) {}
+  try { localStorage.setItem(storageKey, JSON.stringify(data)); } catch(e) {}
 }
 function loadResult() {
-  try {
-    // Check current key first
-    var r = localStorage.getItem('fs_r_' + quizId);
-    if (r) return JSON.parse(r);
-    // Fallback: check old key format (with +166 salt) for backward compatibility
-    var oldKey = 'fs_r_daily-quiz-' + (seed + 166);
-    var r2 = localStorage.getItem(oldKey);
-    if (r2) return JSON.parse(r2);
-    // Also check hasAttemptedLocally with old salted quizId
-    return null;
-  } catch(e) { return null; }
+  try { return JSON.parse(localStorage.getItem(storageKey)); } catch(e) { return null; }
+}
+function markPlayed() {
+  try { localStorage.setItem('dq_played_' + seed, '1'); } catch(e) {}
+}
+function hasPlayed() {
+  return localStorage.getItem('dq_played_' + seed) === '1';
 }
 
 // ── Game state ───────────────────────────────────────────
-var TIMER  = 15, MAX_PTS = 200;
-var curQ   = 0, totalScore = 0, timerInt = null, tLeft = TIMER;
+var TIMER = 15, MAX_PTS = 200;
+var curQ = 0, totalScore = 0, timerInt = null, tLeft = TIMER;
 var qStart = 0, results = [];
 var letters = ['A','B','C','D'];
 
-// ── Render header ────────────────────────────────────────
+// ── Render ───────────────────────────────────────────────
 function hdr() {
   var dots = qs.map(function(_,i) {
     var cls = i < curQ ? (results[i] && results[i].ok ? 'done-correct' : 'done-wrong') : (i===curQ ? 'active' : '');
     return '<div class="progress-dot ' + cls + '" id="dot-' + i + '"></div>';
   }).join('');
-  return '<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem;flex-wrap:wrap;">' +
+  return '<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem;">' +
     '<span style="font-size:1.5rem;">' + theme.emoji + '</span>' +
     '<div><div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:1.4rem;text-transform:uppercase;">Daily Quiz</div>' +
     '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.85rem;color:var(--gray);text-transform:uppercase;">' + theme.theme + '</div></div>' +
     '</div><div class="progress-dots">' + dots + '</div>';
 }
 
-// ── Render question ──────────────────────────────────────
 function renderQ(idx) {
   var q = qs[idx];
   document.getElementById('quiz-container').innerHTML = hdr() +
@@ -290,7 +197,6 @@ function pick(chosen) {
   var pts = ok ? Math.round(MAX_PTS * Math.max(0,(TIMER-dt)/TIMER)) : 0;
   if (ok) totalScore += pts;
   results.push({ ok:ok, pts:pts });
-
   var dot = document.getElementById('dot-' + curQ);
   if (dot) { dot.classList.remove('active'); dot.classList.add(ok?'done-correct':'done-wrong'); }
   for (var i=0; i<q.o.length; i++) {
@@ -302,7 +208,6 @@ function pick(chosen) {
   }
   var fl = document.getElementById('flash');
   if (fl) fl.textContent = ok ? '+' + pts + ' pts' : (chosen===-1 ? "Time's Up!" : 'No points');
-
   setTimeout(function() {
     curQ++;
     if (curQ < qs.length) renderQ(curQ);
@@ -310,7 +215,7 @@ function pick(chosen) {
   }, 1200);
 }
 
-// ── Results screen ───────────────────────────────────────
+// ── Results ───────────────────────────────────────────────
 async function showResults(stored) {
   var isReplay = stored !== null && stored !== undefined;
   var correct    = isReplay ? stored.correct    : results.filter(function(r){return r.ok;}).length;
@@ -318,8 +223,11 @@ async function showResults(stored) {
   var finalScore = isReplay ? stored.finalScore : (isOnFire() ? Math.round(totalScore*1.10) : totalScore);
 
   if (!isReplay) {
+    // Save to localStorage FIRST — always works regardless of Supabase
     saveResult({ correct:correct, emojiRow:emojiRow, finalScore:finalScore });
-    markAttemptedLocally(quizId);
+    markPlayed();
+    updateStreak();
+    // Then save to Supabase
     await saveAttempt(quizId, totalScore, 0, results, 'trivia');
   }
 
@@ -329,13 +237,11 @@ async function showResults(stored) {
     if (pct !== null) pctHtml = '<div class="percentile-badge">Better than ' + pct + '% of players today</div>';
   } catch(e) {}
 
-  // share section built inline via buildShareSection
-
   document.getElementById('quiz-container').innerHTML =
     '<div class="results-card">' +
       '<div style="font-size:2rem;margin-bottom:0.5rem;">' + theme.emoji + '</div>' +
       '<div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:1.1rem;text-transform:uppercase;color:var(--gold);">Quiz Complete!</div>' +
-      (isOnFire() && !isReplay ? '<div style="font-size:0.8rem;color:#ff6400;font-family:Barlow Condensed,sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.25rem;">🔥 On Fire! +10% bonus applied</div>' : '') +
+      (isOnFire() && !isReplay ? '<div style="font-size:0.8rem;color:#ff6400;font-family:Barlow Condensed,sans-serif;font-weight:700;text-transform:uppercase;margin-bottom:0.25rem;">🔥 On Fire! +10% bonus applied</div>' : '') +
       '<div class="results-score">' + finalScore.toLocaleString() + '</div>' +
       '<div class="results-label">' + correct + ' of ' + qs.length + ' correct</div>' +
       '<div style="margin:1rem 0;font-size:1.5rem;letter-spacing:0.2rem;">' + emojiRow + '</div>' +
@@ -362,58 +268,19 @@ async function showResults(stored) {
 }
 
 // ── Init ─────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', function() {
   updateNavAuth();
-  testSupabaseConnection();
 
-  // 1. Check localStorage first — instant, no network needed
+  // Check localStorage for today's result — instant, no network
   var stored = loadResult();
-  if (stored) { showResults(stored); return; }
+  if (stored) {
+    showResults(stored);
+    return;
+  }
 
-  // 2. Check Supabase for a previous attempt (cross-device replay)
-  try {
-    var user = await getCurrentUser();
-    if (user) {
-      var { data: prev } = await supabase.from('attempts')
-        .select('score, created_at')
-        .eq('quiz_id', quizId)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      if (prev) {
-        // Rebuild a stored result from DB data and cache it locally
-        var rebuilt = {
-          correct: 0,
-          emojiRow: '—',
-          finalScore: prev.score
-        };
-        saveResult(rebuilt);
-        markAttemptedLocally(quizId);
-        showResults(rebuilt);
-        return;
-      }
-    }
-  } catch(e) {}
-
-  // 3. Locally flagged as attempted but nothing retrievable
-  if (hasAttemptedLocally(quizId) || hasAttemptedLocally('daily-quiz-' + (seed + 166))) {
-    document.getElementById('quiz-container').innerHTML =
-      '<div class="results-card">' +
-        '<div style="font-size:2rem;margin-bottom:1rem;">✅</div>' +
-        '<div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:1.5rem;text-transform:uppercase;">Already Completed!</div>' +
-        '<p style="color:var(--gray);margin:1rem 0;">Come back tomorrow for a new quiz!</p>' +
-        '<div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin:1rem 0;">' +
-          '<a href="/" class="btn btn-primary">Back to Games</a>' +
-        '</div>' +
-        '<div style="border-top:1px solid var(--card-border);padding-top:1.25rem;margin-top:0.5rem;">' +
-          '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray);margin-bottom:0.75rem;">Try Today\'s Other Games</div>' +
-          '<div class="other-games">' +
-            '<a href="/snap-decision.html" class="other-game-btn">🏈 Snap Decision</a>' +
-            '<a href="/whos-that-player.html" class="other-game-btn">❓ Who\'s That, Player?</a>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
+  // If they played today (marked) but result missing, show score 0 with share
+  if (hasPlayed()) {
+    showResults({ correct: 0, emojiRow: '—', finalScore: 0 });
     return;
   }
 

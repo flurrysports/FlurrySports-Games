@@ -541,7 +541,8 @@ function getPacificOffsetMinutes(d) {
     if (!isReplay) {
       // Store FIRST before any async
       saveWTPResult({ correct, finalPts, cluesUsed, guessesUsed: guessesUsedVal });
-      markAttemptedLocally(player.id);
+      markWTPPlayed();
+      updateStreak();
       await saveAttempt(player.id, correct ? pts : 0, 0, { cluesUsed, guessesUsed: guessesUsedVal, correct }, 'whos_that_player');
     }
 
@@ -612,39 +613,18 @@ function getPacificOffsetMinutes(d) {
     }
   }
 
-  document.addEventListener('DOMContentLoaded', async function() {
+  document.addEventListener('DOMContentLoaded', function() {
     updateNavAuth();
 
-    // 1. Check localStorage first
+    // Check localStorage for today's result — instant, no network
     var stored = loadWTPResult();
     if (stored) {
       showResult(stored.correct, stored.finalPts || 0, true, stored);
       return;
     }
 
-    // 2. Check Supabase for cross-device replay
-    try {
-      var user = await getCurrentUser();
-      if (user) {
-        var { data: prev } = await supabase.from('attempts')
-          .select('score, created_at')
-          .eq('quiz_id', player.id)
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-        if (prev) {
-          var rebuilt = { correct: prev.score > 0, finalPts: prev.score, cluesUsed: 5, guessesUsed: 0 };
-          saveWTPResult(rebuilt);
-          markAttemptedLocally(player.id);
-          showResult(rebuilt.correct, rebuilt.finalPts, true, rebuilt);
-          return;
-        }
-      }
-    } catch(e) {}
-
-    // 3. Locally flagged as attempted
-    if (hasAttemptedLocally(player.id) || hasAttemptedLocally('wtp-' + (parseInt(player.id.replace('wtp-','')) + 166))) {
+    // If played today but result missing
+    if (hasWTPPlayed()) {
       showResult(false, 0, true, { correct: false, finalPts: 0, noData: true });
       return;
     }

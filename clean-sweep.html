@@ -454,16 +454,18 @@ async function csInit() {
   const today = getTodayString();
   todayGameId = GAME_ID_PREFIX + today;
 
-  // Fetch today's puzzle from Supabase
+  // Fetch today's puzzle from Supabase (with timeout so we never hang)
   try {
-    const { data, error } = await supabase
+    const fetchPromise = supabase
       .from('clean_sweep_puzzles')
       .select('*')
       .eq('date', today)
       .single();
-
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), 4000)
+    );
+    const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
     if (error || !data) {
-      // Fallback to a hardcoded sample if no puzzle found
       puzzle = getFallbackPuzzle();
     } else {
       puzzle = data;
@@ -481,7 +483,9 @@ async function csInit() {
 
   // Also check Supabase for already played (in case localStorage was cleared)
   try {
-    const alreadyPlayed = await hasAttemptedQuiz(todayGameId);
+    const checkPromise = hasAttemptedQuiz(todayGameId);
+    const checkTimeout = new Promise(resolve => setTimeout(() => resolve(false), 3000));
+    const alreadyPlayed = await Promise.race([checkPromise, checkTimeout]);
     if (alreadyPlayed) {
       await showAlreadyPlayed();
       return;
@@ -820,7 +824,27 @@ function getFallbackPuzzle() {
 // ─────────────────────────────────────────────────────────────────────────────
 // BOOT
 // ─────────────────────────────────────────────────────────────────────────────
-csInit();
+// Wait for auth.js to be available before init
+function waitForAuth(cb, tries) {
+  tries = tries || 0;
+  if (typeof getTodayString === 'function' && typeof hasAttemptedLocally === 'function') {
+    cb();
+  } else if (tries < 50) {
+    setTimeout(function() { waitForAuth(cb, tries + 1); }, 50);
+  } else {
+    // auth.js never loaded — run with fallback
+    window.getTodayString = function() { return new Date().toISOString().slice(0,10); };
+    window.hasAttemptedLocally = function() { return false; };
+    window.hasAttemptedQuiz = async function() { return false; };
+    window.getCurrentUser = async function() { return null; };
+    window.saveAttempt = async function() { return null; };
+    window.getStreakDisplay = function() { return { fire: false, streak: 0 }; };
+    window.showPostGameAuthPrompt = function() {};
+    window.buildShareSection = function() { return ''; };
+    cb();
+  }
+}
+waitForAuth(function() { csInit(); });
 </script>
 
 <script src="/js/auth.js"></script>

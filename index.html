@@ -74,8 +74,9 @@
       font-size: 1.25rem; flex-shrink: 0;
     }
     .game-tile-icon.quiz { background: rgba(245,197,24,0.15); }
-    .game-tile-icon.snap { background: rgba(76,175,80,0.15); }
-    .game-tile-icon.wtp { background: rgba(52,152,219,0.15); }
+    .game-tile-icon.snap { background: rgba(232,71,10,0.15); }
+    .game-tile-icon.wtp  { background: rgba(13,191,122,0.15); }
+    .game-tile-icon.cs   { background: rgba(245,184,0,0.12); border: 1px solid rgba(245,184,0,0.2); }
     .game-tile-name {
       font-family: 'Barlow Condensed', sans-serif;
       font-weight: 900; font-size: 1.1rem;
@@ -448,11 +449,33 @@
     const wtpDone  = isWTPDone();
     const csDone   = hasAttemptedLocally('clean-sweep-' + getTodayString());
 
+    // Fetch today's Clean Sweep sport category for the subtitle
+    let csSport = 'Sports';
+    try {
+      const { data: csPuzzle } = await supabase
+        .from('clean_sweep_puzzles')
+        .select('sport_category')
+        .eq('date', getTodayString())
+        .single();
+      if (csPuzzle && csPuzzle.sport_category) csSport = csPuzzle.sport_category;
+    } catch(e) {}
+
+    // SVG icons
+    const triviaIcon = `<svg width="26" height="26" viewBox="0 0 52 52" fill="none"><path d="M6 6 H46 C48.2 6 50 7.8 50 10 V34 C50 36.2 48.2 38 46 38 H28 L20 46 L20 38 H6 C3.8 38 2 36.2 2 34 V10 C2 7.8 3.8 6 6 6 Z" stroke="#4A9EE8" stroke-width="2.5" fill="none"/><text x="26" y="30" text-anchor="middle" font-size="22" font-weight="800" fill="#4A9EE8" font-family="Arial Black, Arial, sans-serif">?</text></svg>`;
+
+    const snapIcon = `<svg width="26" height="26" viewBox="0 0 52 52" fill="none"><ellipse cx="26" cy="26" rx="20" ry="12" stroke="#E8470A" stroke-width="2.5" fill="none" transform="rotate(-38 26 26)"/><path d="M10 26 C10 20 13 16 17 14 L17 38 C13 36 10 32 10 26Z" fill="#E8470A"/><path d="M42 26 C42 32 39 36 35 38 L35 14 C39 16 42 20 42 26Z" fill="#E8470A"/><line x1="19" y1="26" x2="33" y2="26" stroke="#E8470A" stroke-width="1.5" stroke-linecap="round"/><line x1="21" y1="21" x2="21" y2="31" stroke="#E8470A" stroke-width="1.5" stroke-linecap="round"/><line x1="25" y1="20" x2="25" y2="32" stroke="#E8470A" stroke-width="1.5" stroke-linecap="round"/><line x1="29" y1="20" x2="29" y2="32" stroke="#E8470A" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+
+    const wtpIcon = `<svg width="26" height="26" viewBox="0 0 52 52" fill="none"><circle cx="26" cy="22" r="9" stroke="#0DBF7A" stroke-width="2.5" fill="none"/><path d="M 17 19 C 14 18 12 17 11 16" stroke="#0DBF7A" stroke-width="2.5" fill="none" stroke-linecap="round"/><circle cx="11" cy="15" r="2" fill="#0DBF7A"/><path d="M 35 19 C 38 18 40 17 41 16" stroke="#0DBF7A" stroke-width="2.5" fill="none" stroke-linecap="round"/><circle cx="41" cy="15" r="2" fill="#0DBF7A"/><path d="M 8 48 C 8 36 16 31 26 31 C 36 31 44 36 44 48" stroke="#0DBF7A" stroke-width="2.5" stroke-linecap="round" fill="none"/></svg>`;
+
+    const csIcon = `<svg width="26" height="26" viewBox="0 0 56 56" fill="none"><rect x="1" y="2" width="17" height="16" rx="3" fill="#F5B800"/><rect x="20" y="2" width="17" height="16" rx="3" fill="#F5B800"/><rect x="38" y="2" width="17" height="16" rx="3" fill="#F5B800"/><rect x="1" y="21" width="17" height="16" rx="3" fill="#F5B800"/><rect x="20" y="21" width="17" height="16" rx="3" fill="#F5B800"/><rect x="38" y="21" width="17" height="16" rx="3" fill="#F5B800"/><path d="M4 10 L7 13.5 L14 6" stroke="#3a2e00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M23 10 L26 13.5 L33 6" stroke="#3a2e00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M41 10 L44 13.5 L51 6" stroke="#3a2e00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 29 L7 32.5 L14 25" stroke="#3a2e00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M23 29 L26 32.5 L33 25" stroke="#3a2e00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M41 29 L44 32.5 L51 25" stroke="#3a2e00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
     grid.innerHTML =
+
+      // ── DAILY QUIZ (blue #4A9EE8) ──
       '<div class="game-tile">' +
         '<div class="game-tile-header">' +
-          '<div class="game-tile-icon quiz">' + quizEmoji + '</div>' +
-          '<div><div class="game-tile-name" style="color:var(--gold);">Daily Quiz</div>' +
+          '<div class="game-tile-icon quiz">' + triviaIcon + '</div>' +
+          '<div><div class="game-tile-name" style="color:#4A9EE8;">Daily Quiz</div>' +
           '<div class="game-tile-tag">5 Questions · Multiple Choice</div></div>' +
         '</div>' +
         '<div class="game-tile-body">' +
@@ -460,15 +483,17 @@
           '<div class="game-tile-desc">5 sports trivia questions on today&#39;s theme. Faster correct answers score more!</div>' +
         '</div>' +
         '<div class="game-tile-footer"><span class="game-tile-meta">⏱️ 15s per question</span>' +
-          (quizDone ? '<a href="/daily-quiz.html" class="btn btn-outline btn-sm" style="border-color:var(--success);color:var(--success);">✓ View Score</a>' :
-            '<a href="/daily-quiz.html" class="btn btn-primary btn-sm">Play Now →</a>') +
+          (quizDone
+            ? '<a href="/daily-quiz.html" class="btn btn-outline btn-sm" style="border-color:var(--success);color:var(--success);">✓ View Score</a>'
+            : '<a href="/daily-quiz.html" class="btn btn-sm" style="background:#4A9EE8;color:#fff;font-family:Barlow Condensed,sans-serif;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;border-radius:8px;padding:0.4rem 0.9rem;text-decoration:none;">Play Now →</a>') +
         '</div>' +
       '</div>' +
 
+      // ── SNAP DECISION (red-orange #E8470A) ──
       '<div class="game-tile">' +
         '<div class="game-tile-header">' +
-          '<div class="game-tile-icon snap">🏈</div>' +
-          '<div><div class="game-tile-name" style="color:#4caf50;">Snap Decision</div>' +
+          '<div class="game-tile-icon snap">' + snapIcon + '</div>' +
+          '<div><div class="game-tile-name" style="color:#E8470A;">Snap Decision</div>' +
           '<div class="game-tile-tag">Read the Defense · Call the Play</div></div>' +
         '</div>' +
         '<div class="game-tile-body">' +
@@ -476,15 +501,17 @@
           '<div class="game-tile-desc">Read 4 defensive looks and call the right play each time. 4 seconds per snap.</div>' +
         '</div>' +
         '<div class="game-tile-footer"><span class="game-tile-meta">⏱️ 4s per snap · 4 Downs</span>' +
-          (snapDone ? '<a href="/snap-decision.html" class="btn btn-outline btn-sm" style="border-color:var(--success);color:var(--success);">✓ View Score</a>' :
-            '<a href="/snap-decision.html" class="btn btn-sm" style="background:#4caf50;color:#030f03;font-family:Barlow Condensed,sans-serif;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;border-radius:8px;padding:0.4rem 0.9rem;text-decoration:none;">Play Now →</a>') +
+          (snapDone
+            ? '<a href="/snap-decision.html" class="btn btn-outline btn-sm" style="border-color:var(--success);color:var(--success);">✓ View Score</a>'
+            : '<a href="/snap-decision.html" class="btn btn-sm" style="background:#E8470A;color:#fff;font-family:Barlow Condensed,sans-serif;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;border-radius:8px;padding:0.4rem 0.9rem;text-decoration:none;">Play Now →</a>') +
         '</div>' +
       '</div>' +
 
+      // ── WHO'S THAT PLAYER (green #0DBF7A) ──
       '<div class="game-tile">' +
         '<div class="game-tile-header">' +
-          '<div class="game-tile-icon wtp">❓</div>' +
-          '<div><div class="game-tile-name" style="color:#3498db;">Who&#39;s That, Player?</div>' +
+          '<div class="game-tile-icon wtp">' + wtpIcon + '</div>' +
+          '<div><div class="game-tile-name" style="color:#0DBF7A;">Who&#39;s That, Player?</div>' +
           '<div class="game-tile-tag">' + dailyPlayer.league + ' · Active Player</div></div>' +
         '</div>' +
         '<div class="game-tile-body">' +
@@ -492,26 +519,27 @@
           '<div class="game-tile-desc">5 clues revealed one at a time. Guess early for more points.</div>' +
         '</div>' +
         '<div class="game-tile-footer"><span class="game-tile-meta">Up to 5 clues · ' + dailyPlayer.league + '</span>' +
-          (wtpDone ? '<a href="/whos-that-player.html" class="btn btn-outline btn-sm" style="border-color:var(--success);color:var(--success);">✓ View Score</a>' :
-            '<a href="/whos-that-player.html" class="btn btn-sm" style="background:#1a4a6a;color:#3498db;border:1px solid #1a5a8a;font-family:Barlow Condensed,sans-serif;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;border-radius:8px;padding:0.4rem 0.9rem;text-decoration:none;">Play Now →</a>') +
+          (wtpDone
+            ? '<a href="/whos-that-player.html" class="btn btn-outline btn-sm" style="border-color:var(--success);color:var(--success);">✓ View Score</a>'
+            : '<a href="/whos-that-player.html" class="btn btn-sm" style="background:#0DBF7A;color:#022b1a;font-family:Barlow Condensed,sans-serif;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;border-radius:8px;padding:0.4rem 0.9rem;text-decoration:none;">Play Now →</a>') +
         '</div>' +
       '</div>' +
 
+      // ── CLEAN SWEEP (gold #F5B800) ──
       '<div class="game-tile">' +
         '<div class="game-tile-header">' +
-          '<div class="game-tile-icon" style="background:rgba(245,184,0,0.12);border:1px solid rgba(245,184,0,0.25);display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:10px;">' +
-            '<svg width="26" height="26" viewBox="0 0 56 56" fill="none"><rect x="1" y="2" width="17" height="16" rx="3" fill="#F5B800"/><rect x="20" y="2" width="17" height="16" rx="3" fill="#F5B800"/><rect x="38" y="2" width="17" height="16" rx="3" fill="#F5B800"/><rect x="1" y="21" width="17" height="16" rx="3" fill="#F5B800"/><rect x="20" y="21" width="17" height="16" rx="3" fill="#F5B800"/><rect x="38" y="21" width="17" height="16" rx="3" fill="#F5B800"/><path d="M4 10 L7 13.5 L14 6" stroke="#3a2e00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M23 10 L26 13.5 L33 6" stroke="#3a2e00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M41 10 L44 13.5 L51 6" stroke="#3a2e00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 29 L7 32.5 L14 25" stroke="#3a2e00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M23 29 L26 32.5 L33 25" stroke="#3a2e00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M41 29 L44 32.5 L51 25" stroke="#3a2e00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-          '</div>' +
+          '<div class="game-tile-icon cs">' + csIcon + '</div>' +
           '<div><div class="game-tile-name" style="color:#F5B800;">Clean Sweep</div>' +
-          '<div class="game-tile-tag">Find Them All · Risk &amp; Reward</div></div>' +
+          '<div class="game-tile-tag">' + csSport + ' · Find Them All</div></div>' +
         '</div>' +
         '<div class="game-tile-body">' +
           '<div class="game-tile-title">Pick the right players</div>' +
           '<div class="game-tile-desc">Find every player that matches the prompt. One wrong pick and you lose everything.</div>' +
         '</div>' +
-        '<div class="game-tile-footer"><span class="game-tile-meta">⏱️ 60s · NFL, NBA, CFB, CBB, NHL</span>' +
-          (csDone ? '<a href="/clean-sweep.html" class="btn btn-outline btn-sm" style="border-color:var(--success);color:var(--success);">✓ View Score</a>' :
-            '<a href="/clean-sweep.html" class="btn btn-sm" style="background:#F5B800;color:#111;font-family:Barlow Condensed,sans-serif;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;border-radius:8px;padding:0.4rem 0.9rem;text-decoration:none;">Play Now →</a>') +
+        '<div class="game-tile-footer"><span class="game-tile-meta">⏱️ 60s · Clean Sweep</span>' +
+          (csDone
+            ? '<a href="/clean-sweep.html" class="btn btn-outline btn-sm" style="border-color:var(--success);color:var(--success);">✓ View Score</a>'
+            : '<a href="/clean-sweep.html" class="btn btn-sm" style="background:#F5B800;color:#111;font-family:Barlow Condensed,sans-serif;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;border-radius:8px;padding:0.4rem 0.9rem;text-decoration:none;">Play Now →</a>') +
         '</div>' +
       '</div>';
   }

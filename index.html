@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo-crown.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/logo-crown.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FlurrySports Games — New Games Every Day</title>
   <meta name="description" content="Play daily sports games with FlurrySports. New games every day covering NFL, NBA, trivia, and more.">
-  <link rel="icon" type="image/png" href="/images/logo-crown.png">
   <link rel="stylesheet" href="/css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="/js/supabase-config.js"></script>
@@ -450,7 +453,7 @@
     const csDone   = hasAttemptedLocally('clean-sweep-' + getTodayString());
 
     // Fetch today's Clean Sweep sport category for the subtitle
-    let csSport = "Today's Game";
+    let csSport = '';
     try {
       const { data: csPuzzle } = await supabase
         .from('clean_sweep_puzzles')
@@ -459,6 +462,7 @@
         .single();
       if (csPuzzle && csPuzzle.sport_category) csSport = csPuzzle.sport_category;
     } catch(e) {}
+    const csTag = csSport ? csSport + ' · Find Them All' : 'Find Them All';
 
     // SVG icons
     const triviaIcon = `<svg width="26" height="26" viewBox="0 0 52 52" fill="none"><path d="M6 6 H46 C48.2 6 50 7.8 50 10 V34 C50 36.2 48.2 38 46 38 H28 L20 46 L20 38 H6 C3.8 38 2 36.2 2 34 V10 C2 7.8 3.8 6 6 6 Z" stroke="#4A9EE8" stroke-width="2.5" fill="none"/><text x="26" y="30" text-anchor="middle" font-size="22" font-weight="800" fill="#4A9EE8" font-family="Arial Black, Arial, sans-serif">?</text></svg>`;
@@ -530,7 +534,7 @@
         '<div class="game-tile-header">' +
           '<div class="game-tile-icon cs">' + csIcon + '</div>' +
           '<div><div class="game-tile-name" style="color:#F5B800;">Clean Sweep</div>' +
-          '<div class="game-tile-tag">' + csSport + ' · Find Them All</div></div>' +
+          '<div class="game-tile-tag">' + csTag + '</div></div>' +
         '</div>' +
         '<div class="game-tile-body">' +
           '<div class="game-tile-title">Pick the right players</div>' +

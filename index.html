@@ -450,7 +450,7 @@
     const csDone   = hasAttemptedLocally('clean-sweep-' + getTodayString());
 
     // Fetch today's Clean Sweep sport category for the subtitle
-    let csSport = 'Sports';
+    let csSport = "Today's Game";
     try {
       const { data: csPuzzle } = await supabase
         .from('clean_sweep_puzzles')

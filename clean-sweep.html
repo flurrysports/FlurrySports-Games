@@ -46,6 +46,11 @@ body {
   min-height: 100vh;
 }
 
+/* Override style.css body::before gradient that fades the left side */
+body::before {
+  display: none !important;
+}
+
 /* ── SCREENS ── */
 .cs-screen { display: none; }
 .cs-screen.active { display: block; }
@@ -318,8 +323,8 @@ body {
         <div class="cs-score-val green" id="cs-next">+100</div>
       </div>
       <div class="cs-score-card">
-        <div class="cs-score-label">Multiplier</div>
-        <div class="cs-score-val" id="cs-mult-disp">x1.0</div>
+        <div class="cs-score-label">Found</div>
+        <div class="cs-score-val" id="cs-mult-disp">0/5</div>
         <div class="cs-mini-bar-bg"><div class="cs-mini-bar-fill" id="cs-mini-bar" style="width:0%"></div></div>
       </div>
     </div>
@@ -337,7 +342,7 @@ body {
 
     <div class="cs-mult-card">
       <div class="cs-mult-row">
-        <span class="cs-mult-label">Streak multiplier</span>
+        <span class="cs-mult-label">Progress</span>
         <span class="cs-mult-val" id="cs-mult-label">x1.0 — pick correctly to build streak</span>
       </div>
       <div class="cs-mult-bar-bg"><div class="cs-mult-bar" id="cs-mult-bar" style="width:0%"></div></div>
@@ -367,7 +372,7 @@ body {
       <div class="cs-stat-row">
         <div class="cs-stat-box"><div class="cs-stat-val" id="cs-stat-correct">0</div><div class="cs-stat-label">Correct picks</div></div>
         <div class="cs-stat-box"><div class="cs-stat-val" id="cs-stat-streak">0</div><div class="cs-stat-label">Best streak</div></div>
-        <div class="cs-stat-box"><div class="cs-stat-val" id="cs-stat-mult">x1.0</div><div class="cs-stat-label">Peak mult.</div></div>
+        <div class="cs-stat-box"><div class="cs-stat-val" id="cs-stat-mult">150</div><div class="cs-stat-label">Pts per pick</div></div>
       </div>
       <div class="cs-reason" id="cs-reason"></div>
     </div>
@@ -432,10 +437,11 @@ let wrongTile = null, endReason = '';
 let finalPoints = 0;
 let todayGameId = '';
 
-const MULT_STEPS = [{s:0,m:1.0},{s:2,m:1.5},{s:4,m:2.0},{s:6,m:3.0}];
-function getMult(s) { let m=1.0; for(const t of MULT_STEPS){if(s>=t.s)m=t.m;} return m; }
-function getNextStep(s) { for(const t of MULT_STEPS){if(t.s>s)return t;} return null; }
-function nextWorth() { return Math.round(100*multiplier); }
+const POINTS_PER_PICK = 150;
+
+// No multiplier — flat 150 per correct pick
+// 4 correct = 600, 5 = 750, 6 = 900, 7 = 1050
+function nextWorth() { return POINTS_PER_PICK; }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SCREEN MANAGEMENT
@@ -500,7 +506,7 @@ function startGame() {
   // Build tile array from puzzle
   tiles = puzzle.tiles_shuffled.map(t => ({ ...t, picked: false, wasWrong: false }));
   totalCorrect = tiles.filter(t => t.correct).length;
-  banked = 0; streak = 0; bestStreak = 0; multiplier = 1.0; peakMult = 1.0;
+  banked = 0; streak = 0; bestStreak = 0;
   foundCount = 0; timeLeft = TOTAL_TIME; gameOver = false; wrongTile = null; endReason = '';
 
   renderGame();
@@ -549,23 +555,22 @@ function renderGrid() {
 
 function updateScoreRow() {
   document.getElementById('cs-banked').textContent = banked.toLocaleString();
-  document.getElementById('cs-next').textContent = '+' + nextWorth();
-  document.getElementById('cs-mult-disp').textContent = 'x' + multiplier.toFixed(1);
-  const pct = Math.min(((multiplier - 1.0) / 2.0) * 100, 100);
-  document.getElementById('cs-mini-bar').style.width = pct + '%';
+  document.getElementById('cs-next').textContent = '+' + POINTS_PER_PICK;
+  document.getElementById('cs-mult-disp').textContent = foundCount + '/' + totalCorrect;
+  document.getElementById('cs-mini-bar').style.width = Math.round((foundCount / Math.max(totalCorrect,1)) * 100) + '%';
 }
 
 function updateMultCard() {
-  multiplier = getMult(streak);
-  if (multiplier > peakMult) peakMult = multiplier;
-  const next = getNextStep(streak);
-  const pct = Math.min(((multiplier - 1.0) / 2.0) * 100, 100);
+  const remaining = totalCorrect - foundCount;
+  const potential = remaining * POINTS_PER_PICK;
   document.getElementById('cs-mult-label').textContent =
-    'x' + multiplier.toFixed(1) + (streak > 0 ? ` — ${streak} correct in a row` : ' — pick correctly to build streak');
+    foundCount > 0 ? `${foundCount} found · ${remaining} remaining` : 'Pick correctly to build your score';
+  const pct = Math.round((foundCount / Math.max(totalCorrect, 1)) * 100);
   document.getElementById('cs-mult-bar').style.width = pct + '%';
-  document.getElementById('cs-mult-hint').textContent = next
-    ? `Next correct: +${nextWorth()} pts · Reach x${next.m.toFixed(1)} at ${next.s} in a row`
-    : `Next correct: +${nextWorth()} pts · Max multiplier!`;
+  document.getElementById('cs-mult-hint').textContent =
+    remaining > 0
+      ? `Next correct: +${POINTS_PER_PICK} pts · Find all ${totalCorrect} for ${totalCorrect * POINTS_PER_PICK} total`
+      : `Perfect! All ${totalCorrect} found — ${totalCorrect * POINTS_PER_PICK} pts!`;
 }
 
 function updateBankBtn() {
@@ -618,9 +623,7 @@ function csPick(idx) {
     foundCount++;
     streak++;
     bestStreak = Math.max(bestStreak, streak);
-    multiplier = getMult(streak);
-    if (multiplier > peakMult) peakMult = multiplier;
-    banked += nextWorth();
+    banked += POINTS_PER_PICK;
     el.classList.add('correct', 'pop');
     setTimeout(() => el.classList.remove('pop'), 250);
     renderPips();
@@ -634,10 +637,8 @@ function csPick(idx) {
     tile.wasWrong = true;
     wrongTile = tile.name;
     el.classList.add('wrong');
-    // Lose ALL points
     banked = 0;
     streak = 0;
-    multiplier = 1.0;
     updateScoreRow();
     updateBankBtn();
     setTimeout(() => csEndGame('wrong'), 700);
@@ -691,7 +692,7 @@ async function csShowScoreScreen(reason) {
   document.getElementById('cs-final-score').textContent = finalPoints.toLocaleString();
   document.getElementById('cs-stat-correct').textContent = foundCount;
   document.getElementById('cs-stat-streak').textContent = bestStreak;
-  document.getElementById('cs-stat-mult').textContent = 'x' + peakMult.toFixed(1);
+  document.getElementById('cs-stat-mult').textContent = POINTS_PER_PICK;
   document.getElementById('cs-reason').innerHTML = reasonHtml;
 
   // Share section

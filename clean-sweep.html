@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clean Sweep — FlurrySports</title>
+<link rel="icon" type="image/png" href="/images/logo-crown.png">
+<link rel="stylesheet" href="/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/js/supabase-config.js"></script>
+<script>
+(function() {
+  var _lib = window.supabase || window.Supabase;
+  var _create = _lib.createClient || (_lib.default && _lib.default.createClient);
+  window.supabase = _create(SUPABASE_URL, SUPABASE_ANON_KEY);
+})();
+</script>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --cs-gold: #F5B800;
+  --cs-gold-dark: #d9a200;
+  --cs-gold-dim: #2a2000;
+  --cs-navy: #1E1B4B;
+  --cs-navy-light: #2a275c;
+  --cs-navy-mid: #35326e;
+  --cs-navy-card: #221f52;
+  --cs-text: #f0f0f8;
+  --cs-muted: #8888aa;
+  --cs-hint: #44446a;
+  --cs-green: #22c55e;
+  --cs-green-bg: #052e16;
+  --cs-green-border: #16a34a;
+  --cs-red: #ef4444;
+  --cs-red-bg: #3a0808;
+  --cs-red-border: #dc2626;
+}
+
+body {
+  background: #0d0b26;
+  color: var(--cs-text);
+  font-family: 'Barlow', sans-serif;
+  min-height: 100vh;
+}
+
+/* ── SCREENS ── */
+.cs-screen { display: none; }
+.cs-screen.active { display: block; }
+
+/* ── SHELL ── */
+.cs-shell {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 0 16px 48px;
+}
+
+/* ── HEADER ── */
+.cs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0 14px;
+  margin-bottom: 4px;
+}
+.cs-brand { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+.cs-brand-name { font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 700; color: #fff; }
+.cs-brand-name span { color: var(--cs-gold); }
+.cs-game-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  background: var(--cs-gold-dim); color: var(--cs-gold);
+  padding: 4px 12px; border-radius: 20px;
+}
+
+/* ── TIMER ── */
+.cs-timer-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.cs-timer-label { font-size: 12px; color: var(--cs-muted); }
+.cs-timer-val { font-family: 'Barlow Condensed', sans-serif; font-size: 19px; font-weight: 700; color: var(--cs-text); font-variant-numeric: tabular-nums; }
+.cs-timer-val.warning { color: #eab308; }
+.cs-timer-val.urgent { color: var(--cs-red); }
+.cs-timer-track { height: 5px; background: var(--cs-navy-mid); border-radius: 4px; overflow: hidden; margin-bottom: 14px; }
+.cs-timer-fill { height: 100%; background: var(--cs-gold); border-radius: 4px; transition: width 1s linear, background 0.4s; }
+
+/* ── SCORE ROW ── */
+.cs-score-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.cs-score-card { background: var(--cs-navy-card); border-radius: 10px; padding: 10px 12px; border: 1px solid var(--cs-navy-mid); }
+.cs-score-label { font-size: 11px; color: var(--cs-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px; }
+.cs-score-val { font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 700; color: var(--cs-gold); line-height: 1; }
+.cs-score-val.green { color: var(--cs-green); }
+.cs-mini-bar-bg { height: 3px; background: var(--cs-navy-mid); border-radius: 2px; overflow: hidden; margin-top: 4px; }
+.cs-mini-bar-fill { height: 100%; background: var(--cs-gold); border-radius: 2px; transition: width 0.4s; }
+
+/* ── PROMPT ── */
+.cs-prompt {
+  background: var(--cs-navy-card);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border-left: 3px solid var(--cs-gold);
+  border-top: 1px solid var(--cs-navy-mid);
+  border-right: 1px solid var(--cs-navy-mid);
+  border-bottom: 1px solid var(--cs-navy-mid);
+}
+.cs-prompt-eyebrow { font-size: 11px; color: var(--cs-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.cs-prompt-text { font-family: 'Barlow Condensed', sans-serif; font-size: 19px; font-weight: 700; color: #fff; margin-bottom: 10px; line-height: 1.25; }
+.cs-prompt-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cs-sport-badge { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 20px; background: rgba(245,184,0,0.12); color: var(--cs-gold); border: 1px solid rgba(245,184,0,0.25); }
+.cs-pip-row { display: flex; gap: 5px; }
+.cs-pip {
+  width: 24px; height: 24px; border-radius: 50%;
+  border: 2px solid var(--cs-hint);
+  background: var(--cs-navy-mid);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px; font-weight: 700; color: var(--cs-hint);
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.cs-pip.found { background: var(--cs-gold); border-color: var(--cs-gold); color: #111; }
+
+/* ── TILE GRID ── */
+.cs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+  margin-bottom: 12px;
+}
+.cs-tile {
+  background: var(--cs-navy-card);
+  border: 1.5px solid var(--cs-navy-mid);
+  border-radius: 10px;
+  min-height: 70px;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center;
+  font-size: 13px; font-weight: 600;
+  color: var(--cs-text);
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, transform 0.1s;
+  line-height: 1.3;
+  padding: 10px 8px;
+  user-select: none;
+}
+.cs-tile:hover:not(.correct):not(.wrong):not(.disabled) {
+  border-color: var(--cs-gold);
+  background: var(--cs-navy-light);
+  transform: translateY(-1px);
+}
+.cs-tile.correct { background: var(--cs-green-bg); border-color: var(--cs-green-border); color: #86efac; cursor: default; }
+.cs-tile.wrong { background: var(--cs-red-bg); border-color: var(--cs-red-border); color: #fca5a5; cursor: default; animation: cs-shake 0.4s ease; }
+.cs-tile.disabled { opacity: 0.45; cursor: default; }
+@keyframes cs-shake {
+  0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)}
+}
+@keyframes cs-pop {
+  0%{transform:scale(1)} 50%{transform:scale(1.06)} 100%{transform:scale(1)}
+}
+.cs-tile.pop { animation: cs-pop 0.22s ease; }
+
+/* ── MULT CARD ── */
+.cs-mult-card {
+  background: var(--cs-navy-card);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  border: 1px solid var(--cs-navy-mid);
+}
+.cs-mult-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.cs-mult-label { font-size: 12px; color: var(--cs-muted); }
+.cs-mult-val { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; color: var(--cs-gold); }
+.cs-mult-bar-bg { height: 4px; background: var(--cs-navy-mid); border-radius: 3px; overflow: hidden; }
+.cs-mult-bar { height: 100%; background: var(--cs-gold); border-radius: 3px; transition: width 0.4s; }
+.cs-mult-hint { font-size: 11px; color: var(--cs-hint); margin-top: 4px; }
+
+/* ── ACTIONS ── */
+.cs-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cs-btn-bank {
+  background: var(--cs-gold); border: none; border-radius: 10px;
+  padding: 14px 10px;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700;
+  color: #111; cursor: pointer; text-align: center; line-height: 1.2;
+  transition: background 0.15s, transform 0.1s;
+}
+.cs-btn-bank:hover { background: var(--cs-gold-dark); }
+.cs-btn-bank:active { transform: scale(0.98); }
+.cs-btn-bank:disabled { background: var(--cs-gold-dim); color: var(--cs-hint); cursor: default; }
+.cs-btn-risk {
+  background: transparent; border: 1.5px solid var(--cs-navy-mid); border-radius: 10px;
+  padding: 14px 10px;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700;
+  color: var(--cs-text); cursor: pointer; text-align: center; line-height: 1.2;
+  transition: border-color 0.15s, color 0.15s;
+}
+.cs-btn-risk:hover { border-color: var(--cs-gold); color: var(--cs-gold); }
+
+/* ── SCORE SCREEN ── */
+.cs-score-card-big {
+  background: var(--cs-navy-card);
+  border-radius: 16px;
+  padding: 28px 24px;
+  border: 1px solid var(--cs-navy-mid);
+  text-align: center;
+  margin-bottom: 14px;
+}
+.cs-result-icon { font-size: 44px; margin-bottom: 10px; }
+.cs-result-title { font-family: 'Barlow Condensed', sans-serif; font-size: 30px; font-weight: 800; color: var(--cs-gold); margin-bottom: 4px; }
+.cs-result-sub { font-size: 13px; color: var(--cs-muted); margin-bottom: 18px; }
+.cs-score-big { font-family: 'Barlow Condensed', sans-serif; font-size: 68px; font-weight: 800; color: var(--cs-gold); line-height: 1; margin-bottom: 2px; }
+.cs-score-big-label { font-size: 12px; color: var(--cs-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 18px; }
+.cs-stat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+.cs-stat-box { background: var(--cs-navy-light); border-radius: 8px; padding: 10px; }
+.cs-stat-val { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; color: var(--cs-text); }
+.cs-stat-label { font-size: 11px; color: var(--cs-muted); }
+.cs-reason { font-size: 13px; color: var(--cs-muted); padding: 10px 14px; background: var(--cs-navy-light); border-radius: 8px; }
+.cs-reason span { color: var(--cs-text); font-weight: 600; }
+
+.cs-btn-wide {
+  width: 100%; border-radius: 10px; padding: 14px;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700;
+  cursor: pointer; margin-bottom: 10px; transition: background 0.15s;
+}
+.cs-btn-outline { background: transparent; border: 1.5px solid var(--cs-gold); color: var(--cs-gold); }
+.cs-btn-outline:hover { background: var(--cs-gold-dim); }
+.cs-btn-solid { background: var(--cs-gold); border: none; color: #111; }
+.cs-btn-solid:hover { background: var(--cs-gold-dark); }
+
+/* ── REVEAL SCREEN ── */
+.cs-reveal-prompt {
+  background: var(--cs-navy-card); border-radius: 10px;
+  padding: 12px 14px; margin-bottom: 12px;
+  border-left: 3px solid var(--cs-gold);
+  border-top: 1px solid var(--cs-navy-mid);
+  border-right: 1px solid var(--cs-navy-mid);
+  border-bottom: 1px solid var(--cs-navy-mid);
+}
+.cs-reveal-prompt-label { font-size: 11px; color: var(--cs-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+.cs-reveal-prompt-text { font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 700; color: #fff; }
+.cs-reveal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.cs-reveal-tile {
+  border-radius: 10px; padding: 10px 8px;
+  min-height: 62px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; font-size: 12px; font-weight: 600; line-height: 1.3;
+}
+.cs-reveal-tile .cs-check { font-size: 13px; margin-bottom: 2px; }
+.cs-reveal-tile.c { background: var(--cs-green-bg); border: 1.5px solid var(--cs-green-border); color: #86efac; }
+.cs-reveal-tile.m { background: rgba(34,197,94,0.04); border: 1.5px dashed var(--cs-green-border); color: #86efac; opacity: 0.6; }
+.cs-reveal-tile.w { background: var(--cs-red-bg); border: 1.5px solid var(--cs-red-border); color: #fca5a5; }
+.cs-reveal-tile.d { background: var(--cs-navy-card); border: 1.5px solid var(--cs-hint); color: var(--cs-muted); }
+.cs-edge-note { font-size: 12px; color: var(--cs-muted); font-style: italic; padding: 10px 14px; background: var(--cs-navy-card); border-radius: 8px; border: 1px solid var(--cs-navy-mid); margin-bottom: 12px; }
+.cs-edge-note strong { color: var(--cs-gold); font-style: normal; }
+
+/* ── ALREADY PLAYED ── */
+.cs-played-card {
+  background: var(--cs-navy-card); border-radius: 16px;
+  padding: 28px 24px; border: 1px solid var(--cs-navy-mid);
+  text-align: center; margin-bottom: 14px;
+}
+.cs-played-icon { font-size: 40px; margin-bottom: 10px; }
+.cs-played-title { font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 800; color: var(--cs-gold); margin-bottom: 4px; }
+.cs-played-sub { font-size: 13px; color: var(--cs-muted); margin-bottom: 18px; }
+</style>
+</head>
+<body>
+
+<!-- APP NAV (same as rest of app) -->
+<nav>
+  <a class="nav-logo" href="/">
+    <img src="/images/logo-yeti-orange.png" alt="FlurrySports" style="height:48px;width:auto;">
+  </a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="/quizzes.html">Quizzes</a></li>
+    <li><a href="/leaderboard.html">Leaderboard</a></li>
+  </ul>
+  <div class="nav-actions" id="nav-actions">
+    <button class="btn btn-ghost btn-sm" onclick="openModal('login')">Log In</button>
+    <button class="btn btn-primary btn-sm" onclick="openModal('signup')">Sign Up</button>
+  </div>
+</nav>
+
+<!-- LOADING -->
+<div id="cs-loading-screen" class="cs-screen active">
+  <div class="cs-shell">
+    <div class="cs-header">
+      <a class="cs-brand" href="/"><svg width="26" height="26" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="7" fill="#F5B800"/><path d="M4 22 Q4 14 14 9 Q24 14 24 22" fill="none" stroke="#1E1B4B" stroke-width="2.5" stroke-linecap="round"/><path d="M4 22 L24 22" stroke="#1E1B4B" stroke-width="2.5" stroke-linecap="round"/><path d="M9 22 L9 18 M14 22 L14 15 M19 22 L19 18" stroke="#1E1B4B" stroke-width="2" stroke-linecap="round"/></svg><span class="cs-brand-name">Flurry<span>Sports</span></span></a>
+      <span class="cs-game-badge">Clean Sweep</span>
+    </div>
+    <div style="text-align:center;padding:48px 0;color:var(--cs-muted);font-size:14px;">Loading today's puzzle...</div>
+  </div>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="cs-game-screen" class="cs-screen">
+  <div class="cs-shell">
+    <div class="cs-header">
+      <a class="cs-brand" href="/"><svg width="26" height="26" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="7" fill="#F5B800"/><path d="M4 22 Q4 14 14 9 Q24 14 24 22" fill="none" stroke="#1E1B4B" stroke-width="2.5" stroke-linecap="round"/><path d="M4 22 L24 22" stroke="#1E1B4B" stroke-width="2.5" stroke-linecap="round"/><path d="M9 22 L9 18 M14 22 L14 15 M19 22 L19 18" stroke="#1E1B4B" stroke-width="2" stroke-linecap="round"/></svg><span class="cs-brand-name">Flurry<span>Sports</span></span></a>
+      <span class="cs-game-badge">Clean Sweep</span>
+    </div>
+
+    <div class="cs-timer-row">
+      <span class="cs-timer-label">Time remaining</span>
+      <span class="cs-timer-val" id="cs-timer-val">1:00</span>
+    </div>
+    <div class="cs-timer-track"><div class="cs-timer-fill" id="cs-timer-fill" style="width:100%"></div></div>
+
+    <div class="cs-score-row">
+      <div class="cs-score-card">
+        <div class="cs-score-label">Points banked</div>
+        <div class="cs-score-val" id="cs-banked">0</div>
+      </div>
+      <div class="cs-score-card">
+        <div class="cs-score-label">Next pick</div>
+        <div class="cs-score-val green" id="cs-next">+100</div>
+      </div>
+      <div class="cs-score-card">
+        <div class="cs-score-label">Multiplier</div>
+        <div class="cs-score-val" id="cs-mult-disp">x1.0</div>
+        <div class="cs-mini-bar-bg"><div class="cs-mini-bar-fill" id="cs-mini-bar" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="cs-prompt">
+      <div class="cs-prompt-eyebrow">Today's prompt</div>
+      <div class="cs-prompt-text" id="cs-prompt-text">Loading...</div>
+      <div class="cs-prompt-meta">
+        <span class="cs-sport-badge" id="cs-sport-badge">NFL</span>
+        <div class="cs-pip-row" id="cs-pip-row"></div>
+      </div>
+    </div>
+
+    <div class="cs-grid" id="cs-grid"></div>
+
+    <div class="cs-mult-card">
+      <div class="cs-mult-row">
+        <span class="cs-mult-label">Streak multiplier</span>
+        <span class="cs-mult-val" id="cs-mult-label">x1.0 — pick correctly to build streak</span>
+      </div>
+      <div class="cs-mult-bar-bg"><div class="cs-mult-bar" id="cs-mult-bar" style="width:0%"></div></div>
+      <div class="cs-mult-hint" id="cs-mult-hint">Next correct: +100 pts</div>
+    </div>
+
+    <div class="cs-actions">
+      <button class="cs-btn-bank" id="cs-bank-btn" onclick="csBank()" disabled>Take the points — 0</button>
+      <button class="cs-btn-risk">Keep going — risk it</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCORE SCREEN -->
+<div id="cs-score-screen" class="cs-screen">
+  <div class="cs-shell">
+    <div class="cs-header">
+      <a class="cs-brand" href="/"><svg width="26" height="26" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="7" fill="#F5B800"/><path d="M4 22 Q4 14 14 9 Q24 14 24 22" fill="none" stroke="#1E1B4B" stroke-width="2.5" stroke-linecap="round"/><path d="M4 22 L24 22" stroke="#1E1B4B" stroke-width="2.5" stroke-linecap="round"/><path d="M9 22 L9 18 M14 22 L14 15 M19 22 L19 18" stroke="#1E1B4B" stroke-width="2" stroke-linecap="round"/></svg><span class="cs-brand-name">Flurry<span>Sports</span></span></a>
+      <span class="cs-game-badge">Clean Sweep</span>
+    </div>
+    <div class="cs-score-card-big">
+      <div class="cs-result-icon" id="cs-result-icon">🏆</div>
+      <div class="cs-result-title" id="cs-result-title">Clean Sweep!</div>
+      <div class="cs-result-sub" id="cs-result-sub"></div>
+      <div class="cs-score-big" id="cs-final-score">0</div>
+      <div class="cs-score-big-label">points</div>
+      <div class="cs-stat-row">
+        <div class="cs-stat-box"><div class="cs-stat-val" id="cs-stat-correct">0</div><div class="cs-stat-label">Correct picks</div></div>
+        <div class="cs-stat-box"><div class="cs-stat-val" id="cs-stat-streak">0</div><div class="cs-stat-label">Best streak</div></div>
+        <div class="cs-stat-box"><div class="cs-stat-val" id="cs-stat-mult">x1.0</div><div class="cs-stat-label">Peak mult.</div></div>
+      </div>
+      <div class="cs-reason" id="cs-reason"></div>
+    </div>
+    <div id="cs-share-area"></div>
+    <button class="cs-btn-wide cs-btn-outline" onclick="csShowReveal()">See all answers</button>
+    <a href="/" class="cs-btn-wide cs-btn-solid" style="display:block;text-align:center;text-decoration:none;line-height:2.8;">Back to home</a>
+  </div>
+</div>
+
+<!-- REVEAL SCREEN -->
+<div id="cs-reveal-screen" class="cs-screen">
+  <div class="cs-shell">
+    <div class="cs-header">
+      <a class="cs-brand" href="/"><svg width="26" height="26" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="7" fill="#F5B800"/><path d="M4 22 Q4 14 14 9 Q24 14 24 22" fill="none" stroke="#1E1B4B" stroke-width="2.5" stroke-linecap="round"/><path d="M4 22 L24 22" stroke="#1E1B4B" stroke-width="2.5" stroke-linecap="round"/><path d="M9 22 L9 18 M14 22 L14 15 M19 22 L19 18" stroke="#1E1B4B" stroke-width="2" stroke-linecap="round"/></svg><span class="cs-brand-name">Flurry<span>Sports</span></span></a>
+      <span class="cs-game-badge">Clean Sweep</span>
+    </div>
+    <div class="cs-reveal-prompt">
+      <div class="cs-reveal-prompt-label">The prompt was</div>
+      <div class="cs-reveal-prompt-text" id="cs-reveal-prompt-text"></div>
+    </div>
+    <div class="cs-reveal-grid" id="cs-reveal-grid"></div>
+    <div class="cs-edge-note" id="cs-edge-note" style="display:none;"></div>
+    <button class="cs-btn-wide cs-btn-outline" onclick="csShowScore()">← Back to score</button>
+    <a href="/" class="cs-btn-wide cs-btn-solid" style="display:block;text-align:center;text-decoration:none;line-height:2.8;margin-bottom:10px;">Back to home</a>
+  </div>
+</div>
+
+<!-- ALREADY PLAYED SCREEN -->
+<div id="cs-played-screen" class="cs-screen">
+  <div class="cs-shell">
+    <div class="cs-header">
+      <a class="cs-brand" href="/"><svg width="26" height="26" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="7" fill="#F5B800"/><path d="M4 22 Q4 14 14 9 Q24 14 24 22" fill="none" stroke="#1E1B4B" stroke-width="2.5" stroke-linecap="round"/><path d="M4 22 L24 22" stroke="#1E1B4B" stroke-width="2.5" stroke-linecap="round"/><path d="M9 22 L9 18 M14 22 L14 15 M19 22 L19 18" stroke="#1E1B4B" stroke-width="2" stroke-linecap="round"/></svg><span class="cs-brand-name">Flurry<span>Sports</span></span></a>
+      <span class="cs-game-badge">Clean Sweep</span>
+    </div>
+    <div class="cs-played-card">
+      <div class="cs-played-icon">✅</div>
+      <div class="cs-played-title">Already played today!</div>
+      <div class="cs-played-sub">Come back tomorrow for a new puzzle.</div>
+      <div class="cs-score-big" id="cs-played-score">0</div>
+      <div class="cs-score-big-label" style="margin-bottom:16px;">your score today</div>
+      <div class="cs-reason" id="cs-played-reason" style="text-align:left;margin-bottom:0;"></div>
+    </div>
+    <div id="cs-played-share-area"></div>
+    <button class="cs-btn-wide cs-btn-outline" onclick="csShowReveal()">See all answers</button>
+    <a href="/" class="cs-btn-wide cs-btn-solid" style="display:block;text-align:center;text-decoration:none;line-height:2.8;">Back to home</a>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────────────────────
+const TOTAL_TIME = 60;
+const GAME_ID_PREFIX = 'clean-sweep-';
+
+let puzzle = null;        // puzzle object from Supabase
+let tiles = [];           // shuffled [{name, correct, picked, wasWrong}]
+let banked = 0, streak = 0, bestStreak = 0, multiplier = 1.0, peakMult = 1.0;
+let foundCount = 0, totalCorrect = 0;
+let timeLeft = TOTAL_TIME, timerInterval = null, gameOver = false;
+let wrongTile = null, endReason = '';
+let finalPoints = 0;
+let todayGameId = '';
+
+const MULT_STEPS = [{s:0,m:1.0},{s:2,m:1.5},{s:4,m:2.0},{s:6,m:3.0}];
+function getMult(s) { let m=1.0; for(const t of MULT_STEPS){if(s>=t.s)m=t.m;} return m; }
+function getNextStep(s) { for(const t of MULT_STEPS){if(t.s>s)return t;} return null; }
+function nextWorth() { return Math.round(100*multiplier); }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCREEN MANAGEMENT
+// ─────────────────────────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.cs-screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────────────────────
+async function csInit() {
+  showScreen('cs-loading-screen');
+
+  // Get today's game ID (Pacific time date)
+  const today = getTodayString();
+  todayGameId = GAME_ID_PREFIX + today;
+
+  // Fetch today's puzzle from Supabase
+  try {
+    const { data, error } = await supabase
+      .from('clean_sweep_puzzles')
+      .select('*')
+      .eq('date', today)
+      .single();
+
+    if (error || !data) {
+      // Fallback to a hardcoded sample if no puzzle found
+      puzzle = getFallbackPuzzle();
+    } else {
+      puzzle = data;
+    }
+  } catch(e) {
+    puzzle = getFallbackPuzzle();
+  }
+
+  // Check if already played
+  const played = hasAttemptedLocally(todayGameId);
+  if (played) {
+    await showAlreadyPlayed();
+    return;
+  }
+
+  // Also check Supabase for already played (in case localStorage was cleared)
+  try {
+    const alreadyPlayed = await hasAttemptedQuiz(todayGameId);
+    if (alreadyPlayed) {
+      await showAlreadyPlayed();
+      return;
+    }
+  } catch(e) {}
+
+  startGame();
+}
+
+function startGame() {
+  // Build tile array from puzzle
+  tiles = puzzle.tiles_shuffled.map(t => ({ ...t, picked: false, wasWrong: false }));
+  totalCorrect = tiles.filter(t => t.correct).length;
+  banked = 0; streak = 0; bestStreak = 0; multiplier = 1.0; peakMult = 1.0;
+  foundCount = 0; timeLeft = TOTAL_TIME; gameOver = false; wrongTile = null; endReason = '';
+
+  renderGame();
+  showScreen('cs-game-screen');
+  startTimer();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────────────────────────────────────
+function renderGame() {
+  document.getElementById('cs-prompt-text').textContent = puzzle.prompt;
+  document.getElementById('cs-sport-badge').textContent = puzzle.sport_category || 'Sports';
+  renderPips();
+  renderGrid();
+  updateScoreRow();
+  updateMultCard();
+  updateBankBtn();
+}
+
+function renderPips() {
+  const row = document.getElementById('cs-pip-row');
+  row.innerHTML = '';
+  for (let i = 0; i < totalCorrect; i++) {
+    const pip = document.createElement('div');
+    pip.className = 'cs-pip' + (i < foundCount ? ' found' : '');
+    pip.textContent = i + 1;
+    row.appendChild(pip);
+  }
+}
+
+function renderGrid() {
+  const grid = document.getElementById('cs-grid');
+  grid.innerHTML = '';
+  tiles.forEach((tile, idx) => {
+    const el = document.createElement('div');
+    el.className = 'cs-tile';
+    el.textContent = tile.name;
+    if (tile.picked && tile.correct) el.classList.add('correct');
+    else if (tile.wasWrong) el.classList.add('wrong');
+    else if (gameOver) el.classList.add('disabled');
+    else el.onclick = () => csPick(idx);
+    grid.appendChild(el);
+  });
+}
+
+function updateScoreRow() {
+  document.getElementById('cs-banked').textContent = banked.toLocaleString();
+  document.getElementById('cs-next').textContent = '+' + nextWorth();
+  document.getElementById('cs-mult-disp').textContent = 'x' + multiplier.toFixed(1);
+  const pct = Math.min(((multiplier - 1.0) / 2.0) * 100, 100);
+  document.getElementById('cs-mini-bar').style.width = pct + '%';
+}
+
+function updateMultCard() {
+  multiplier = getMult(streak);
+  if (multiplier > peakMult) peakMult = multiplier;
+  const next = getNextStep(streak);
+  const pct = Math.min(((multiplier - 1.0) / 2.0) * 100, 100);
+  document.getElementById('cs-mult-label').textContent =
+    'x' + multiplier.toFixed(1) + (streak > 0 ? ` — ${streak} correct in a row` : ' — pick correctly to build streak');
+  document.getElementById('cs-mult-bar').style.width = pct + '%';
+  document.getElementById('cs-mult-hint').textContent = next
+    ? `Next correct: +${nextWorth()} pts · Reach x${next.m.toFixed(1)} at ${next.s} in a row`
+    : `Next correct: +${nextWorth()} pts · Max multiplier!`;
+}
+
+function updateBankBtn() {
+  const btn = document.getElementById('cs-bank-btn');
+  btn.textContent = 'Take the points — ' + banked.toLocaleString();
+  btn.disabled = banked === 0 || gameOver;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TIMER
+// ─────────────────────────────────────────────────────────────────────────────
+function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    const el = document.getElementById('cs-timer-val');
+    const fill = document.getElementById('cs-timer-fill');
+    const m = Math.floor(timeLeft / 60);
+    const s = timeLeft % 60;
+    el.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+    fill.style.width = Math.round((timeLeft / TOTAL_TIME) * 100) + '%';
+    el.className = 'cs-timer-val';
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      fill.style.width = '0%';
+      csEndGame('timeout');
+    } else if (timeLeft <= 15) {
+      el.classList.add('urgent');
+      fill.style.background = '#ef4444';
+    } else if (timeLeft <= 30) {
+      el.classList.add('warning');
+      fill.style.background = '#eab308';
+    }
+  }, 1000);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PICK
+// ─────────────────────────────────────────────────────────────────────────────
+function csPick(idx) {
+  if (gameOver) return;
+  const tile = tiles[idx];
+  if (tile.picked || tile.wasWrong) return;
+
+  const els = document.querySelectorAll('.cs-tile');
+  const el = els[idx];
+
+  if (tile.correct) {
+    tile.picked = true;
+    foundCount++;
+    streak++;
+    bestStreak = Math.max(bestStreak, streak);
+    multiplier = getMult(streak);
+    if (multiplier > peakMult) peakMult = multiplier;
+    banked += nextWorth();
+    el.classList.add('correct', 'pop');
+    setTimeout(() => el.classList.remove('pop'), 250);
+    renderPips();
+    updateScoreRow();
+    updateMultCard();
+    updateBankBtn();
+    if (foundCount === totalCorrect) {
+      setTimeout(() => csEndGame('complete'), 400);
+    }
+  } else {
+    tile.wasWrong = true;
+    wrongTile = tile.name;
+    el.classList.add('wrong');
+    // Lose ALL points
+    banked = 0;
+    streak = 0;
+    multiplier = 1.0;
+    updateScoreRow();
+    updateBankBtn();
+    setTimeout(() => csEndGame('wrong'), 700);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BANK
+// ─────────────────────────────────────────────────────────────────────────────
+function csBank() {
+  if (gameOver || banked === 0) return;
+  csEndGame('banked');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// END GAME
+// ─────────────────────────────────────────────────────────────────────────────
+function csEndGame(reason) {
+  gameOver = true;
+  endReason = reason;
+  clearInterval(timerInterval);
+  document.querySelectorAll('.cs-tile:not(.correct):not(.wrong)').forEach(el => {
+    el.classList.add('disabled');
+    el.onclick = null;
+  });
+  document.getElementById('cs-bank-btn').disabled = true;
+  finalPoints = reason === 'wrong' ? 0 : banked;
+  setTimeout(() => csShowScoreScreen(reason), reason === 'wrong' ? 800 : 300);
+}
+
+async function csShowScoreScreen(reason) {
+  let icon, title, sub, reasonHtml;
+
+  if (reason === 'complete') {
+    icon = '🏆'; title = 'Clean Sweep!'; sub = `All ${totalCorrect} correct picks found`;
+    reasonHtml = `Perfect run — you found every correct answer without a single mistake.`;
+  } else if (reason === 'banked') {
+    icon = '💰'; title = 'Points secured!'; sub = `Smart cash-out`;
+    reasonHtml = `You banked <span>${banked.toLocaleString()} pts</span> after ${foundCount} of ${totalCorrect} correct picks.`;
+  } else if (reason === 'wrong') {
+    icon = '💥'; title = 'Wrong pick!'; sub = `${wrongTile} didn't qualify`;
+    reasonHtml = `<span>${wrongTile}</span> didn't match the prompt — you lose all your points.`;
+  } else {
+    icon = '⏰'; title = "Time's up!"; sub = `60 seconds is all you get`;
+    reasonHtml = `You had <span>${banked.toLocaleString()} pts</span> banked when time expired.`;
+  }
+
+  document.getElementById('cs-result-icon').textContent = icon;
+  document.getElementById('cs-result-title').textContent = title;
+  document.getElementById('cs-result-sub').textContent = sub;
+  document.getElementById('cs-final-score').textContent = finalPoints.toLocaleString();
+  document.getElementById('cs-stat-correct').textContent = foundCount;
+  document.getElementById('cs-stat-streak').textContent = bestStreak;
+  document.getElementById('cs-stat-mult').textContent = 'x' + peakMult.toFixed(1);
+  document.getElementById('cs-reason').innerHTML = reasonHtml;
+
+  // Share section
+  document.getElementById('cs-share-area').innerHTML = buildShareSection('Clean Sweep', finalPoints, `${foundCount}/${totalCorrect} correct picks`);
+
+  showScreen('cs-score-screen');
+
+  // Save attempt
+  const user = await getCurrentUser();
+  const { fire } = getStreakDisplay();
+  const scoredPoints = fire ? Math.round(finalPoints * 1.10) : finalPoints;
+
+  await saveAttempt(todayGameId, finalPoints, TOTAL_TIME - timeLeft,
+    { foundCount, totalCorrect, bestStreak, peakMult: peakMult.toFixed(1), endReason: reason, wrongPick: wrongTile },
+    'clean_sweep'
+  );
+
+  // Prompt sign-in if guest
+  if (!user && finalPoints > 0) {
+    setTimeout(() => showPostGameAuthPrompt(todayGameId, finalPoints, 'clean_sweep', 'Clean Sweep'), 800);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REVEAL
+// ─────────────────────────────────────────────────────────────────────────────
+function csShowReveal() {
+  document.getElementById('cs-reveal-prompt-text').textContent = puzzle.prompt;
+
+  // Edge case note
+  const edgeEl = document.getElementById('cs-edge-note');
+  if (puzzle.edge_case_note) {
+    edgeEl.style.display = 'block';
+    edgeEl.innerHTML = '<strong>💡 Edge case:</strong> ' + puzzle.edge_case_note;
+  }
+
+  const grid = document.getElementById('cs-reveal-grid');
+  grid.innerHTML = '';
+  tiles.forEach(tile => {
+    const el = document.createElement('div');
+    el.className = 'cs-reveal-tile';
+    if (tile.correct && tile.picked) {
+      el.classList.add('c');
+      el.innerHTML = '<div class="cs-check">✓</div>' + tile.name;
+    } else if (tile.wasWrong) {
+      el.classList.add('w');
+      el.innerHTML = '<div class="cs-check">✗</div>' + tile.name;
+    } else if (tile.correct) {
+      el.classList.add('m');
+      el.innerHTML = '<div class="cs-check">✓</div>' + tile.name;
+    } else {
+      el.classList.add('d');
+      el.innerHTML = tile.name;
+    }
+    grid.appendChild(el);
+  });
+
+  showScreen('cs-reveal-screen');
+}
+
+function csShowScore() {
+  showScreen('cs-score-screen');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ALREADY PLAYED
+// ─────────────────────────────────────────────────────────────────────────────
+async function showAlreadyPlayed() {
+  // Try to fetch their previous score from Supabase
+  let prevScore = 0;
+  let prevReason = '';
+  let prevFound = 0;
+  try {
+    const cookieId = getCookieId();
+    const { data } = await supabase.from('attempts')
+      .select('score, answers')
+      .eq('quiz_id', todayGameId)
+      .eq('cookie_id', cookieId)
+      .limit(1)
+      .single();
+    if (data) {
+      prevScore = data.score || 0;
+      prevFound = data.answers?.foundCount || 0;
+      prevReason = data.answers?.endReason || '';
+    }
+  } catch(e) {}
+
+  document.getElementById('cs-played-score').textContent = prevScore.toLocaleString();
+  let reasonText = '';
+  if (prevReason === 'complete') reasonText = `You found all ${totalCorrect || ''} correct picks — perfect run!`;
+  else if (prevReason === 'banked') reasonText = `You cashed out after finding ${prevFound} correct picks.`;
+  else if (prevReason === 'wrong') reasonText = `A wrong pick ended your run.`;
+  else if (prevReason === 'timeout') reasonText = `Time ran out.`;
+  document.getElementById('cs-played-reason').innerHTML = reasonText;
+
+  // Share
+  document.getElementById('cs-played-share-area').innerHTML = buildShareSection('Clean Sweep', prevScore, `${prevFound}/${totalCorrect || '?'} correct picks`);
+
+  // Set up reveal with puzzle data
+  if (puzzle && puzzle.tiles_shuffled) {
+    tiles = puzzle.tiles_shuffled.map(t => ({ ...t, picked: false, wasWrong: false }));
+    totalCorrect = tiles.filter(t => t.correct).length;
+  }
+
+  showScreen('cs-played-screen');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FALLBACK PUZZLE (shown if Supabase has no puzzle yet for today)
+// ─────────────────────────────────────────────────────────────────────────────
+function getFallbackPuzzle() {
+  return {
+    prompt: "Won at least one Super Bowl championship as the starting quarterback",
+    sport_category: "NFL",
+    difficulty: "medium",
+    edge_case_note: "Jeff Hostetler won Super Bowl XXV with the Giants — a journeyman QB who stepped in for an injured Phil Simms and won it all, qualifying with just one championship.",
+    tiles_shuffled: [
+      {name:"Tom Brady",correct:true},
+      {name:"Dan Marino",correct:false},
+      {name:"Peyton Manning",correct:true},
+      {name:"Jim Kelly",correct:false},
+      {name:"Joe Montana",correct:true},
+      {name:"Patrick Mahomes",correct:true},
+      {name:"Donovan McNabb",correct:false},
+      {name:"Jeff Hostetler",correct:true},
+      {name:"Fran Tarkenton",correct:false}
+    ]
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BOOT
+// ─────────────────────────────────────────────────────────────────────────────
+csInit();
+</script>
+
+<script src="/js/auth.js"></script>
+</body>
+</html>

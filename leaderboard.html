@@ -113,6 +113,7 @@
     <button class="cat-tab" id="cat-trivia" onclick="setCat('trivia')">🎯 Trivia</button>
     <button class="cat-tab" id="cat-snap" onclick="setCat('snap_decision')">🏈 Snap Decision</button>
     <button class="cat-tab" id="cat-wtp" onclick="setCat('whos_that_player')">❓ Who's That, Player?</button>
+    <button class="cat-tab" id="cat-cs" onclick="setCat('clean_sweep')">✅ Clean Sweep</button>
   </div>
 
   <!-- Top 3 podium (overall only) -->
@@ -149,8 +150,9 @@
 
   function setCat(c) {
     currentCat = c;
-    ['overall','trivia','snap_decision','whos_that_player'].forEach(x => {
-      const btn = document.getElementById(`cat-${x === 'overall' ? 'overall' : x === 'trivia' ? 'trivia' : x === 'snap_decision' ? 'snap' : 'wtp'}`);
+    ['overall','trivia','snap_decision','whos_that_player','clean_sweep'].forEach(x => {
+      const btnId = x === 'overall' ? 'cat-overall' : x === 'trivia' ? 'cat-trivia' : x === 'snap_decision' ? 'cat-snap' : x === 'whos_that_player' ? 'cat-wtp' : 'cat-cs';
+      const btn = document.getElementById(btnId);
       if (btn) btn.classList.toggle('active', x === c);
     });
     loadLeaderboard();
@@ -193,9 +195,10 @@
     if (currentCat !== 'overall') {
       data = data.filter(a => {
         const id = (a.quiz_id || '').toLowerCase();
-        if (currentCat === 'trivia') return id.startsWith('daily-quiz-') || (!id.startsWith('snap-') && !id.startsWith('wtp-'));
+        if (currentCat === 'trivia') return id.startsWith('daily-quiz-') || (!id.startsWith('snap-') && !id.startsWith('wtp-') && !id.startsWith('clean-sweep-'));
         if (currentCat === 'snap_decision') return id.startsWith('snap-decision');
         if (currentCat === 'whos_that_player') return id.startsWith('wtp-');
+        if (currentCat === 'clean_sweep') return id.startsWith('clean-sweep-');
         return true;
       });
     }
@@ -234,7 +237,7 @@
     }
 
     // Game label
-    const gameLabel = { overall: 'Games', trivia: 'Trivia Games', snap_decision: 'Snap Decision Games', whos_that_player: "Who's That, Player?" }[currentCat] || 'Games';
+    const gameLabel = { overall: 'Games', trivia: 'Trivia Games', snap_decision: 'Snap Decision Games', whos_that_player: "Who's That, Player?", clean_sweep: 'Clean Sweep Games' }[currentCat] || 'Games';
 
     if (top25.length === 0) {
       document.getElementById('lb-table').innerHTML = `<p style="text-align:center;padding:3rem;color:var(--gray);">No scores yet.</p>`;

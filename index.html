@@ -446,6 +446,7 @@
     const quizDone = isDailyQuizDone();
     const snapDone = hasAttemptedLocally('snap-decision-v1');
     const wtpDone  = isWTPDone();
+    const csDone   = hasAttemptedLocally('clean-sweep-' + getTodayString());
 
     grid.innerHTML =
       '<div class="game-tile">' +
@@ -493,6 +494,24 @@
         '<div class="game-tile-footer"><span class="game-tile-meta">Up to 5 clues · ' + dailyPlayer.league + '</span>' +
           (wtpDone ? '<a href="/whos-that-player.html" class="btn btn-outline btn-sm" style="border-color:var(--success);color:var(--success);">✓ View Score</a>' :
             '<a href="/whos-that-player.html" class="btn btn-sm" style="background:#1a4a6a;color:#3498db;border:1px solid #1a5a8a;font-family:Barlow Condensed,sans-serif;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;border-radius:8px;padding:0.4rem 0.9rem;text-decoration:none;">Play Now →</a>') +
+        '</div>' +
+      '</div>' +
+
+      '<div class="game-tile">' +
+        '<div class="game-tile-header">' +
+          '<div class="game-tile-icon" style="background:rgba(245,184,0,0.12);border:1px solid rgba(245,184,0,0.25);display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:10px;">' +
+            '<svg width="26" height="26" viewBox="0 0 56 56" fill="none"><rect x="1" y="2" width="17" height="16" rx="3" fill="#F5B800"/><rect x="20" y="2" width="17" height="16" rx="3" fill="#F5B800"/><rect x="38" y="2" width="17" height="16" rx="3" fill="#F5B800"/><rect x="1" y="21" width="17" height="16" rx="3" fill="#F5B800"/><rect x="20" y="21" width="17" height="16" rx="3" fill="#F5B800"/><rect x="38" y="21" width="17" height="16" rx="3" fill="#F5B800"/><path d="M4 10 L7 13.5 L14 6" stroke="#3a2e00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M23 10 L26 13.5 L33 6" stroke="#3a2e00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M41 10 L44 13.5 L51 6" stroke="#3a2e00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 29 L7 32.5 L14 25" stroke="#3a2e00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M23 29 L26 32.5 L33 25" stroke="#3a2e00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M41 29 L44 32.5 L51 25" stroke="#3a2e00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+          '</div>' +
+          '<div><div class="game-tile-name" style="color:#F5B800;">Clean Sweep</div>' +
+          '<div class="game-tile-tag">Find Them All · Risk &amp; Reward</div></div>' +
+        '</div>' +
+        '<div class="game-tile-body">' +
+          '<div class="game-tile-title">Pick the right players</div>' +
+          '<div class="game-tile-desc">Find every player that matches the prompt. One wrong pick and you lose everything.</div>' +
+        '</div>' +
+        '<div class="game-tile-footer"><span class="game-tile-meta">⏱️ 60s · NFL, NBA, CFB, CBB, NHL</span>' +
+          (csDone ? '<a href="/clean-sweep.html" class="btn btn-outline btn-sm" style="border-color:var(--success);color:var(--success);">✓ View Score</a>' :
+            '<a href="/clean-sweep.html" class="btn btn-sm" style="background:#F5B800;color:#111;font-family:Barlow Condensed,sans-serif;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;border-radius:8px;padding:0.4rem 0.9rem;text-decoration:none;">Play Now →</a>') +
         '</div>' +
       '</div>';
   }

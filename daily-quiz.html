@@ -84,6 +84,16 @@ function dateSeed() {
   var pac = new Date(d.getTime() + getPacificOffsetMinutes(d)*60000);
   return parseInt(pac.toISOString().slice(0,10).replace(/-/g,''));
 }
+// Returns a sequential day index (days since 2025-01-01) so theme rotation
+// never collides at month boundaries. Using date integers like 20260331 % 14
+// breaks because month rollovers jump by 70, which is a multiple of 14.
+function dayIndex() {
+  var d = new Date();
+  var pac = new Date(d.getTime() + getPacificOffsetMinutes(d)*60000);
+  var pacDateStr = pac.toISOString().slice(0,10);
+  var epoch = new Date('2025-01-01T00:00:00Z');
+  return Math.floor((new Date(pacDateStr + 'T00:00:00Z') - epoch) / 86400000);
+}
 function seededRandom(seed) {
   var s = seed;
   return function() { s=(s*9301+49297)%233280; return s/233280; };
@@ -123,7 +133,7 @@ function q_heisman() { return [{q:"Who won the Heisman Trophy in 2023?",o:["Bo N
 
 // ── Today's quiz ─────────────────────────────────────────
 var seed   = dateSeed();
-var theme  = QUIZ_THEMES[(seed + 3) % QUIZ_THEMES.length];
+var theme  = QUIZ_THEMES[dayIndex() % QUIZ_THEMES.length];
 var qs     = theme.questions();
 var quizId = 'daily-quiz-' + seed;
 

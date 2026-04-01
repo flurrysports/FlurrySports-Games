@@ -47,6 +47,12 @@ function getTodayString() {
   return getPacificDateString();
 }
 
+// Returns yesterday's date string in Pacific time.
+// Uses a UTC-based subtraction to avoid local-timezone bugs with setDate().
+function getPacificYesterday() {
+  return getPacificDateString(new Date(Date.now() - 86400000));
+}
+
 // ─── CHECK IF USER ATTEMPTED A GAME ───────────────────────────────
 async function hasAttemptedQuiz(gameId) {
   if (hasAttemptedLocally(gameId)) return true;
@@ -581,9 +587,7 @@ function updateStreak() {
   const last = getLastPlayedDate();
   let streak = getStreak();
   if (last === today) return streak;
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = getPacificDateString(yesterday);
+  const yesterdayStr = getPacificYesterday();
   if (last === yesterdayStr) { streak++; }
   else if (last === null) { streak = 1; }
   else { streak = 1; localStorage.removeItem(STREAK_FIRE_KEY); }
@@ -597,8 +601,7 @@ function applyFireBonus(score) { return isOnFire() ? Math.round(score * 1.10) : 
 function getStreakDisplay() { return { streak: getStreak(), fire: isOnFire() }; }
 
 function reviveStreak() {
-  const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
-  const ys = getPacificDateString(yesterday);
+  const ys = getPacificYesterday();
   localStorage.setItem(STREAK_DATE_KEY, ys);
   showToast('Streak revived! 🔥 Play today to keep it going!', 'success');
 }
@@ -617,8 +620,7 @@ function renderStreakBadge(container) {
 function showStreakModal() {
   const { streak, fire } = getStreakDisplay();
   const last = getLastPlayedDate(), today = getTodayString();
-  const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
-  const ys = getPacificDateString(yesterday);
+  const ys = getPacificYesterday();
   const streakBroken = last && last !== today && last !== ys;
   let modal = document.getElementById('streak-modal'); if (modal) modal.remove();
   modal = document.createElement('div'); modal.id='streak-modal'; modal.className='modal-overlay';

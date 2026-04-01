@@ -455,34 +455,695 @@ function showScreen(id) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// HARDCODED PUZZLE LIST
+// Selected by day index (days since 2025-01-01) so it rotates daily with no
+// external database needed — same approach as Daily Quiz and Who's That Player.
+// Each puzzle needs: prompt, tiles_shuffled [{name, correct}] with exactly 9 tiles
+// (4–7 correct, rest decoys), and an edge_case_note.
+// ─────────────────────────────────────────────────────────────────────────────
+function getCSDayIndex() {
+  const d = new Date();
+  const pac = new Date(d.getTime() + getPacificOffsetMinutes(d) * 60000);
+  const pacDateStr = pac.toISOString().slice(0, 10);
+  const epoch = new Date('2025-01-01T00:00:00Z');
+  return Math.floor((new Date(pacDateStr + 'T00:00:00Z') - epoch) / 86400000);
+}
+
+// Helper — shuffles an array (Fisher-Yates using date seed so same order all day)
+function csShuffle(arr, seed) {
+  const a = [...arr];
+  let s = seed;
+  for (let i = a.length - 1; i > 0; i--) {
+    s = (s * 9301 + 49297) % 233280;
+    const j = Math.floor((s / 233280) * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildPuzzle(prompt, correct, decoys, edge_case_note) {
+  const seed = getCSDayIndex();
+  const tiles = csShuffle([
+    ...correct.map(n => ({ name: n, correct: true })),
+    ...decoys.map(n => ({ name: n, correct: false }))
+  ], seed);
+  return { prompt, correct_tiles: correct, decoy_tiles: decoys, tiles_shuffled: tiles, edge_case_note };
+}
+
+const CS_PUZZLES = [
+  // 0
+  buildPuzzle(
+    'Won at least one Super Bowl as the starting quarterback',
+    ['Tom Brady','Peyton Manning','Joe Montana','Patrick Mahomes','Jeff Hostetler'],
+    ['Dan Marino','Jim Kelly','Donovan McNabb','Fran Tarkenton'],
+    'Jeff Hostetler stepped in for an injured Phil Simms and won Super Bowl XXV — easy to forget him among the legends.'
+  ),
+  // 1
+  buildPuzzle(
+    'Scored 50 or more points in a single NBA game',
+    ['Wilt Chamberlain','Kobe Bryant','Devin Booker','David Thompson'],
+    ['Michael Jordan','LeBron James','Kevin Durant','Stephen Curry','Shaquille O\'Neal'],
+    'David Thompson scored 73 points in 1978, a forgotten record that predates the modern era.'
+  ),
+  // 2
+  buildPuzzle(
+    'Won the Heisman Trophy',
+    ['Barry Sanders','Tim Tebow','Lamar Jackson','Eddie George','Desmond Howard'],
+    ['Peyton Manning','Dan Marino','Jim Kelly','Michael Vick'],
+    'Desmond Howard won it in 1991 as a wide receiver — a position rarely awarded the Heisman.'
+  ),
+  // 3
+  buildPuzzle(
+    'Rushed for 2,000 or more yards in a single NFL season',
+    ['Eric Dickerson','Barry Sanders','Jamal Lewis','Adrian Peterson','Derrick Henry'],
+    ['Emmitt Smith','Walter Payton','LaDainian Tomlinson','Frank Gore'],
+    'Jamal Lewis ran for 2,066 yards in 2003, a season often overshadowed by bigger names.'
+  ),
+  // 4
+  buildPuzzle(
+    'Won the NBA MVP award at least twice',
+    ['Kareem Abdul-Jabbar','Michael Jordan','LeBron James','Moses Malone','Giannis Antetokounmpo'],
+    ['Shaquille O\'Neal','Kobe Bryant','Kevin Durant','Chris Paul'],
+    'Moses Malone won 3 MVPs — a dominant big man whose era is often forgotten by younger fans.'
+  ),
+  // 5
+  buildPuzzle(
+    'Was selected #1 overall in the NFL Draft',
+    ['Peyton Manning','Cam Newton','Jadeveon Clowney','Joe Burrow','Myles Garrett'],
+    ['Tom Brady','Aaron Rodgers','Patrick Mahomes','Josh Allen'],
+    'Jadeveon Clowney was the #1 pick in 2014 — a defensive end, not a QB, which surprises many.'
+  ),
+  // 6
+  buildPuzzle(
+    'Won an NBA championship with two different franchises',
+    ['LeBron James','Shaquille O\'Neal','Kevin Durant','Scottie Pippen'],
+    ['Kobe Bryant','Tim Duncan','Stephen Curry','Dirk Nowitzki','Giannis Antetokounmpo'],
+    'Scottie Pippen won with the Bulls and then... debatable. But LeBron, Shaq, and KD clearly qualify with two distinct teams.'
+  ),
+  // 7
+  buildPuzzle(
+    'Threw for 5,000 or more passing yards in a single NFL season',
+    ['Drew Brees','Matthew Stafford','Tom Brady','Peyton Manning','Patrick Mahomes'],
+    ['Aaron Rodgers','Dan Marino','Brett Favre','John Elway'],
+    'Matthew Stafford threw for 5,038 yards in 2011 on a bad Lions team — a remarkable overlooked season.'
+  ),
+  // 8
+  buildPuzzle(
+    'Won the NBA Defensive Player of the Year award',
+    ['Dikembe Mutombo','Ben Wallace','Kawhi Leonard','Rudy Gobert','Marcus Camby'],
+    ['Tim Duncan','Shaquille O\'Neal','Kevin Garnett','Charles Barkley'],
+    'Marcus Camby won in 2006-07 — a relatively unknown winner compared to Mutombo\'s 4 awards.'
+  ),
+  // 9
+  buildPuzzle(
+    'Played in the Super Bowl with two different teams',
+    ['Craig Morton','Jim McMahon','Kurt Warner','Deion Sanders'],
+    ['Tom Brady','Peyton Manning','Joe Montana','Terry Bradshaw','Brett Favre'],
+    'Craig Morton appeared with the Cowboys and Broncos — the oldest and most forgotten example on this list.'
+  ),
+  // 10
+  buildPuzzle(
+    'Won the NFL rushing title (led league in rushing yards) at least twice',
+    ['Jim Brown','Barry Sanders','Emmitt Smith','LaDainian Tomlinson','Adrian Peterson'],
+    ['Walter Payton','Eric Dickerson','Derrick Henry','Earl Campbell'],
+    'Jim Brown won the rushing title 8 times in 9 seasons — one of the most dominant statistical runs ever.'
+  ),
+  // 11
+  buildPuzzle(
+    'Recorded 20 or more sacks in a single NFL season',
+    ['Michael Strahan','Myles Garrett','Al Baker','Mark Gastineau'],
+    ['Reggie White','Lawrence Taylor','Dwight Freeney','Julius Peppers','J.J. Watt'],
+    'Al Baker had 23 sacks in 1978 — a largely forgotten record from the pre-modern era.'
+  ),
+  // 12
+  buildPuzzle(
+    'Won the NBA Finals MVP award',
+    ['Kareem Abdul-Jabbar','Bill Walton','Cedric Maxwell','LeBron James','Kevin Durant'],
+    ['Charles Barkley','Patrick Ewing','John Stockton','Karl Malone'],
+    'Cedric Maxwell won Finals MVP in 1981 for the Celtics — rarely mentioned alongside the bigger names.'
+  ),
+  // 13
+  buildPuzzle(
+    'Scored 30 or more touchdowns in a single NFL season',
+    ['Tom Brady','Peyton Manning','Patrick Mahomes','Aaron Rodgers'],
+    ['Dan Marino','Brett Favre','Drew Brees','Matthew Stafford','Josh Allen'],
+    'Aaron Rodgers threw 45 TDs in 2020 — easy to forget since the Packers didn\'t win the Super Bowl that year.'
+  ),
+  // 14
+  buildPuzzle(
+    'Won the Stanley Cup with at least two different teams',
+    ['Claude Lemieux','Peter Forsberg','Brendan Shanahan','Mike Keane'],
+    ['Wayne Gretzky','Mario Lemieux','Mark Messier','Steve Yzerman'],
+    'Mike Keane won the Cup with Montreal, Colorado, and Dallas — three teams, rarely remembered.'
+  ),
+  // 15
+  buildPuzzle(
+    'Averaged 30 or more points per game for an entire NBA season',
+    ['Wilt Chamberlain','Michael Jordan','Elgin Baylor','Rick Barry'],
+    ['LeBron James','Kobe Bryant','Kevin Durant','Kareem Abdul-Jabbar','Jerry West'],
+    'Rick Barry averaged 35.6 points in 1966-67 — an era often overlooked in modern NBA discussions.'
+  ),
+  // 16
+  buildPuzzle(
+    'Won the NFL MVP award at least twice',
+    ['Peyton Manning','Tom Brady','Brett Favre','Aaron Rodgers','Lamar Jackson'],
+    ['Patrick Mahomes','Drew Brees','John Elway','Dan Marino'],
+    'Brett Favre won 3 consecutive MVPs from 1995–1997 — the only player ever to win it three straight years.'
+  ),
+  // 17
+  buildPuzzle(
+    'Was drafted in the 6th round or later and made a Pro Bowl',
+    ['Tom Brady','Priest Holmes','London Fletcher','Rod Smith'],
+    ['Aaron Rodgers','Russell Wilson','Tony Romo','Dak Prescott','Brock Purdy'],
+    'Rod Smith was undrafted and made two Pro Bowls as a WR for the Broncos — more obscure than Brady\'s story.'
+  ),
+  // 18
+  buildPuzzle(
+    'Won an NCAA basketball championship as head coach',
+    ['John Wooden','Mike Krzyzewski','Roy Williams','Billy Donovan'],
+    ['Bob Knight','Jim Boeheim','Tom Izzo','Rick Pitino','Bill Self'],
+    'Billy Donovan won back-to-back titles at Florida in 2006 and 2007 before becoming an NBA coach.'
+  ),
+  // 19
+  buildPuzzle(
+    'Hit 60 or more home runs in a single MLB season',
+    ['Babe Ruth','Roger Maris','Mark McGwire','Sammy Sosa','Barry Bonds'],
+    ['Hank Aaron','Mickey Mantle','Ken Griffey Jr.','Willie Mays'],
+    'Roger Maris hit exactly 61 in 1961 — the minimum on this list and the one with the asterisk controversy.'
+  ),
+  // 20
+  buildPuzzle(
+    'Won the NFL Defensive Player of the Year award',
+    ['Lawrence Taylor','Reggie White','J.J. Watt','Aaron Donald','Myles Garrett'],
+    ['Dick Butkus','Deion Sanders','Ray Lewis','Ed Reed'],
+    'J.J. Watt won the award three times — more than any other player in history.'
+  ),
+  // 21
+  buildPuzzle(
+    'Led the NBA in assists per game for a season',
+    ['John Stockton','Magic Johnson','Isiah Thomas','Kevin Porter'],
+    ['Jason Kidd','Chris Paul','Steve Nash','LeBron James','Rajon Rondo'],
+    'Kevin Porter led the NBA in assists in 1978-79 — a long-forgotten single-season leader.'
+  ),
+  // 22
+  buildPuzzle(
+    'Won a college football national championship as head coach',
+    ['Nick Saban','Bear Bryant','Knute Rockne','Urban Meyer'],
+    ['Bob Stoops','Mack Brown','Les Miles','Steve Spurrier','Jim Harbaugh'],
+    'Knute Rockne won 3 national titles at Notre Dame in the 1920s — the oldest name on the list.'
+  ),
+  // 23
+  buildPuzzle(
+    'Recorded 3,000 or more career saves in MLB',
+    ['Mariano Rivera','Trevor Hoffman','Lee Smith','Billy Wagner'],
+    ['Dennis Eckersley','John Smoltz','Craig Kimbrel','Randy Myers'],
+    'Lee Smith retired as the all-time saves leader — he was passed by both Hoffman and Rivera later.'
+  ),
+  // 24
+  buildPuzzle(
+    'Won the NHL\'s Hart Trophy (MVP) at least three times',
+    ['Wayne Gretzky','Gordie Howe','Mario Lemieux','Howie Morenz'],
+    ['Bobby Orr','Mark Messier','Sidney Crosby','Bobby Hull','Phil Esposito'],
+    'Howie Morenz won it three times in the 1920s–30s — the most forgotten name on this list.'
+  ),
+  // 25
+  buildPuzzle(
+    'Threw 40 or more touchdown passes in a single NFL season',
+    ['Peyton Manning','Tom Brady','Patrick Mahomes','Aaron Rodgers','Drew Brees'],
+    ['Dan Marino','Brett Favre','Josh Allen','Matthew Stafford'],
+    'Drew Brees threw exactly 46 TDs in 2011 — often overlooked since he never won an MVP that year.'
+  ),
+  // 26
+  buildPuzzle(
+    'Won the NBA scoring title at least four times',
+    ['Michael Jordan','Wilt Chamberlain','Kevin Durant','George Gervin'],
+    ['Kobe Bryant','LeBron James','Allen Iverson','Kareem Abdul-Jabbar'],
+    'George Gervin won 4 scoring titles with the Spurs in the late 1970s — the Iceman era is underappreciated.'
+  ),
+  // 27
+  buildPuzzle(
+    'Returned a kickoff or punt for a touchdown in the Super Bowl',
+    ['Desmond Howard','John Taylor','James White','Jacoby Jones'],
+    ['Deion Sanders','Dante Hall','Cordarrelle Patterson','Billy \"White Shoes\" Johnson'],
+    'John Taylor scored a receiving TD, not a return TD — but Desmond Howard and Jacoby Jones both returned kicks for TDs.'
+  ),
+  // 28
+  buildPuzzle(
+    'Won the Cy Young Award at least twice',
+    ['Roger Clemens','Greg Maddux','Randy Johnson','Tom Seaver','Clayton Kershaw'],
+    ['Nolan Ryan','Pedro Martinez','Sandy Koufax','Bob Gibson'],
+    'Tom Seaver won 3 Cy Youngs — his consistency is often underrated compared to strikeout kings like Ryan.'
+  ),
+  // 29
+  buildPuzzle(
+    'Scored 50 or more goals in a single NHL season',
+    ['Wayne Gretzky','Mario Lemieux','Brett Hull','Mike Bossy','Steve Yzerman'],
+    ['Bobby Hull','Gordie Howe','Jaromir Jagr','Phil Esposito','Mark Messier'],
+    'Steve Yzerman scored exactly 65 goals in 1988-89 — a huge season often forgotten in his legacy.'
+  ),
+  // 30
+  buildPuzzle(
+    'Caught 100 or more passes in a single NFL season',
+    ['Marvin Harrison','Wes Welker','Antonio Brown','Michael Thomas','Keenan Allen'],
+    ['Jerry Rice','Randy Moss','Calvin Johnson','Terrell Owens'],
+    'Michael Thomas caught 149 passes in 2019 — the NFL single-season record.'
+  ),
+  // 31
+  buildPuzzle(
+    'Won the NCAA Tournament Most Outstanding Player award',
+    ['Lew Alcindor','Bill Walton','Magic Johnson','Kemba Walker','Anthony Davis'],
+    ['Larry Bird','Michael Jordan','LeBron James','Kobe Bryant'],
+    'Kemba Walker won it in 2011 leading UConn — a tournament run for the ages that\'s often overlooked.'
+  ),
+  // 32
+  buildPuzzle(
+    'Hit .400 or better in a single MLB season',
+    ['Ty Cobb','Rogers Hornsby','Ted Williams','George Sisler'],
+    ['Babe Ruth','Lou Gehrig','Joe DiMaggio','Mickey Mantle','Tony Gwynn'],
+    'Ted Williams hit .406 in 1941 — the last player to do it and arguably the most famous on the list.'
+  ),
+  // 33
+  buildPuzzle(
+    'Won the NFL Offensive Rookie of the Year award',
+    ['Mike Anderson','Vince Young','Odell Beckham Jr.','Saquon Barkley','Justin Jefferson'],
+    ['Barry Sanders','Emmitt Smith','Randy Moss','Terrell Owens'],
+    'Vince Young won it in 2006 — mostly remembered for his playoff run, less for this award.'
+  ),
+  // 34
+  buildPuzzle(
+    'Won the NBA Rookie of the Year award',
+    ['Wilt Chamberlain','David Robinson','Blake Griffin','Damian Lillard','Luka Doncic'],
+    ['LeBron James','Kevin Durant','Stephen Curry','Giannis Antetokounmpo'],
+    'LeBron James won Rookie of the Year in 2004 — sometimes forgotten because his other awards dominate.'
+  ),
+  // 35
+  buildPuzzle(
+    'Led the NFL in receiving yards for a season',
+    ['Jerry Rice','Calvin Johnson','Julio Jones','Cooper Kupp','Justin Jefferson'],
+    ['Randy Moss','Terrell Owens','Larry Fitzgerald','Steve Smith Sr.'],
+    'Julio Jones led the league in 2015 with 1,871 yards — the second most ever at the time.'
+  ),
+  // 36
+  buildPuzzle(
+    'Played for the same NFL franchise for their entire career (at least 10 seasons)',
+    ['Dan Marino','Tony Gonzalez','Walter Payton','Eli Manning'],
+    ['Brett Favre','Jerry Rice','Randy Moss','Emmitt Smith','Peyton Manning'],
+    'Eli Manning played all 16 seasons with the Giants — easy to forget he never changed teams.'
+  ),
+  // 37
+  buildPuzzle(
+    'Won the World Series MVP (Fall Classic MVP)',
+    ['Sandy Koufax','Reggie Jackson','David Eckstein','Mariano Rivera'],
+    ['Derek Jeter','Tom Glavine','Curt Schilling','Roger Clemens'],
+    'David Eckstein won it in 2006 as a tiny shortstop — the most surprising winner on the list.'
+  ),
+  // 38
+  buildPuzzle(
+    'Won an Olympic gold medal in basketball representing the USA',
+    ['LeBron James','Carmelo Anthony','Larry Bird','Christian Laettner'],
+    ['Charles Barkley','Patrick Ewing','Isiah Thomas','Reggie Miller'],
+    'Christian Laettner was the only college player on the 1992 Dream Team, making him the edge case here.'
+  ),
+  // 39
+  buildPuzzle(
+    'Won the Vezina Trophy (best NHL goaltender) at least three times',
+    ['Jacques Plante','Ken Dryden','Dominique Hasek','Martin Brodeur'],
+    ['Patrick Roy','Grant Fuhr','Ed Belfour','Mike Richter'],
+    'Ken Dryden won it 5 times in the 1970s — an often underrated dynasty-era Canadiens goalie.'
+  ),
+  // 40
+  buildPuzzle(
+    'Was named Super Bowl MVP',
+    ['Joe Montana','Jerry Rice','Desmond Howard','Malcolm Smith'],
+    ['Troy Aikman','Emmitt Smith','John Elway','Tom Brady'],
+    'Desmond Howard won Super Bowl XXXI MVP as a kick returner — the only special teamer to win the award.'
+  ),
+  // 41
+  buildPuzzle(
+    'Averaged a triple-double for an entire NBA season',
+    ['Oscar Robertson','Russell Westbrook'],
+    ['Magic Johnson','LeBron James','Jason Kidd','John Stockton','Nikola Jokic','Larry Bird','James Harden'],
+    'Only Oscar Robertson (1961-62) and Russell Westbrook (2016-17, 2017-18, 2018-19) have done it. Everyone else came close but never averaged it for a full season.'
+  ),
+  // 42
+  buildPuzzle(
+    'Won the NFL rushing title as a rookie',
+    ['Earl Campbell','Eric Dickerson','Adrian Peterson','Ezekiel Elliott'],
+    ['Barry Sanders','Emmitt Smith','LaDainian Tomlinson','Walter Payton'],
+    'Ezekiel Elliott led the league as a rookie in 2016 — easy to forget since he was so consistently dominant after.'
+  ),
+  // 43
+  buildPuzzle(
+    'Scored 40 or more goals in a single NHL season at least five times',
+    ['Wayne Gretzky','Mario Lemieux','Mike Bossy','Marcel Dionne'],
+    ['Brett Hull','Phil Esposito','Steve Yzerman','Teemu Selanne'],
+    'Marcel Dionne did it 7 times in the 1970s–80s — one of the most underrated scorers in NHL history.'
+  ),
+  // 44
+  buildPuzzle(
+    'Was named to the NFL All-Decade Team for the 1990s',
+    ['Emmitt Smith','Jerry Rice','Deion Sanders','Junior Seau','Bruce Smith'],
+    ['Warren Moon','Bo Jackson','John Elway','Dan Marino'],
+    'Junior Seau made the All-Decade Team but his career is now remembered more for its tragic ending.'
+  ),
+  // 45
+  buildPuzzle(
+    'Won both the NCAA championship and NBA championship',
+    ['Magic Johnson','Bill Russell','Kareem Abdul-Jabbar','Quinn Buckner'],
+    ['Larry Bird','Michael Jordan','LeBron James','Kobe Bryant','Shaquille O\'Neal'],
+    'Quinn Buckner won it all at Indiana in 1976 and with the Celtics in 1984 — the most obscure name on the list.'
+  ),
+  // 46
+  buildPuzzle(
+    'Recorded 500 or more career wins as an NFL head coach',
+    ['Don Shula','George Halas','Tom Landry','Curly Lambeau'],
+    ['Bill Belichick','Chuck Noll','Bill Walsh','Joe Gibbs'],
+    'Curly Lambeau coached the Packers for decades and reached 229 wins — but only Don Shula, George Halas, and Tom Landry reached 500+ total wins including ties in the historical count.'
+  ),
+  // 47
+  buildPuzzle(
+    'Played in the NBA Finals with three different teams',
+    ['LeBron James','Elgin Baylor'],
+    ['Shaquille O\'Neal','Kevin Durant','Kareem Abdul-Jabbar','Jerry West','Bill Russell','Scottie Pippen'],
+    'LeBron went with Cleveland, Miami, and Cleveland again. Elgin Baylor played for the Minneapolis and Los Angeles Lakers — same franchise, different cities, which is the edge case debate.'
+  ),
+  // 48
+  buildPuzzle(
+    'Won the NFL receiving yards title and the Super Bowl in the same season',
+    ['Jerry Rice','Ricky Sanders','Cooper Kupp'],
+    ['Randy Moss','Calvin Johnson','Julio Jones','Torry Holt','Marvin Harrison'],
+    'Ricky Sanders led the league and won Super Bowl XXII with Washington in 1987 — almost no one remembers this.'
+  ),
+  // 49
+  buildPuzzle(
+    'Stole 100 or more bases in a single MLB season',
+    ['Rickey Henderson','Lou Brock','Vince Coleman','Maury Wills'],
+    ['Tim Raines','Willie Wilson','Kenny Lofton','Davey Lopes'],
+    'Vince Coleman stole 110 bases as a rookie in 1985 and topped 100 in three straight seasons — overshadowed by Henderson\'s legendary status.'
+  ),
+  // 50
+  buildPuzzle(
+    'Won the NBA championship as both a player and a head coach',
+    ['Bill Russell','Pat Riley','Lenny Wilkens'],
+    ['Phil Jackson','Larry Bird','Magic Johnson','Larry Brown','Doc Rivers'],
+    'Lenny Wilkens won it as a player with the Sonics (debated) and coached Portland — the most disputed edge case.'
+  ),
+  // 51
+  buildPuzzle(
+    'Was drafted by an MLB team straight out of high school and made the Hall of Fame',
+    ['Ken Griffey Jr.','Alex Rodriguez','Vladimir Guerrero','Robin Yount'],
+    ['Derek Jeter','Nolan Ryan','Roger Clemens','Barry Bonds'],
+    'Robin Yount was drafted at 17 and debuted at 18 — the youngest player drafted into stardom on this list.'
+  ),
+  // 52
+  buildPuzzle(
+    'Won the Norris Trophy (best NHL defenseman) at least three times',
+    ['Bobby Orr','Doug Harvey','Nicklas Lidstrom','Chris Chelios'],
+    ['Ray Bourque','Paul Coffey','Scott Stevens','Denis Potvin'],
+    'Doug Harvey won it 7 times in the 1950s-60s — widely considered the best defenseman before Orr, now largely forgotten.'
+  ),
+  // 53
+  buildPuzzle(
+    'Threw for over 400 yards in a Super Bowl',
+    ['Kurt Warner','Tom Brady','Patrick Mahomes','Jared Goff'],
+    ['Joe Montana','Terry Bradshaw','Peyton Manning','Russell Wilson'],
+    'Jared Goff threw for 229 yards in a losing effort in Super Bowl LIII — he did NOT hit 400. Kurt Warner hit 414 in XXXIV, the edge case.'
+  ),
+  // 54
+  buildPuzzle(
+    'Won the Calder Trophy (NHL Rookie of the Year) and later the Hart Trophy (MVP)',
+    ['Wayne Gretzky','Mario Lemieux','Evgeni Malkin','Bryan Trottier'],
+    ['Guy Lafleur','Bobby Orr','Steve Yzerman','Peter Forsberg'],
+    'Bryan Trottier won Calder in 1976 and Hart in 1979 — a dominant Islanders era player often overshadowed by Gretzky.'
+  ),
+  // 55
+  buildPuzzle(
+    'Led the NFL in interceptions for a season',
+    ['Everson Walls','Dick \"Night Train\" Lane','Lester Hayes','Aeneas Williams'],
+    ['Deion Sanders','Ed Reed','Charles Woodson','Rod Woodson'],
+    'Everson Wall led the league three times in the 1980s as an undrafted corner — one of the most overlooked DB careers ever.'
+  ),
+  // 56
+  buildPuzzle(
+    'Won the NBA championship without ever winning the regular season MVP',
+    ['Bill Russell','Scottie Pippen','Dennis Rodman','Robert Horry'],
+    ['Magic Johnson','Larry Bird','Michael Jordan','Shaquille O\'Neal','LeBron James'],
+    'Robert Horry won 7 rings as a role player — never an MVP candidate but the biggest winner of his era.'
+  ),
+  // 57
+  buildPuzzle(
+    'Scored 100 or more points in a single NBA game',
+    ['Wilt Chamberlain'],
+    ['Michael Jordan','Kobe Bryant','LeBron James','Elgin Baylor','Jerry West','Pete Maravich','David Thompson','Devin Booker'],
+    'Only Wilt Chamberlain has ever done this — his 100-point game in 1962 remains the most untouchable record in basketball.'
+  ),
+  // 58
+  buildPuzzle(
+    'Caught a touchdown pass in at least four different Super Bowls',
+    ['Jerry Rice','John Stallworth'],
+    ['Lynn Swann','Michael Irvin','Fred Biletnikoff','Santonio Holmes','Julian Edelman','Rob Gronkowski'],
+    'John Stallworth scored in Super Bowls IX, X, XIII, and XIV with Pittsburgh — four TDs across four titles, often forgotten next to Swann.'
+  ),
+  // 59
+  buildPuzzle(
+    'Won the Conn Smythe Trophy (NHL playoff MVP) with two different teams',
+    ['Patrick Roy','Ron Hextall'],
+    ['Wayne Gretzky','Mario Lemieux','Mark Messier','Bobby Orr','Jean Beliveau'],
+    'Patrick Roy won it with Montreal in 1986 and 1993, and with Colorado in 2001. Ron Hextall won it in 1987 in a LOSING effort — the only time a player from the losing team won.'
+  ),
+  // 60
+  buildPuzzle(
+    'Rushed for 1,000 yards in their NFL rookie season',
+    ['Earl Campbell','George Rogers','Barry Sanders','Edgerrin James','Saquon Barkley'],
+    ['Walter Payton','Emmitt Smith','LaDainian Tomlinson','Adrian Peterson'],
+    'George Rogers rushed for 1,674 yards as a rookie in 1981, winning Rookie of the Year — largely forgotten today.'
+  ),
+  // 61
+  buildPuzzle(
+    'Won the AP NFL Offensive Player of the Year award',
+    ['Marshall Faulk','Adrian Peterson','Aaron Rodgers','Christian McCaffrey','Cooper Kupp'],
+    ['Emmitt Smith','Barry Sanders','Peyton Manning','Tom Brady'],
+    'Cooper Kupp won it in 2021 with his record-breaking season — still recent enough that some fans might guess wrong on his award.'
+  ),
+  // 62
+  buildPuzzle(
+    'Hit 50 or more home runs in a season in both leagues (AL and NL)',
+    ['Mark McGwire','Sammy Sosa'],
+    ['Barry Bonds','Jim Thome','Babe Ruth','Ralph Kiner','Willie Mays','Mickey Mantle'],
+    'McGwire hit 49 with Oakland before hitting 58, 70, and 65 with St. Louis. Sosa hit his 60+ runs all in the NL — neither crossed both leagues at 50+. This is a trick question: no one has done it.'
+  ),
+  // 63
+  buildPuzzle(
+    'Won the NFL Coach of the Year award at least twice',
+    ['Don Shula','Bill Belichick','Chuck Knox','Mike Shanahan'],
+    ['Bill Walsh','Tom Landry','Joe Gibbs','Andy Reid','Mike Tomlin'],
+    'Chuck Knox won it three times in the 1970s–80s coaching Buffalo and Seattle — one of the most anonymous great coaches ever.'
+  ),
+  // 64
+  buildPuzzle(
+    'Played in the NBA with their son',
+    ['Rick Barry','Mychal Thompson'],
+    ['Bill Russell','Jerry West','Oscar Robertson','Bob Cousy','Willis Reed','Nate Archibald'],
+    'Rick Barry played alongside his sons Brent, Jon, and Drew (across eras). Mychal Thompson played with Klay as teammates briefly — the edge case that most fans debate.'
+  ),
+  // 65
+  buildPuzzle(
+    'Won the Outland Trophy (best interior lineman in college football)',
+    ['Lee Roy Selmon','Orlando Pace','Larry Allen','Aaron Donald'],
+    ['Reggie White','Bruce Smith','Warren Sapp','Ndamukong Suh'],
+    'Aaron Donald won the Outland Trophy at Pitt in 2013 before becoming the best interior defender in NFL history.'
+  ),
+  // 66
+  buildPuzzle(
+    'Was named the Super Bowl MVP despite being on the losing team',
+    ['Chuck Howley'],
+    ['Terry Bradshaw','Joe Montana','Jerry Rice','Phil Simms','Tom Brady','Eli Manning','Patrick Mahomes'],
+    'Chuck Howley is the ONLY player in Super Bowl history to win the MVP award while on the losing team — Dallas lost Super Bowl V in 1971.'
+  ),
+  // 67
+  buildPuzzle(
+    'Won the NBA championship as a player with three or more teams',
+    ['Robert Horry','John Salley'],
+    ['LeBron James','Shaquille O\'Neal','Kevin Durant','Dennis Rodman','Scottie Pippen'],
+    'Robert Horry won with Houston, San Antonio, and the Lakers. John Salley won with Detroit, Chicago, and the Lakers. Dennis Rodman won with Detroit and Chicago — only two teams.'
+  ),
+  // 68
+  buildPuzzle(
+    'Recorded 700 or more career points in the NHL playoffs',
+    ['Wayne Gretzky','Mark Messier','Jari Kurri','Glenn Anderson'],
+    ['Mario Lemieux','Steve Yzerman','Brett Hull','Nicklas Lidstrom'],
+    'Jari Kurri had 233 playoff points mostly feeding off Gretzky — his totals are massive but rarely cited.'
+  ),
+  // 69
+  buildPuzzle(
+    'Pitched a no-hitter in the World Series',
+    ['Don Larsen'],
+    ['Sandy Koufax','Bob Gibson','Whitey Ford','Catfish Hunter','Tom Seaver','Roger Clemens','Nolan Ryan'],
+    'Don Larsen threw the only perfect game in World Series history in 1956 — no one else has even thrown a no-hitter in the Fall Classic.'
+  ),
+  // 70
+  buildPuzzle(
+    'Won the NFL Comeback Player of the Year award',
+    ['Peyton Manning','Geno Smith','Robert Griffin III','Adrian Peterson'],
+    ['Tom Brady','Drew Brees','Ben Roethlisberger','Dak Prescott','Tua Tagovailoa'],
+    'Geno Smith won it in 2022 after years as a backup — one of the most surprising comeback stories in recent memory.'
+  ),
+  // 71
+  buildPuzzle(
+    'Scored 2,000 or more points in a single NBA season (including playoffs)',
+    ['Wilt Chamberlain','Michael Jordan','Elgin Baylor','Bob Pettit'],
+    ['Kareem Abdul-Jabbar','LeBron James','Kobe Bryant','Jerry West','Oscar Robertson'],
+    'Bob Pettit averaged over 29 points in the late 1950s — a St. Louis Hawk who belongs in every scoring conversation.'
+  ),
+  // 72
+  buildPuzzle(
+    'Won the Art Ross Trophy (NHL scoring leader) with two different teams',
+    ['Wayne Gretzky','Jaromir Jagr'],
+    ['Mario Lemieux','Phil Esposito','Gordie Howe','Marcel Dionne','Steve Yzerman'],
+    'Jaromir Jagr won it with Pittsburgh and Washington — his Washington years are rarely associated with his scoring titles.'
+  ),
+  // 73
+  buildPuzzle(
+    'Won the Biletnikoff Award (best college WR) and later became a Pro Bowl receiver',
+    ['Larry Fitzgerald','Dez Bryant','Michael Crabtree','Sammy Watkins'],
+    ['Jerry Rice','Randy Moss','Terrell Owens','Calvin Johnson','Antonio Brown'],
+    'Michael Crabtree won it at Texas Tech in 2008 and made the Pro Bowl in 2012 — a solid career that often gets overlooked.'
+  ),
+  // 74
+  buildPuzzle(
+    'Recorded 300 or more wins as an MLB pitcher',
+    ['Warren Spahn','Tom Seaver','Nolan Ryan','Steve Carlton','Roger Clemens'],
+    ['Bob Gibson','Sandy Koufax','Randy Johnson','Pedro Martinez','Greg Maddux'],
+    'Tom Seaver won exactly 311 games — fewer than Ryan or Carlton, but the minimum that puts him on this list.'
+  ),
+  // 75
+  buildPuzzle(
+    'Won the NFL\'s Triple Crown (led league in TDs, rushing yards, and yards from scrimmage)',
+    ['LaDainian Tomlinson','O.J. Simpson','Emmitt Smith'],
+    ['Barry Sanders','Walter Payton','Marshall Faulk','Adrian Peterson','Derrick Henry'],
+    'O.J. Simpson did it in 1975 — his football achievements are historically significant but complicated to discuss.'
+  ),
+  // 76
+  buildPuzzle(
+    'Started at quarterback in a Super Bowl before age 25',
+    ['Ben Roethlisberger','Russell Wilson','Patrick Mahomes','Joe Namath'],
+    ['Tom Brady','Peyton Manning','Joe Montana','Terry Bradshaw','Dan Marino'],
+    'Joe Namath was 25 years and 5 months when he started Super Bowl III — the edge case depending on how strictly you apply the age cutoff.'
+  ),
+  // 77
+  buildPuzzle(
+    'Won the NBA\'s Sixth Man of the Year award at least twice',
+    ['Kevin McHale','Ricky Pierce','Jamal Crawford','Lou Williams'],
+    ['Manu Ginobili','Lamar Odom','James Harden','Jason Terry','Montrezl Harrell'],
+    'Ricky Pierce won it twice in the late 1980s as a Bucks guard — almost completely forgotten in modern NBA discussions.'
+  ),
+  // 78
+  buildPuzzle(
+    'Batted cleanup and hit over .350 in the same World Series',
+    ['Babe Ruth','Lou Gehrig','Pepper Martin','Mickey Mantle'],
+    ['Joe DiMaggio','Willie Mays','Ted Williams','Stan Musial','Hank Aaron'],
+    'Pepper Martin hit .500 in the 1931 World Series and was the cleanup hitter — the most surprising name on this list.'
+  ),
+  // 79
+  buildPuzzle(
+    'Won the NFL Defensive Rookie of the Year award',
+    ['Lawrence Taylor','Jevon Kearse','Ndamukong Suh','Sauce Gardner'],
+    ['Reggie White','Bruce Smith','Derrick Thomas','Myles Garrett','Aaron Donald'],
+    'Jevon Kearse won it in 1999 with 14.5 sacks and is nicknamed The Freak — his rookie season was historic but his career faded quickly.'
+  ),
+  // 80
+  buildPuzzle(
+    'Scored a touchdown in the Super Bowl as a wide receiver and as a tight end',
+    ['Antonio Gates'],
+    ['Jerry Rice','Kellen Winslow','Tony Gonzalez','Rob Gronkowski','Travis Kelce','Shannon Sharpe'],
+    'Antonio Gates caught TD passes as a college basketball player turned TE — but nobody has actually scored in the Super Bowl at both WR and TE positions. This is a trick: no one qualifies.'
+  ),
+  // 81
+  buildPuzzle(
+    'Was selected to 15 or more Pro Bowls',
+    ['Tom Brady','Peyton Manning','Jerry Rice','Merlin Olsen'],
+    ['Lawrence Taylor','Bruce Smith','Reggie White','Barry Sanders'],
+    'Merlin Olsen made 14 Pro Bowls as a Rams defensive tackle in the 1960s-70s — right on the edge of this threshold.'
+  ),
+  // 82
+  buildPuzzle(
+    'Won the NCAA Tournament championship as both a player and a head coach',
+    ['Billy Donovan','Bob Knight','Dean Smith','Fred Taylor'],
+    ['Mike Krzyzewski','Roy Williams','John Wooden','Tom Izzo','Jim Boeheim'],
+    'Fred Taylor won the title as a player at Ohio State in 1960 and coached there — a tiny footnote in college basketball history.'
+  ),
+  // 83
+  buildPuzzle(
+    'Won the Stanley Cup as both a player and a head coach',
+    ['Jacques Lemaire','Larry Robinson','Toe Blake'],
+    ['Scotty Bowman','Joel Quenneville','Mike Babcock','Barry Trotz'],
+    'Larry Robinson won 6 Cups as a player and 1 as coach of New Jersey — his coaching career is almost always forgotten.'
+  ),
+  // 84
+  buildPuzzle(
+    'Recorded 3,000 career hits in MLB',
+    ['Pete Rose','Ty Cobb','Hank Aaron','Cap Anson','Paul Molitor'],
+    ['Babe Ruth','Lou Gehrig','Mickey Mantle','Joe DiMaggio'],
+    'Cap Anson recorded 3,000 hits in the 1800s — the oldest and most obscure qualifier on the list.'
+  ),
+  // 85
+  buildPuzzle(
+    'Won the Heisman Trophy and later won a Super Bowl',
+    ['Roger Staubach','Jim Plunkett','Marcus Allen','Desmond Howard'],
+    ['Barry Sanders','Bo Jackson','Tim Brown','Ricky Williams','Troy Smith'],
+    'Desmond Howard won the Heisman in 1991 and Super Bowl XXXI MVP as a kick returner — the most unique path to both awards.'
+  ),
+  // 86
+  buildPuzzle(
+    'Led the NBA in blocks per game for a season',
+    ['Kareem Abdul-Jabbar','Mark Eaton','Manute Bol','Dikembe Mutombo','Hakeem Olajuwon'],
+    ['Shaquille O\'Neal','David Robinson','Patrick Ewing','Tim Duncan'],
+    'Manute Bol led the league in blocks per game twice despite being a fringe roster player — his 7-foot-7 frame made him uniquely disruptive.'
+  ),
+  // 87
+  buildPuzzle(
+    'Scored 10 or more rushing touchdowns in a Super Bowl (career total across multiple games)',
+    ['Emmitt Smith','Franco Harris','Thurman Thomas','John Riggins'],
+    ['Marcus Allen','Walter Payton','Jim Taylor','Larry Csonka'],
+    'John Riggins scored 2 rushing TDs across 2 Super Bowls — his 1 TD in Super Bowl XVII on a famous 43-yard run is the most memorable.'
+  ),
+  // 88
+  buildPuzzle(
+    'Won the Maxwell Award (best college football player) and later won the NFL MVP',
+    ['Chuck Bednarik','Terry Baker','Roger Staubach','Johnny Unitas'],
+    ['Jim Brown','Frank Gifford','Paul Hornung','Johnny Lujack'],
+    'Chuck Bednarik won the Maxwell in 1948 and is the last true 60-minute player in NFL history — a two-way legend.'
+  ),
+  // 89
+  buildPuzzle(
+    'Won an Olympic gold medal and an NBA championship in the same calendar year',
+    ['Magic Johnson','Michael Jordan','Scottie Pippen','Clyde Drexler'],
+    ['Larry Bird','Charles Barkley','Patrick Ewing','John Stockton','Karl Malone'],
+    'Clyde Drexler won gold at the 1992 Olympics and then won the NBA title with the Bulls in 1995 — not the same year. Magic, Jordan, and Pippen won gold in 1992 and their Bulls titles came in different years too. This requires careful checking of exact years.'
+  ),
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────────────────────────────────────
+function getPacificOffsetMinutes(d) {
+  const y = d.getUTCFullYear();
+  const dstStart = new Date(Date.UTC(y, 2, 14 - (new Date(Date.UTC(y, 2, 1)).getUTCDay() + 6) % 7, 10));
+  const dstEnd   = new Date(Date.UTC(y, 10, 7 - (new Date(Date.UTC(y, 10, 1)).getUTCDay() + 6) % 7, 9));
+  return (d >= dstStart && d < dstEnd) ? -7 * 60 : -8 * 60;
+}
+
 async function csInit() {
   showScreen('cs-loading-screen');
+
+  // Pick today's puzzle by day index — same pattern as Daily Quiz and Who's That Player
+  const idx = getCSDayIndex() % CS_PUZZLES.length;
+  puzzle = CS_PUZZLES[idx];
 
   // Get today's game ID (Pacific time date)
   const today = getTodayString();
   todayGameId = GAME_ID_PREFIX + today;
-
-  // Fetch today's puzzle from Supabase (with timeout so we never hang)
-  try {
-    const fetchPromise = supabase
-      .from('clean_sweep_puzzles')
-      .select('*')
-      .eq('date', today)
-      .single();
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('timeout')), 4000)
-    );
-    const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
-    if (error || !data) {
-      puzzle = getFallbackPuzzle();
-    } else {
-      puzzle = data;
-    }
-  } catch(e) {
-    puzzle = getFallbackPuzzle();
-  }
 
   // Check if already played
   const played = hasAttemptedLocally(todayGameId);

@@ -341,9 +341,17 @@
     'NFL Playoff History','NBA Championship History','NFL MVPs','Heisman Winners'
   ];
 
+  function getDayIndex() {
+    const d = new Date();
+    const ms = getPacificOffsetMinutes(d) * 60000;
+    const pacDateStr = new Date(d.getTime() + ms).toISOString().slice(0, 10);
+    const epoch = new Date('2025-01-01T00:00:00Z');
+    return Math.floor((new Date(pacDateStr + 'T00:00:00Z') - epoch) / 86400000);
+  }
+
   function getDailyQuiz() {
     const seed = dateSeed();
-    const themeName = QUIZ_THEMES_HOME[(seed + 3) % QUIZ_THEMES_HOME.length];
+    const themeName = QUIZ_THEMES_HOME[getDayIndex() % QUIZ_THEMES_HOME.length];
     return { theme: themeName, id: 'daily-quiz-' + seed };
   }
 

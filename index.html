@@ -413,15 +413,26 @@
   // ─── BUILD TODAY'S GAMES GRID ─────────────────────────────────
   async function loadTodaysGames() {
     const grid = document.getElementById('todays-games-grid');
-    const dailyQuiz = getDailyQuiz();
+    let dailyQuiz = getDailyQuiz();
     const dailyPlayer = getDailyPlayer();
+
+    // Try to get today's AI-generated quiz theme from Supabase
+    try {
+      const today = getTodayString();
+      const quizFetch = supabase.from('daily_quizzes').select('theme,emoji').eq('date', today).single();
+      const quizTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000));
+      const { data: qData } = await Promise.race([quizFetch, quizTimeout]);
+      if (qData && qData.theme) {
+        dailyQuiz = { theme: qData.theme, emoji: qData.emoji || '🎯' };
+      }
+    } catch(e) {}
 
     const THEME_EMOJIS = {
       'NFL Legends':'🏈','NBA History':'🏀','Super Bowl Trivia':'🏆','NFL Draft':'📋',
       'NBA Awards':'⭐','Sports Records':'📊','Fantasy Football':'🎯',
       'MLB History':'⚾','NHL History':'🏒','College Football':'🎓'
     };
-    const quizEmoji = THEME_EMOJIS[dailyQuiz.theme] || '🎯';
+    const quizEmoji = dailyQuiz.emoji || THEME_EMOJIS[dailyQuiz.theme] || '🎯';
 
     const seed = dateSeed();
     // Check all possible completion markers

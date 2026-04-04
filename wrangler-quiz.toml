@@ -1,0 +1,16 @@
+name = "daily-quiz-generator"
+main = "daily-quiz-worker.js"
+compatibility_date = "2024-01-01"
+
+# 8:00 AM UTC = midnight Pacific Standard Time (UTC-8)
+# During Daylight Saving (UTC-7) this fires at 1:00 AM Pacific — close enough
+[triggers]
+crons = ["0 8 * * *"]
+
+# Set ALL THREE as Secrets in Cloudflare dashboard:
+#   Dashboard → Workers & Pages → daily-quiz-generator → Settings → Variables
+#   Add as "Secret" (encrypted), NOT plain text
+#
+# ANTHROPIC_API_KEY    = your Anthropic API key
+# SUPABASE_URL         = https://sseikmeeiwfhousepsbs.supabase.co
+# SUPABASE_SERVICE_KEY = your Supabase service role key (NOT the anon key)

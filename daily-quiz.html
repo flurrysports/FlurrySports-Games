@@ -84,6 +84,11 @@ function dateSeed() {
   var pac = new Date(d.getTime() + getPacificOffsetMinutes(d)*60000);
   return parseInt(pac.toISOString().slice(0,10).replace(/-/g,''));
 }
+function getPacificDateString() {
+  var d = new Date();
+  var pac = new Date(d.getTime() + getPacificOffsetMinutes(d)*60000);
+  return pac.toISOString().slice(0,10);
+}
 // Returns a sequential day index (days since 2025-01-01) so theme rotation
 // never collides at month boundaries. Using date integers like 20260331 % 14
 // breaks because month rollovers jump by 70, which is a multiple of 14.
@@ -133,9 +138,10 @@ function q_heisman() { return [{q:"Who won the Heisman Trophy in 2023?",o:["Bo N
 
 // ── Today's quiz ─────────────────────────────────────────
 var seed   = dateSeed();
-var theme  = QUIZ_THEMES[dayIndex() % QUIZ_THEMES.length];
-var qs     = theme.questions();
 var quizId = 'daily-quiz-' + seed;
+// theme and qs are set after Supabase fetch (or fallback)
+var theme  = QUIZ_THEMES[dayIndex() % QUIZ_THEMES.length]; // fallback
+var qs     = theme.questions();                             // fallback
 
 // ── Storage: ONE key, ONE approach ───────────────────────
 // Key: 'dq_result_YYYYMMDD' — uses date string not quizId to survive seed formula changes
@@ -311,30 +317,48 @@ async function showResults(stored) {
 }
 
 // ── Init ─────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
   updateNavAuth();
 
-  console.log('DQ Init: seed=' + seed + ' storageKey=' + storageKey);
-  console.log('DQ localStorage keys:', Object.keys(localStorage).filter(function(k){return k.startsWith('dq_') || k.startsWith('fs_r_') || k.startsWith('fs_attempted');}).join(', '));
+  // Try to fetch today's AI-generated quiz from Supabase
+  try {
+    var today = getPacificDateString();
+    var fetchP = supabase
+      .from('daily_quizzes')
+      .select('*')
+      .eq('date', today)
+      .single();
+    var timeoutP = new Promise(function(_, reject) {
+      setTimeout(function() { reject(new Error('timeout')); }, 4000);
+    });
+    var result = await Promise.race([fetchP, timeoutP]);
+    var data = result.data;
+    if (data && data.questions && data.questions.length === 5) {
+      // Override with AI-generated quiz
+      theme = { theme: data.theme, emoji: data.emoji || '🎯' };
+      qs = data.questions; // [{q, o:[4], c:index}]
+      console.log('DQ: loaded AI quiz from Supabase — theme:', data.theme);
+    } else {
+      console.log('DQ: no Supabase quiz found, using hardcoded fallback');
+    }
+  } catch(e) {
+    console.log('DQ: Supabase fetch failed, using hardcoded fallback:', e.message);
+  }
+
+  console.log('DQ Init: seed=' + seed + ' theme=' + theme.theme);
 
   var stored = loadResult();
-  console.log('DQ loadResult:', stored ? 'FOUND score=' + stored.finalScore : 'NULL');
-
   if (stored) {
-    console.log('DQ: showing replay screen');
     showResults(stored);
     return;
   }
 
   var played = hasPlayed();
-  console.log('DQ hasPlayed:', played);
-
   if (played) {
     showResults({ correct: 0, emojiRow: '—', finalScore: 0 });
     return;
   }
 
-  console.log('DQ: fresh play - showing countdown');
   showCountdown(function() { renderQ(0); });
 });
 </script>

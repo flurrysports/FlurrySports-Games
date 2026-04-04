@@ -195,6 +195,36 @@ function getPacificOffsetMinutes(d) {
     return function() { s = (s * 9301 + 49297) % 233280; return s / 233280; };
   }
 
+  // ── Photo fallback chain ──────────────────────────────────────
+  // Primary: ESPN combiner URL  
+  // Fallback: ESPN direct PNG (no combiner params)
+  // Final: show SVG silhouette
+  function handleImgError(img, espnId, league) {
+    var tried = img.dataset.fallback || '0';
+    if (tried === '0' && espnId) {
+      img.dataset.fallback = '1';
+      var sport = league === 'NFL' ? 'nfl' : 'nba';
+      // Try direct ESPN URL without combiner
+      img.src = 'https://a.espncdn.com/i/headshots/' + sport + '/players/full/' + espnId + '.png';
+    } else {
+      // All sources failed — hide img, show fallback SVG
+      img.style.display = 'none';
+      var svg = document.getElementById('fallback-svg');
+      if (svg) svg.style.display = 'block';
+    }
+  }
+
+  function handleRevealImgError(img, espnId, league) {
+    var tried = img.dataset.fallback || '0';
+    if (tried === '0' && espnId) {
+      img.dataset.fallback = '1';
+      var sport = league === 'NFL' ? 'nfl' : 'nba';
+      img.src = 'https://a.espncdn.com/i/headshots/' + sport + '/players/full/' + espnId + '.png';
+    } else {
+      img.style.opacity = '0.3';
+    }
+  }
+
   // ── Player pools (pre-shuffled, 52 NFL + 59 NBA, zero repeats for 90+ days) ──
   // ── Player pools (50 NFL + 50 NBA) ─────────────────────────────
   var NFL_PLAYERS = [
@@ -300,7 +330,7 @@ function getPacificOffsetMinutes(d) {
     {name:"Tyler Herro",espnId:"4395725",pos:"SG",team:"Miami Heat",college:"Kentucky",drafted:"2019 \u00b7 1st \u00b7 Pick 13",clues:[{label:"Position",text:"Shooting Guard in the Eastern Conference"},{label:"College",text:"One-and-done at Kentucky"},{label:"Draft",text:"13th overall pick in 2019"},{label:"Playoff",text:"Scored 37 off the bench in Game 4 of the 2020 Eastern Conference Finals"},{label:"Award",text:"Won the NBA Sixth Man of the Year award in 2021-22"}]},
     {name:"Russell Westbrook",espnId:"3468",pos:"PG",team:"Free Agent",college:"UCLA",drafted:"2008 \u00b7 1st \u00b7 Pick 4",clues:[{label:"Position",text:"Point Guard, currently a free agent"},{label:"College",text:"Played at UCLA"},{label:"Draft",text:"4th overall pick in 2008"},{label:"Record",text:"Broke Oscar Robertson's all-time triple-double record"},{label:"Award",text:"Won the NBA MVP award in 2016-17"}]},
     {name:"Chris Paul",espnId:"2779",pos:"PG",team:"San Antonio Spurs",college:"Wake Forest",drafted:"2005 \u00b7 1st \u00b7 Pick 4",clues:[{label:"Position",text:"Point Guard in the Western Conference"},{label:"College",text:"Played at Wake Forest"},{label:"Nickname",text:"Known as CP3 and the Point God"},{label:"Style",text:"Considered the greatest pure point guard of his generation"},{label:"Longevity",text:"Still playing at an elite level well into his late 30s"}]},
-    {name:"Jordan Poole",pos:"SG",team:"Washington Wizards",college:"Michigan",drafted:"2019 \u00b7 1st \u00b7 Pick 28",clues:[{label:"Position",text:"Shooting Guard in the Eastern Conference"},{label:"College",text:"Won a national championship at Michigan"},{label:"Draft",text:"28th pick in 2019"},{label:"Incident",text:"Was punched by a teammate during a Warriors practice"},{label:"Trade",text:"Was traded from Golden State to Washington in the Klay Thompson extension"}]}
+    {name:"Jordan Poole",espnId:"4278129",pos:"SG",team:"Washington Wizards",college:"Michigan",drafted:"2019 \u00b7 1st \u00b7 Pick 28",clues:[{label:"Position",text:"Shooting Guard in the Eastern Conference"},{label:"College",text:"Won a national championship at Michigan"},{label:"Draft",text:"28th pick in 2019"},{label:"Incident",text:"Was punched by a teammate during a Warriors practice"},{label:"Trade",text:"Was traded from Golden State to Washington in the Klay Thompson extension"}]}
   ];
 
   // ── Shuffle-based rotation: no repeat for 50 days per league ────
@@ -335,10 +365,24 @@ function getPacificOffsetMinutes(d) {
   }
 
   const player = getDailyPlayer();
-  // ESPN headshot - only show if we have an espnId
-  const espnImg = player.espnId 
-    ? `https://a.espncdn.com/combiner/i?img=/i/headshots/${player.league === 'NFL' ? 'nfl' : 'nba'}/players/full/${player.espnId}.png&w=350&h=254`
-    : '';
+
+  // ESPN CDN works for both NFL and NBA using espnIds.
+  // Try primary format first, then alternate format on error, then show silhouette.
+  function getPlayerPhotoUrl(espnId, league) {
+    if (!espnId) return '';
+    var sport = league === 'NFL' ? 'nfl' : 'nba';
+    // Primary: ESPN combiner (350x254 crop)
+    return 'https://a.espncdn.com/combiner/i?img=/i/headshots/' + sport + '/players/full/' + espnId + '.png&w=350&h=254';
+  }
+
+  function getPlayerPhotoFallback(espnId, league) {
+    if (!espnId) return '';
+    var sport = league === 'NFL' ? 'nfl' : 'nba';
+    // Alternate: direct PNG without combiner params (sometimes works when combiner blocks)
+    return 'https://a.espncdn.com/i/headshots/' + sport + '/players/full/' + espnId + '.png';
+  }
+
+  const espnImg = getPlayerPhotoUrl(player.espnId, player.league);
 
   let revealedClues = 1;
   let guessesUsed = 0;
@@ -407,7 +451,8 @@ function getPacificOffsetMinutes(d) {
               <img class="wtp-player-img" id="silhouette-img"
                 src="${espnImg}"
                 alt="mystery player"
-                onerror="this.style.display='none';document.getElementById('fallback-svg').style.display='block';"
+                crossorigin="anonymous"
+                onerror="handleImgError(this, '${player.espnId}', '${player.league}')"
               />
               <svg id="fallback-svg" style="display:none;width:100%;height:100%;" viewBox="0 0 140 185" xmlns="http://www.w3.org/2000/svg">
                 <ellipse cx="70" cy="28" rx="22" ry="24" fill="#0a1520"/>
@@ -611,7 +656,7 @@ function getPacificOffsetMinutes(d) {
         ptsLine +
         '<div id="wtp-percentile" style="margin-bottom:1rem;"></div>' +
         '<div class="wtp-player-reveal">' +
-          '<img class="wtp-player-img-reveal" src="' + espnImg + '" alt="' + player.name + '" onerror="this.style.opacity=0.3;"/>' +
+          '<img class="wtp-player-img-reveal" src="' + espnImg + '" alt="' + player.name + '" onerror="handleRevealImgError(this, \'' + player.espnId + '\', \'' + player.league + '\')"/>' +
           '<div>' +
             '<div class="wtp-player-name">' + player.name + '</div>' +
             '<div class="wtp-player-details">' + player.pos + ' · ' + player.team + '<br>' + player.college + '<br>Draft: ' + player.drafted + '</div>' +

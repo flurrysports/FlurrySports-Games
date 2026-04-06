@@ -1162,13 +1162,36 @@ function getPacificOffsetMinutes(d) {
 async function csInit() {
   showScreen('cs-loading-screen');
 
-  // Pick today's puzzle by day index — same pattern as Daily Quiz and Who's That Player
-  const idx = getCSDayIndex() % CS_PUZZLES.length;
-  puzzle = CS_PUZZLES[idx];
-
   // Get today's game ID (Pacific time date)
   const today = getTodayString();
   todayGameId = GAME_ID_PREFIX + today;
+
+  // Try to fetch today's puzzle from Supabase first
+  try {
+    const fetchPromise = supabase
+      .from('clean_sweep_puzzles')
+      .select('*')
+      .eq('date', today)
+      .single();
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), 4000)
+    );
+    const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
+    if (data && data.tiles_shuffled && !error) {
+      puzzle = data;
+      console.log('CS: loaded puzzle from Supabase — ', data.prompt);
+    } else {
+      // Fall back to hardcoded pool
+      const idx = getCSDayIndex() % CS_PUZZLES.length;
+      puzzle = CS_PUZZLES[idx];
+      console.log('CS: using hardcoded fallback puzzle');
+    }
+  } catch(e) {
+    // Fall back to hardcoded pool
+    const idx = getCSDayIndex() % CS_PUZZLES.length;
+    puzzle = CS_PUZZLES[idx];
+    console.log('CS: Supabase fetch failed, using hardcoded fallback:', e.message);
+  }
 
   // Check if already played
   const played = hasAttemptedLocally(todayGameId);

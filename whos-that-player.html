@@ -153,7 +153,32 @@
       .wtp-body { grid-template-columns: 1fr; }
       .wtp-silhouette-panel { border-right: none; border-bottom: 1px solid rgba(52,152,219,0.1); min-height: 200px; }
     }
-  </style>
+  
+/* ── TECHNICAL FOUL OVERLAY ── */
+#tech-foul-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.92);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  padding: 2rem;
+  font-family: 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
+}
+#tech-foul-overlay.active { display: flex; }
+.tf-whistle { font-size: 4rem; margin-bottom: 0.5rem; }
+.tf-title { font-size: clamp(2.5rem, 10vw, 4.5rem); font-weight: 900; color: #E8470A; letter-spacing: 0.05em; text-transform: uppercase; line-height: 1; margin-bottom: 0.5rem; }
+.tf-subtitle { font-size: clamp(1rem, 4vw, 1.3rem); color: #f0f0f8; margin-bottom: 0.5rem; font-weight: 600; }
+.tf-rule { font-size: 0.95rem; color: #8888aa; margin-bottom: 2rem; max-width: 400px; line-height: 1.5; font-family: sans-serif; font-weight: 400; }
+.tf-score { font-size: clamp(3rem, 12vw, 5rem); font-weight: 900; color: #F5B800; line-height: 1; margin-bottom: 0.25rem; }
+.tf-score-label { font-size: 0.85rem; color: #8888aa; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2rem; }
+.tf-btn { background: #E8470A; color: #fff; border: none; border-radius: 10px; padding: 14px 40px; font-family: 'Barlow Condensed', Arial, sans-serif; font-size: 1.1rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; }
+.tf-btn:hover { background: #c93d08; }
+
+</style>
 </head>
 <body>
 <nav>
@@ -717,6 +742,53 @@ function getPacificOffsetMinutes(d) {
     renderGame();
   });
 
+</script>
+<script>
+// ── TECHNICAL FOUL: fires when player leaves the game ──
+(function() {
+  var _tfTriggered = false;
+
+  function _isGameActive() {
+    try { return typeof gameOver !== 'undefined' && !gameOver && typeof revealedClues !== 'undefined'; } catch(e) { return false; }
+  }
+
+  function _getCurrentScore() {
+    try { return 0; } catch(e) { return 0; }
+  }
+
+  function _endGame() {
+    try { if(typeof gameOver!=='undefined'){gameOver=true;} } catch(e) {}
+  }
+
+  function _showTechFoul() {
+    if (_tfTriggered) return;
+    if (!_isGameActive()) return;
+    _tfTriggered = true;
+    _endGame();
+    var score = _getCurrentScore();
+    var el = document.getElementById('tf-final-score');
+    if (el) el.textContent = score.toLocaleString();
+    var overlay = document.getElementById('tech-foul-overlay');
+    if (overlay) overlay.classList.add('active');
+    // Save the attempt as a loss/forfeit
+    try {
+      if (typeof saveAttempt === 'function') {
+        saveAttempt(typeof quizId !== 'undefined' ? quizId : (typeof todayGameId !== 'undefined' ? todayGameId : 'unknown'), score, 0, {forfeit: true}, 'forfeit');
+      }
+    } catch(e) {}
+  }
+
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) _showTechFoul();
+  });
+
+  window.addEventListener('blur', function() {
+    // Small delay to avoid false positives from clicking within the page
+    setTimeout(function() {
+      if (!document.hasFocus()) _showTechFoul();
+    }, 300);
+  });
+})();
 </script>
 </body>
 </html>

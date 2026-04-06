@@ -110,24 +110,31 @@ async function generateAndStore(env) {
       throw new Error(`Total tiles must = 9, got ${puzzle.correct_tiles.length + puzzle.decoy_tiles.length}`);
     }
 
-    // 6. Self-verify with a second Claude call
+    // 6. Self-verify — up to 3 total attempts
     log.push('Verifying answers with Claude...');
     const verified = await verifyPuzzle(env, puzzle);
     if (!verified.passed) {
-      log.push(`Verification failed: ${verified.issues.join('; ')}`);
-      // Attempt one regeneration with the issues noted
-      log.push('Regenerating after verification failure...');
+      log.push(`Attempt 1 failed: ${verified.issues.join('; ')}`);
+      log.push('Regenerating (attempt 2)...');
       const puzzle2 = await generatePuzzle(env, usedPrompts, chosenSport, verified.issues);
       const verified2 = await verifyPuzzle(env, puzzle2);
       if (!verified2.passed) {
-        log.push('Second attempt also failed verification — storing anyway with flag');
-        puzzle2.verification_flag = verified2.issues.join('; ');
-        return await storePuzzle(env, today, puzzle2, log);
+        log.push(`Attempt 2 failed: ${verified2.issues.join('; ')}`);
+        log.push('Regenerating (attempt 3)...');
+        const puzzle3 = await generatePuzzle(env, usedPrompts, chosenSport, verified2.issues);
+        const verified3 = await verifyPuzzle(env, puzzle3);
+        if (!verified3.passed) {
+          log.push('All 3 attempts failed — storing attempt 3 with verification_flag for admin review');
+          puzzle3.verification_flag = verified3.issues.join('; ');
+          return await storePuzzle(env, today, puzzle3, log);
+        }
+        log.push('Attempt 3 verification passed ✓');
+        return await storePuzzle(env, today, puzzle3, log);
       }
+      log.push('Attempt 2 verification passed ✓');
       return await storePuzzle(env, today, puzzle2, log);
     }
-    log.push('Verification passed ✓');
-
+    log.push('Attempt 1 verification passed ✓');
     return await storePuzzle(env, today, puzzle, log);
 
   } catch (err) {
@@ -188,10 +195,18 @@ ${sportNote}
 - NHL = ~10% (NHL prompts must be about major awards: Hart Trophy, Vezina, Norris, Conn Smythe, Art Ross, or Stanley Cup wins)
 
 PROMPT RULES:
-- Must be a single factual, verifiable criterion
-- Good categories: teams played for, stat milestones (single season or career), awards won, championships, draft position, school attended
-- For NHL only: limit to top awards or Stanley Cup wins
-- Prompt must be specific enough to have a clear yes/no answer per player
+- Must be a single factual, verifiable criterion with a clear yes/no answer per player
+- Prefer criteria that are well-documented and unambiguous (championships won, awards received, teams played for, draft position)
+- AVOID criteria that depend on subjective thresholds or could be disputed
+- AVOID prompts about "career stats" where exact numbers matter — stick to milestones and records that are clearly documented
+- For NHL only: limit to top awards (Hart, Vezina, Norris, Conn Smythe, Art Ross) or Stanley Cup wins
+
+ACCURACY RULES — THIS IS CRITICAL:
+- Only include a player as CORRECT if you are 100% certain they meet the criterion
+- If you are even slightly unsure about a player, make them a DECOY instead
+- Double-check edge cases: a player on a championship team may not have been the "starting" player, a player may have won an award in a different season than you think
+- Do not confuse similar players, similar team names, or similar award names
+- When in doubt, leave a player out of the correct list
 
 TILE RULES:
 - 4 to 7 correct answers (players who genuinely meet the criterion)
@@ -231,39 +246,84 @@ Return this exact JSON:
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// VERIFY PUZZLE
+// VERIFY PUZZLE — strict independent fact-check
 // ─────────────────────────────────────────────────────────────────────────────
 async function verifyPuzzle(env, puzzle) {
-  const system = `You are a meticulous sports fact-checker. Verify sports trivia claims with precision. Return ONLY valid JSON.`;
+  const system = `You are an extremely strict sports fact-checker. You are reviewing puzzles built by someone else and your job is to FIND ERRORS. 
+Be skeptical. Do not give the benefit of the doubt. If you are not 100% certain a claim is true, flag it.
+You know that puzzle generators frequently make mistakes with:
+- Players who are close but don't quite meet a threshold
+- Players who qualify for a similar but different criterion
+- Stats that are slightly off (e.g. "3 titles" when they won 4, or confusing regular season vs playoff stats)
+- Players who qualified at one point but the prompt implies a current or specific timeframe
+Return ONLY valid JSON. No markdown, no backticks.`;
 
   const allTiles = [
-    ...puzzle.correct_tiles.map(n => ({ name: n, claimed: true })),
-    ...puzzle.decoy_tiles.map(n => ({ name: n, claimed: false }))
+    ...puzzle.correct_tiles.map(n => ({ name: n, claimed: 'CORRECT — should qualify' })),
+    ...puzzle.decoy_tiles.map(n => ({ name: n, claimed: 'DECOY — should NOT qualify' }))
   ];
 
-  const user = `Verify this Clean Sweep puzzle. For each player, confirm whether they genuinely meet the criterion or not.
+  const user = `Fact-check this sports trivia puzzle. Be critical and look for errors.
 
-Prompt: "${puzzle.prompt}"
-Sport: ${puzzle.sport_category}
+PROMPT: "${puzzle.prompt}"
+SPORT: ${puzzle.sport_category}
 
-Players to verify:
-${allTiles.map((t, i) => `${i+1}. ${t.name} — claimed to ${t.claimed ? 'QUALIFY' : 'NOT qualify'}`).join('\n')}
+For each player below, independently determine whether they meet the criterion in the prompt.
+Do NOT trust the label — verify from your own knowledge.
 
-For each player, state whether the claim is CORRECT or INCORRECT.
-If a claim is incorrect, explain briefly why.
+${allTiles.map((t, i) => `${i+1}. ${t.name} (labeled: ${t.claimed})`).join('\n')}
 
-Return this exact JSON:
+Rules:
+- Mark as WRONG if a player labeled CORRECT actually does NOT meet the criterion
+- Mark as WRONG if a player labeled DECOY actually DOES meet the criterion  
+- If you are less than 90% confident about any player, mark it UNCERTAIN
+- Be especially careful about edge cases and exact thresholds
+
+Return this exact JSON (no other text):
 {
-  "passed": true | false,
   "results": [
-    { "name": "Player Name", "claimed": true|false, "actual": true|false, "correct": true|false, "note": "explanation if wrong" }
+    {
+      "name": "Player Name",
+      "labeled_correct": true,
+      "actually_qualifies": true,
+      "verdict": "OK" | "WRONG" | "UNCERTAIN",
+      "reason": "one sentence explanation — required for WRONG or UNCERTAIN"
+    }
   ],
-  "issues": ["list of issue descriptions if any"]
-}`;
+  "passed": true,
+  "issues": []
+}
 
-  const raw = await claudeCall(env, system, user, 1000);
+Set "passed" to false if ANY result has verdict "WRONG".
+Set "passed" to false if MORE THAN ONE result has verdict "UNCERTAIN".
+List all problems in "issues" array.`;
+
+  const raw = await claudeCall(env, system, user, 1500);
   const cleaned = raw.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
-  return JSON.parse(cleaned);
+  
+  let result;
+  try {
+    result = JSON.parse(cleaned);
+  } catch(e) {
+    throw new Error(`Verification JSON parse failed: ${e.message}. Raw: ${raw.substring(0, 200)}`);
+  }
+
+  // Extra safety: re-check passed flag ourselves based on results array
+  // Don't trust Claude's self-reported passed value alone
+  if (result.results) {
+    const wrongs = result.results.filter(r => r.verdict === 'WRONG');
+    const uncertains = result.results.filter(r => r.verdict === 'UNCERTAIN');
+    if (wrongs.length > 0 || uncertains.length > 1) {
+      result.passed = false;
+      result.issues = [
+        ...wrongs.map(r => `WRONG: ${r.name} — ${r.reason}`),
+        ...uncertains.map(r => `UNCERTAIN: ${r.name} — ${r.reason}`),
+        ...(result.issues || [])
+      ];
+    }
+  }
+
+  return result;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

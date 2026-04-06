@@ -73,7 +73,6 @@
     .lb-avatar { width:32px; height:32px; border-radius:50%; background:rgba(245,197,24,0.15); border:1px solid rgba(245,197,24,0.3); display:flex; align-items:center; justify-content:center; font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:0.85rem; color:var(--gold); flex-shrink:0; }
     .lb-username { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:0.95rem; word-break:break-all; overflow-wrap:anywhere; }
     .lb-score { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:1.1rem; color:var(--gold); text-align:right; white-space:nowrap; }
-    .lb-games { font-size:0.8rem; color:var(--gray); text-align:right; white-space:nowrap; }
     .my-rank-section { margin-bottom:2rem; }
     .my-rank-section h3 { font-family:'Barlow Condensed',sans-serif; font-weight:800; font-size:1.2rem; text-transform:uppercase; margin-bottom:0.75rem; }
     @media (max-width:480px) {
@@ -306,7 +305,6 @@
                 <div class="podium-avatar">${u.username.charAt(0).toUpperCase()}</div>
                 <div class="podium-name">${u.username}</div>
                 <div class="podium-score">${u.total.toLocaleString()}</div>
-                <div class="podium-meta">${u.count} game${u.count!==1?'s':''}</div>
                 <div class="podium-bar"></div>
               </div>
             </div>

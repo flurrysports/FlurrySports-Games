@@ -1728,11 +1728,11 @@ function resetGame() {
   var _tfTriggered = false;
 
   function _isGameActive() {
-    try { return typeof score !== 'undefined' && document.getElementById('gameScreen') && document.getElementById('gameScreen').classList.contains('active'); } catch(e) { return false; }
+    try { var gs = document.getElementById('gameScreen'); return gs && gs.classList.contains('active') && typeof currentPlay !== 'undefined' && currentPlay > 0; } catch(e) { return false; }
   }
 
   function _getCurrentScore() {
-    try { return typeof score !== 'undefined' ? score : 0; } catch(e) { return 0; }
+    try { return (typeof score !== 'undefined' && score > 0) ? score : 0; } catch(e) { return 0; }
   }
 
   function _endGame() {
@@ -1749,11 +1749,10 @@ function resetGame() {
     if (el) el.textContent = score.toLocaleString();
     var overlay = document.getElementById('tech-foul-overlay');
     if (overlay) { overlay.style.cssText = 'display:flex !important; position:fixed !important; top:0 !important; left:0 !important; right:0 !important; bottom:0 !important; width:100% !important; height:100% !important; min-height:100vh !important; z-index:999999 !important; background:rgba(0,0,0,0.95) !important; align-items:center !important; justify-content:center !important; flex-direction:column !important; text-align:center !important; padding:2rem !important; box-sizing:border-box !important;'; overlay.classList.add('active'); }
-    // Save the attempt as a loss/forfeit
+    // Save forfeit
     try {
-      if (typeof saveAttempt === 'function') {
-        saveAttempt(typeof quizId !== 'undefined' ? quizId : (typeof todayGameId !== 'undefined' ? todayGameId : 'unknown'), score, 0, {forfeit: true}, 'forfeit');
-      }
+      if (typeof storeSnapResult === 'function') storeSnapResult({ type: 'loss', score: score, playHistory: typeof playHistory !== 'undefined' ? playHistory : [], decisionTimes: typeof decisionTimes !== 'undefined' ? decisionTimes : [], currentPlay: typeof currentPlay !== 'undefined' ? currentPlay : 0, headline: 'Technical Foul', desc: 'Left the field of play.', badge: 'Forfeit' });
+      if (typeof saveAttempt === 'function') saveAttempt('snap-decision-v1', score, 0, { forfeit: true }, 'snap_decision');
     } catch(e) {}
   }
 
@@ -1761,14 +1760,52 @@ function resetGame() {
     if (document.visibilityState === 'hidden') _showTechFoul();
   });
 
+  window.addEventListener('pagehide', function() { _showTechFoul(); });
+
   window.addEventListener('blur', function() {
-    // Small delay to avoid false positives from clicking within the page
     setTimeout(function() {
       if (document.visibilityState === 'hidden' || !document.hasFocus()) _showTechFoul();
-    }, 300);
+    }, 400);
   });
 })();
 </script>
+
+// ── BACK BUTTON: 25% rule for Snap Decision ──
+(function() {
+  var _gameStarted = false;
+
+  window.addEventListener('popstate', function(e) {
+    if (!_gameStarted) return;
+    var gs = document.getElementById('gameScreen');
+    var isActive = gs && gs.classList.contains('active');
+    if (!isActive) return;
+    if (typeof currentPlay !== 'undefined' && currentPlay < 1) {
+      // Before 25% — allow reload
+      window.location.reload();
+    } else {
+      // Past 25% — push state back, treat as loss
+      history.pushState({ snapPlaying: true }, '', window.location.href);
+      if (typeof showLoss === 'function') showLoss('Left the Field', 'You left mid-drive. Final score locked in.', 'Forfeit');
+    }
+  });
+
+  // Hook game start
+  var _origLoadPlay = window.loadPlay;
+  document.addEventListener('DOMContentLoaded', function() {
+    var startBtn = document.querySelector('[onclick*="startGame"], [onclick*="showScreen"]');
+    // Watch for gameScreen becoming active
+    var obs = new MutationObserver(function() {
+      var gs = document.getElementById('gameScreen');
+      if (gs && gs.classList.contains('active') && !_gameStarted) {
+        _gameStarted = true;
+        history.pushState({ snapPlaying: true }, '', window.location.href);
+      }
+    });
+    var target = document.getElementById('gameScreen');
+    if (target) obs.observe(target, { attributes: true, attributeFilter: ['class'] });
+  });
+})();
+
 </body>
 </html>
 

@@ -227,7 +227,7 @@ function hasPlayed() {
 
 // ── Game state ───────────────────────────────────────────
 var TIMER = 15, MAX_PTS = 200;
-var curQ = 0, totalScore = 0, timerInt = null, tLeft = TIMER;
+var curQ = 0, totalScore = 0, timerInt = null, tLeft = TIMER, dqInProgress = false;
 var qStart = 0, results = [];
 var letters = ['A','B','C','D'];
 
@@ -304,6 +304,7 @@ function pick(chosen) {
 
 // ── Results ───────────────────────────────────────────────
 async function showResults(stored) {
+  dqInProgress = false;
   var isReplay = stored !== null && stored !== undefined;
   var correct    = isReplay ? stored.correct    : results.filter(function(r){return r.ok;}).length;
   var emojiRow   = isReplay ? stored.emojiRow   : results.map(function(r){return r.ok?'✅':'❌';}).join('');
@@ -397,7 +398,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     return;
   }
 
-  showCountdown(function() { renderQ(0); });
+  showCountdown(function() { dqInProgress = true; renderQ(0); });
 });
 </script>
 <script>
@@ -406,7 +407,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   var _tfTriggered = false;
 
   function _isGameActive() {
-    try { return typeof curQ !== 'undefined' && curQ < 5 && typeof timerInt !== 'undefined' && timerInt !== null; } catch(e) { return false; }
+    try { return typeof dqInProgress !== 'undefined' && dqInProgress === true; } catch(e) { return false; }
   }
 
   function _getCurrentScore() {
@@ -414,7 +415,12 @@ document.addEventListener('DOMContentLoaded', async function() {
   }
 
   function _endGame() {
-    try { if(typeof timerInt !== 'undefined' && timerInt){ clearInterval(timerInt); timerInt=null; } } catch(e) {}
+    try {
+      dqInProgress = false;
+      if (timerInt) { clearInterval(timerInt); timerInt = null; }
+      // Mark as played so they can't replay
+      try { markPlayed(); } catch(e) {}
+    } catch(e) {}
   }
 
   function _showTechFoul() {
@@ -427,11 +433,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (el) el.textContent = score.toLocaleString();
     var overlay = document.getElementById('tech-foul-overlay');
     if (overlay) { overlay.style.cssText = 'display:flex !important; position:fixed !important; top:0 !important; left:0 !important; right:0 !important; bottom:0 !important; width:100% !important; height:100% !important; min-height:100vh !important; z-index:999999 !important; background:rgba(0,0,0,0.95) !important; align-items:center !important; justify-content:center !important; flex-direction:column !important; text-align:center !important; padding:2rem !important; box-sizing:border-box !important;'; overlay.classList.add('active'); }
-    // Save the attempt as a loss/forfeit
+    // Save forfeit — must call saveResult (localStorage) so score shows on reload
     try {
-      if (typeof saveAttempt === 'function') {
-        saveAttempt(typeof quizId !== 'undefined' ? quizId : (typeof todayGameId !== 'undefined' ? todayGameId : 'unknown'), score, 0, {forfeit: true}, 'forfeit');
-      }
+      var correct = typeof results !== 'undefined' ? results.filter(function(r){return r && r.ok;}).length : 0;
+      var emojiRow = typeof results !== 'undefined' ? results.map(function(r){return r && r.ok ? '✅' : '❌';}).join('') + '🚫' : '🚫';
+      if (typeof saveResult === 'function') saveResult({ correct: correct, emojiRow: emojiRow, finalScore: score });
+      if (typeof markPlayed === 'function') markPlayed();
+      if (typeof saveAttempt === 'function') saveAttempt(quizId, score, 0, { forfeit: true }, 'trivia');
     } catch(e) {}
   }
 
@@ -439,13 +447,48 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (document.visibilityState === 'hidden') _showTechFoul();
   });
 
+  window.addEventListener('pagehide', function() { _showTechFoul(); });
+
   window.addEventListener('blur', function() {
-    // Small delay to avoid false positives from clicking within the page
     setTimeout(function() {
       if (document.visibilityState === 'hidden' || !document.hasFocus()) _showTechFoul();
-    }, 300);
+    }, 400);
   });
 })();
 </script>
+
+// ── BACK BUTTON: push state on game start, enforce 25% rule ──
+(function() {
+  var _gameStarted = false;
+
+  window.addEventListener('popstate', function(e) {
+    if (!_gameStarted) return;
+    var before25 = typeof curQ !== 'undefined' && curQ < 2 && typeof dqInProgress !== 'undefined' && dqInProgress;
+    if (before25) {
+      dqInProgress = false;
+      if (typeof timerInt !== 'undefined' && timerInt) { clearInterval(timerInt); timerInt = null; }
+      window.location.reload();
+    } else if (typeof dqInProgress !== 'undefined' && dqInProgress) {
+      history.pushState({ dqPlaying: true }, '', window.location.href);
+      if (typeof showResults === 'function') showResults(null);
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      if (typeof showCountdown === 'function') {
+        var _origFn = showCountdown;
+        window.showCountdown = function(cb) {
+          if (!_gameStarted) {
+            _gameStarted = true;
+            history.pushState({ dqPlaying: true }, '', window.location.href);
+          }
+          _origFn(cb);
+        };
+      }
+    }, 100);
+  });
+})();
+
 </body>
 </html>

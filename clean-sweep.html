@@ -1629,12 +1629,45 @@ waitForAuth(function() { csInit(); });
     if (document.visibilityState === 'hidden') _showTechFoul();
   });
 
+  window.addEventListener('pagehide', function() { _showTechFoul(); });
+
   window.addEventListener('blur', function() {
     setTimeout(function() {
       if (document.visibilityState === 'hidden' || !document.hasFocus()) _showTechFoul();
-    }, 300);
+    }, 400);
   });
 })();
 </script>
+
+// ── BACK BUTTON: Clean Sweep — no restart once prompt is seen ──
+(function() {
+  var _gameStarted = false;
+
+  window.addEventListener('popstate', function(e) {
+    if (!_gameStarted) return;
+    // Always push back — Clean Sweep has no restart
+    history.pushState({ csPlaying: true }, '', window.location.href);
+    // If game is still going, end it
+    if (typeof gameOver !== 'undefined' && !gameOver) {
+      if (typeof timerInterval !== 'undefined') clearInterval(timerInterval);
+      gameOver = true;
+      if (typeof csEndGame === 'function') csEndGame('forfeit');
+    }
+  });
+
+  // Push state when game grid appears
+  var _csObserver = new MutationObserver(function() {
+    var grid = document.getElementById('cs-grid') || document.querySelector('.cs-tile');
+    if (grid) {
+      if (!_gameStarted) {
+        _gameStarted = true;
+        history.pushState({ csPlaying: true }, '', window.location.href);
+      }
+      _csObserver.disconnect();
+    }
+  });
+  _csObserver.observe(document.body, { childList: true, subtree: true });
+})();
+
 </body>
 </html>

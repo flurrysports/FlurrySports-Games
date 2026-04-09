@@ -160,14 +160,27 @@
     loadLeaderboard();
   }
 
+  // Daily game quiz_id prefixes — everything else is evergreen and excluded from leaderboard
+  function isDailyAttempt(attempt) {
+    const id = (attempt.quiz_id || '').toLowerCase();
+    const gt = (attempt.game_type || '').toLowerCase();
+    if (gt === 'evergreen') return false;
+    if (gt === 'daily') return true;
+    // Fallback: check known daily prefixes for older rows without game_type
+    return id.startsWith('daily-quiz-') ||
+           id.startsWith('snap-decision') ||
+           id.startsWith('wtp-') ||
+           id.startsWith('clean-sweep-');
+  }
+
   async function loadLeaderboard() {
     document.getElementById('lb-table').innerHTML = '<div class="spinner" style="margin:2rem auto;"></div>';
     document.getElementById('podium-section').innerHTML = '';
 
-    // Fetch all attempts — filter by quiz_id prefix on client side
-    // quiz_id patterns: 'daily-quiz-*' = trivia, 'snap-decision-*' = snap, 'wtp-*' = whos that player
-    // Include all attempts (including guests - they appear as "Guest")
-    let query = supabase.from('attempts').select('user_id, score, quiz_id, created_at, cookie_id').range(0, 9999);
+    // Fetch attempts — include game_type so we can filter out evergreen quizzes
+    let query = supabase.from('attempts')
+      .select('user_id, score, quiz_id, game_type, created_at, cookie_id')
+      .range(0, 9999);
 
     if (currentTime === 'weekly') {
       const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -181,23 +194,15 @@
       document.getElementById('lb-table').innerHTML = `<p style="padding:2rem;color:var(--error);">Failed to load: ${error.message}</p>`;
       return;
     }
-    console.log('Leaderboard raw data:', rawData ? rawData.length + ' rows' : 'null', 'category:', currentCat);
-    if (rawData) {
-      const snapRows = rawData.filter(a => (a.quiz_id||'').startsWith('snap-'));
-      const wtpRows  = rawData.filter(a => (a.quiz_id||'').startsWith('wtp-'));
-      const quizRows = rawData.filter(a => (a.quiz_id||'').startsWith('daily-quiz-'));
-      console.log('  snap rows:', snapRows.length, 'wtp rows:', wtpRows.length, 'quiz rows:', quizRows.length);
-      // Show all unique quiz_ids so we can see what's actually in the DB
-      const uniqueIds = [...new Set(rawData.map(a => a.quiz_id))];
-      console.log('  All quiz_ids in DB:', uniqueIds);
-    }
 
-    // Filter by category using quiz_id prefix
-    let data = rawData || [];
+    // Exclude evergreen replayable quiz attempts — leaderboard is daily games only
+    let data = (rawData || []).filter(isDailyAttempt);
+
+    // Filter by category
     if (currentCat !== 'overall') {
       data = data.filter(a => {
         const id = (a.quiz_id || '').toLowerCase();
-        if (currentCat === 'trivia') return id.startsWith('daily-quiz-') || (!id.startsWith('snap-') && !id.startsWith('wtp-') && !id.startsWith('clean-sweep-'));
+        if (currentCat === 'trivia') return id.startsWith('daily-quiz-');
         if (currentCat === 'snap_decision') return id.startsWith('snap-decision');
         if (currentCat === 'whos_that_player') return id.startsWith('wtp-');
         if (currentCat === 'clean_sweep') return id.startsWith('clean-sweep-');

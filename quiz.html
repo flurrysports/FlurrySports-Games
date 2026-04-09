@@ -51,25 +51,6 @@
     <p style="color:var(--gray);margin-top:1rem;">Loading quiz...</p>
   </div>
 
-  <!-- ALREADY ATTEMPTED (fallback for old attempts without stored data) -->
-  <div id="already-attempted" class="hidden" style="text-align:center;padding:4rem 2rem;">
-    <img src="/images/logo-icon-gold.png" style="height:100px;margin-bottom:1.5rem;opacity:0.5;">
-    <h2 style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;text-transform:uppercase;margin-bottom:0.75rem;">Already Completed</h2>
-    <p style="color:var(--gray);margin-bottom:2rem;">You've already taken this quiz. Detailed score replay is available for quizzes completed from now on.</p>
-    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:2rem;">
-      <a href="/quizzes.html" class="btn btn-primary">Find Another Quiz</a>
-      <a href="/leaderboard.html" class="btn btn-outline">View Leaderboard</a>
-    </div>
-    <div style="border-top:1px solid var(--card-border);padding-top:1.5rem;max-width:500px;margin:0 auto;">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray);margin-bottom:0.75rem;">Try Today&#39;s Daily Games</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;">
-        <a href="/daily-quiz.html" style="background:rgba(255,255,255,0.04);border:1px solid var(--card-border);border-radius:10px;padding:0.75rem;text-decoration:none;color:var(--white);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;text-align:center;">🎯 Daily Quiz</a>
-        <a href="/snap-decision.html" style="background:rgba(255,255,255,0.04);border:1px solid var(--card-border);border-radius:10px;padding:0.75rem;text-decoration:none;color:var(--white);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;text-align:center;">🏈 Snap Decision</a>
-        <a href="/whos-that-player.html" style="background:rgba(255,255,255,0.04);border:1px solid var(--card-border);border-radius:10px;padding:0.75rem;text-decoration:none;color:var(--white);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.06em;text-align:center;">❓ Who&#39;s That Player?</a>
-      </div>
-    </div>
-  </div>
-
   <!-- QUIZ INTRO -->
   <div id="quiz-intro" class="hidden">
     <div style="text-align:center;margin-bottom:2.5rem;">
@@ -171,14 +152,8 @@
   <h2 class="results-title" id="results-title">Quiz Complete!</h2>
   <p class="results-percentile" id="results-percentile"></p>
 
-  <!-- Auth prompt for guests -->
-  <div class="auth-prompt hidden" id="auth-prompt">
-    <p>🏆 Sign up or log in to save your score to the leaderboard and track your progress over time!</p>
-    <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
-      <button class="btn btn-primary" onclick="openModal('signup')">Create Account</button>
-      <button class="btn btn-outline" onclick="openModal('login')">Log In</button>
-    </div>
-  </div>
+  <!-- Auth prompt for guests — populated by JS -->
+  <div class="hidden" id="auth-prompt"></div>
 
   <!-- Share -->
   <div class="share-section">
@@ -195,8 +170,8 @@
   <div id="results-breakdown" style="text-align:left;"></div>
 
   <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:2rem;">
-    <a href="/quizzes.html" class="btn btn-primary">More Quizzes</a>
-    <a href="/leaderboard.html" class="btn btn-outline">Leaderboard</a>
+    <button id="play-again-btn" class="btn btn-primary">Play Again</button>
+    <a href="/quizzes.html" class="btn btn-outline">More Quizzes</a>
   </div>
 </div>
 
@@ -232,62 +207,13 @@
   const SPEED_BONUS_MAX = 100; // up to 100 extra for instant answer
 
   // ─── INIT ──────────────────────────────────────────────
+  // Evergreen quizzes are always replayable — no attempt gate
   document.addEventListener('DOMContentLoaded', async () => {
     updateNavAuth();
     const params = new URLSearchParams(window.location.search);
     const quizId = params.get('id');
     if (!quizId) { window.location.href = '/quizzes.html'; return; }
 
-    // Check local storage first — no network needed
-    const storedResult = getStoredQuizResult(quizId);
-    if (storedResult) {
-      // Hide loading spinner immediately, show results
-      document.getElementById('quiz-loading').classList.add('hidden');
-      await showStoredResult(quizId, storedResult);
-      return;
-    }
-    // Check if attempted (may require network)
-    const already = await hasAttemptedQuiz(quizId);
-    if (already) {
-      // Try to fetch their score from Supabase to show results screen
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: attempt } = await supabase.from('attempts')
-            .select('score, answers, created_at')
-            .eq('quiz_id', quizId)
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
-          if (attempt) {
-            // Build a stored result from the DB data and show results
-            const fakeStored = {
-              score: attempt.score,
-              title: quiz ? quiz.title : quizId,
-              questionCount: 5,
-              correct: attempt.answers ? (Array.isArray(attempt.answers) ? attempt.answers.filter(a => a.isCorrect).length : 0) : 0,
-              answers: Array.isArray(attempt.answers) ? attempt.answers : [],
-              fireActive: false
-            };
-            // Load quiz title if we don't have it yet
-            if (!quiz) {
-              const { data: qdata } = await supabase.from('quizzes').select('title').eq('id', quizId).single();
-              if (qdata) fakeStored.title = qdata.title;
-            }
-            document.getElementById('quiz-loading').classList.add('hidden');
-            await showStoredResult(quizId, fakeStored);
-            return;
-          }
-        }
-      } catch(e) {}
-      // Fallback: show already-attempted wall
-      document.getElementById('quiz-loading').classList.add('hidden');
-      document.getElementById('already-attempted').classList.remove('hidden');
-      return;
-    }
-
-    // Load quiz data
     const { data: q, error: qErr } = await supabase.from('quizzes').select('*').eq('id', quizId).single();
     const { data: qs, error: qsErr } = await supabase.from('questions').select('*').eq('quiz_id', quizId).order('sort_order');
     if (qErr || qsErr || !q) { document.getElementById('quiz-loading').innerHTML = '<p style="color:var(--error)">Failed to load quiz. <a href="/quizzes.html">Back to quizzes</a></p>'; return; }
@@ -777,22 +703,9 @@
     clearInterval(rankTimerInterval);
     const timeTaken = Math.floor((Date.now() - quizStartTime) / 1000);
 
-    // Apply On Fire bonus (+10%) if streak >= 7
-    updateStreak();
-    const fireActive = isOnFire();
-    if (fireActive) score = applyFireBonus(score);
-
-    // Store locally FIRST so replay always works
-    storeQuizResult(quiz.id, {
-      score,
-      title: quiz.title,
-      questionCount: questions.length,
-      correct: userAnswers.filter(a => a.isCorrect).length,
-      answers: userAnswers,
-      fireActive
-    });
-    // Save attempt
-    await saveAttempt(quiz.id, score, timeTaken, userAnswers);
+    // Evergreen quizzes: no On Fire bonus, no streak update — those are daily-only rewards
+    // Save attempt with isEvergreen=true so it is excluded from leaderboard
+    await saveAttempt(quiz.id, score, timeTaken, userAnswers, 'evergreen', true);
 
     // Show results
     document.getElementById('quiz-page').classList.add('hidden');
@@ -801,14 +714,6 @@
     document.title = `Results — ${quiz.title}`;
 
     document.getElementById('results-badge').textContent = quiz.title;
-
-    // Show fire banner if on fire
-    if (fireActive) {
-      const fireBanner = document.createElement('div');
-      fireBanner.style.cssText = 'background:rgba(255,100,0,0.15);border:1px solid rgba(255,100,0,0.4);border-radius:10px;padding:0.65rem 1rem;margin-bottom:1.25rem;color:#ff6400;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:1rem;text-transform:uppercase;letter-spacing:0.05em;';
-      fireBanner.innerHTML = '🔥 On Fire Bonus Active! Score boosted by +10%';
-      document.getElementById('results-page').insertBefore(fireBanner, document.getElementById('results-page').querySelector('.results-score-ring'));
-    }
     document.getElementById('result-score').textContent = score.toLocaleString();
 
     // Animate score ring
@@ -829,7 +734,7 @@
     const grade = grades.find(g => pct >= g.min);
     document.getElementById('results-title').textContent = grade.label;
 
-    // Percentile
+    // Percentile — shown to everyone since evergreen quizzes are public
     const percentile = await getPercentile(quiz.id, score);
     const percentEl = document.getElementById('results-percentile');
     if (percentile !== null) {
@@ -838,9 +743,31 @@
       percentEl.textContent = grade.sub;
     }
 
-    // Auth prompt for guests
+    // Auth prompt for guests — shown after results so it never blocks gameplay
     const user = await getCurrentUser();
-    if (!user) document.getElementById('auth-prompt').classList.remove('hidden');
+    if (!user) {
+      const authPrompt = document.getElementById('auth-prompt');
+      if (authPrompt) {
+        authPrompt.innerHTML = `
+          <div style="background:rgba(245,197,24,0.08);border:1px solid rgba(245,197,24,0.25);border-radius:12px;padding:1.25rem 1.5rem;text-align:center;margin-bottom:1.5rem;">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.1rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--gold);margin-bottom:0.35rem;">Save Your Score</div>
+            <div style="font-size:0.85rem;color:var(--gray-light);margin-bottom:1rem;">Create a free account to track your progress and compete on the leaderboard.</div>
+            <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+              <button class="btn btn-primary btn-sm" onclick="openModal('signup')">Sign Up Free</button>
+              <button class="btn btn-ghost btn-sm" onclick="openModal('login')">Log In</button>
+            </div>
+          </div>`;
+        authPrompt.classList.remove('hidden');
+      }
+    }
+
+    // Play Again button
+    const playAgainBtn = document.getElementById('play-again-btn');
+    if (playAgainBtn) {
+      playAgainBtn.addEventListener('click', () => {
+        window.location.reload();
+      });
+    }
 
     // Share links
     window._shareLinks = shareScore(quiz.title, score, window.location.href);

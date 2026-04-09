@@ -79,8 +79,7 @@
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.12em;
-      color: #021a0d;
-      opacity: 0.65;
+      color: var(--navy);
       text-transform: uppercase;
       white-space: nowrap;
     }
@@ -590,7 +589,7 @@ function dateSeed() {
       <div class="wtp-hero">
         <div class="wtp-silhouette-box" id="sil-box">
           <img id="silhouette-img"
-            src="${espnImg}"
+            src="${window._wtpValidatedPhoto || espnImg}"
             alt="mystery player"
             data-nba-id="${player.nbaId || ''}"
             onerror="handleImgError(this, '${player.espnId}', '${player.league}')"
@@ -824,7 +823,23 @@ function dateSeed() {
       return;
     }
 
-    renderGame();
+    // Try to get worker-validated photo URL from Supabase first
+    (async function() {
+      try {
+        var today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
+        var res = await fetch(
+          SUPABASE_URL + '/rest/v1/wtp_daily?date=eq.' + today + '&select=photo_url',
+          { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } }
+        );
+        if (res.ok) {
+          var rows = await res.json();
+          if (rows && rows.length > 0 && rows[0].photo_url) {
+            window._wtpValidatedPhoto = rows[0].photo_url;
+          }
+        }
+      } catch(e) { /* silently fall back to CDN guessing */ }
+      renderGame();
+    })();
   });
 
 </script>

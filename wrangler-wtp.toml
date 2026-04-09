@@ -1,0 +1,16 @@
+name = "wtp-daily-player"
+main = "wtp-worker.js"
+compatibility_date = "2025-01-01"
+
+# Runs at 8:00 AM UTC = midnight Pacific Standard Time
+# During Daylight Saving Time (March–November) this fires at 1:00 AM Pacific — acceptable
+[triggers]
+crons = ["0 8 * * *"]
+
+# ─── SECRETS ───────────────────────────────────────────────────────────────────
+# Do NOT put real values here — this file is committed to git.
+# Add these two secrets via the Cloudflare dashboard:
+#   Workers & Pages → wtp-daily-player → Settings → Variables and Secrets
+#
+#   SUPABASE_URL         = https://your-project-ref.supabase.co
+#   SUPABASE_SERVICE_KEY = your service_role key (from Supabase → Settings → API)

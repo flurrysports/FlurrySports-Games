@@ -6,14 +6,12 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/images/logo-crown.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Who's That, Player? — FlurrySports Games</title>
   <link rel="stylesheet" href="/css/style.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="/js/supabase-config.js"></script>
   <script>
@@ -25,358 +23,177 @@
     window.supabase = _create(SUPABASE_URL, SUPABASE_ANON_KEY);
     console.log('Supabase client created:', typeof window.supabase);
   })();
-  </script>
+</script>
   <style>
-    /* ── LAYOUT: nav is 68px, game fills the rest, no scroll during play ── */
-    html, body { height: 100%; overflow: hidden; }
-    body { display: flex; flex-direction: column; }
-
-    /* Allow scrolling only on result screen */
-    body.wtp-result-active { overflow: auto; }
-
-    nav { flex-shrink: 0; height: 68px; }
-
-    .wtp-page {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      min-height: 0;
-    }
-
-    /* ── MAIN GAME CARD ── */
-    .wtp-card {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-      min-height: 0;
-      max-width: 520px;
-      width: 100%;
-      margin: 0 auto;
-      position: relative;
-      z-index: 1;
-    }
-
-    /* ── TOP BAR (green header) ── */
-    .wtp-topbar {
-      background: #0DBF7A;
-      padding: 0 16px;
-      height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-shrink: 0;
-    }
-    .wtp-topbar-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(15px, 4vw, 20px);
-      color: #021a0d;
-      letter-spacing: 0.06em;
-      white-space: nowrap;
-    }
-    .wtp-topbar-badge {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      color: var(--navy);
-      text-transform: uppercase;
-      white-space: nowrap;
-    }
-
-    /* ── HERO (silhouette + stats) ── */
+    .wtp-shell { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; position: relative; z-index: 1; }
     .wtp-hero {
-      background: #0a120b;
-      border-bottom: 2px solid #0DBF7A;
-      padding: 10px 14px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      flex-shrink: 0;
+      background: linear-gradient(135deg, #020d1a 0%, #041428 50%, #020d1a 100%);
+      border: 1px solid rgba(52,152,219,0.2);
+      border-radius: 20px; overflow: hidden; margin-bottom: 1.5rem;
     }
-    .wtp-silhouette-box {
-      width: clamp(60px, 15vw, 80px);
-      height: clamp(60px, 15vw, 80px);
-      border-radius: 10px;
-      border: 1px solid rgba(13,191,122,0.3);
-      background: #061209;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      overflow: hidden;
-      position: relative;
+    .wtp-hero-top {
+      background: linear-gradient(90deg, rgba(52,152,219,0.08), transparent);
+      border-bottom: 1px solid rgba(52,152,219,0.15);
+      padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
     }
-    .wtp-silhouette-box img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: top center;
+    .wtp-brand { display: flex; align-items: center; gap: 0.75rem; }
+    .wtp-brand-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: rgba(52,152,219,0.2); border: 1px solid rgba(52,152,219,0.4);
+      display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+    }
+    .wtp-brand-name { font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; color: #3498db; }
+    .wtp-brand-sub { font-family: 'Barlow Condensed',sans-serif; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(52,152,219,0.5); }
+    .wtp-league-badge {
+      font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 0.75rem;
+      letter-spacing: 0.15em; text-transform: uppercase; padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+    }
+    .wtp-body { display: grid; grid-template-columns: 240px 1fr; gap: 0; }
+    .wtp-silhouette-panel {
+      background: linear-gradient(180deg, #010810 0%, #020d1a 100%);
+      border-right: 1px solid rgba(52,152,219,0.1);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem 1.5rem; min-height: 280px; position: relative;
+    }
+    .wtp-who-label {
+      font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.7rem;
+      letter-spacing: 0.25em; text-transform: uppercase; color: rgba(52,152,219,0.3);
+      margin-bottom: 1rem; text-align: center;
+    }
+    .wtp-silhouette-wrap { position: relative; width: 140px; height: 185px; margin-bottom: 1rem; }
+    .wtp-player-img {
+      width: 100%; height: 100%; object-fit: cover; object-position: top;
       filter: brightness(0) saturate(100%);
     }
-    .wtp-silhouette-box .wtp-qmark-big {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(36px, 10vw, 52px);
-      color: #0DBF7A;
-      opacity: 0.65;
-      line-height: 1;
+    .wtp-glow {
+      position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
+      width: 100px; height: 30px;
+      background: radial-gradient(ellipse, rgba(52,152,219,0.2) 0%, transparent 70%);
     }
-    .wtp-stats-row {
-      flex: 1;
-      display: flex;
-      min-width: 0;
+    .wtp-qmarks {
+      font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 1.5rem;
+      color: rgba(52,152,219,0.4); letter-spacing: 0.4em; text-align: center;
     }
-    .wtp-stat {
-      flex: 1;
-      text-align: center;
-      padding: 0 4px;
-      border-right: 1px solid #1a2e1f;
+    .wtp-clues-panel { padding: 1.5rem; }
+    .wtp-clues-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .wtp-clues-title { font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.3); }
+    .wtp-clue-count { font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.8rem; color: #3498db; }
+    .wtp-clue {
+      display: flex; align-items: flex-start; gap: 0.875rem;
+      padding: 0.875rem 1rem; margin-bottom: 0.625rem;
+      background: rgba(52,152,219,0.05); border: 1px solid rgba(52,152,219,0.1);
+      border-radius: 10px; transition: all 0.3s ease;
     }
-    .wtp-stat:last-child { border-right: none; }
-    .wtp-stat-val {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(20px, 5vw, 28px);
-      color: #0DBF7A;
-      line-height: 1;
-    }
-    .wtp-stat-val.identity {
-      font-size: clamp(18px, 4.5vw, 24px);
-      opacity: 0.22;
-    }
-    .wtp-stat-lbl {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: clamp(7px, 1.8vw, 9px);
-      font-weight: 700;
-      color: #2a4a30;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      margin-top: 2px;
-    }
-
-    /* ── CLUES LIST ── */
-    .wtp-clues-section {
-      flex: 1;
-      min-height: 0;
-      display: flex;
-      flex-direction: column;
-      padding: 8px 12px 4px;
-      gap: 4px;
-      overflow: hidden;
-    }
-
-    .wtp-clue-row {
-      display: flex;
-      align-items: center;
-      border-radius: 6px;
-      overflow: hidden;
-      border: 1px solid #1a1a1a;
-      flex-shrink: 0;
-    }
-    .wtp-clue-row.active { border-color: #0DBF7A; }
-
-    .wtp-clue-num {
-      width: clamp(26px, 7vw, 32px);
-      align-self: stretch;
-      background: #111;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(13px, 3.5vw, 17px);
-      color: #222;
-      flex-shrink: 0;
-    }
-    .wtp-clue-row.active .wtp-clue-num {
-      background: #0DBF7A;
-      color: #021a0d;
-    }
-
-    .wtp-clue-inner {
-      flex: 1;
-      padding: 5px 8px;
-      background: #0a0a0a;
-      min-width: 0;
-    }
-    .wtp-clue-tag {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: clamp(7px, 1.8vw, 9px);
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: #2a2a2a;
-      margin-bottom: 1px;
-    }
-    .wtp-clue-row.active .wtp-clue-tag { color: rgba(13,191,122,0.55); }
-    .wtp-clue-text {
-      font-family: 'Barlow', sans-serif;
-      font-size: clamp(10px, 2.5vw, 12px);
-      font-weight: 500;
-      color: #1a1a1a;
-      line-height: 1.3;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .wtp-clue-row.active .wtp-clue-text { color: rgba(255,255,255,0.88); white-space: normal; }
-
-    .wtp-clue-pts {
-      padding: 0 8px;
-      background: #0a0a0a;
-      display: flex;
-      align-items: center;
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(11px, 2.8vw, 14px);
-      color: #1e3a24;
-      border-left: 1px solid #1a1a1a;
-      flex-shrink: 0;
-      align-self: stretch;
-    }
-    .wtp-clue-row.active .wtp-clue-pts { color: #0DBF7A; }
-
-    /* ── GUESS FOOTER ── */
-    .wtp-guess-footer {
-      flex-shrink: 0;
-      padding: 8px 12px 12px;
-      padding-bottom: max(12px, env(safe-area-inset-bottom));
-      border-top: 1px solid #1a1a1a;
-      background: rgba(8,12,46,0.6);
-    }
-    .wtp-feedback {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-align: center;
-      height: 16px;
-      margin-bottom: 5px;
-    }
-    .wtp-feedback.wrong-guess { color: #ff4d6d; }
-    .wtp-feedback.close-guess { color: #F5B800; }
-
-    .wtp-input-row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 6px;
-    }
+    .wtp-clue.locked { opacity: 0.25; background: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.04); }
+    .wtp-clue.revealed { animation: clueReveal 0.4s ease; }
+    @keyframes clueReveal { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+    .wtp-clue-num { font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 1.3rem; color: #3498db; line-height: 1; min-width: 16px; }
+    .wtp-clue.locked .wtp-clue-num { color: rgba(255,255,255,0.1); }
+    .wtp-clue-content { flex: 1; }
+    .wtp-clue-label { font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.25); margin-bottom: 2px; }
+    .wtp-clue-text { font-size: 0.9rem; font-weight: 600; color: var(--white); line-height: 1.3; }
+    .wtp-clue.locked .wtp-clue-text { color: rgba(255,255,255,0.08); }
+    .wtp-pts-badge { font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.7rem; letter-spacing: 0.08em; padding: 3px 8px; border-radius: 4px; white-space: nowrap; background: rgba(52,152,219,0.1); color: #3498db; border: 1px solid rgba(52,152,219,0.2); }
+    .wtp-clue.locked .wtp-pts-badge { background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.04); }
+    .wtp-guess-section { padding: 1rem 1.5rem 1.5rem; border-top: 1px solid rgba(52,152,219,0.1); }
+    .wtp-guess-label { font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 0.625rem; }
+    .wtp-guess-row { display: flex; gap: 0.625rem; }
     .wtp-guess-input {
-      flex: 1;
-      background: #111;
-      border: 1px solid #1e1e1e;
-      border-radius: 7px;
-      height: 40px;
-      padding: 0 12px;
-      color: var(--white);
-      font-family: 'Barlow', sans-serif;
-      font-size: 14px;
-      outline: none;
-      transition: border-color 0.2s;
+      flex: 1; background: rgba(52,152,219,0.06); border: 1px solid rgba(52,152,219,0.2);
+      border-radius: 8px; padding: 0.75rem 1rem; color: var(--white);
+      font-family: 'Barlow',sans-serif; font-size: 0.95rem; outline: none;
     }
-    .wtp-guess-input:focus { border-color: rgba(13,191,122,0.4); }
+    .wtp-guess-input:focus { border-color: rgba(52,152,219,0.5); background: rgba(52,152,219,0.08); }
     .wtp-guess-input::placeholder { color: rgba(255,255,255,0.2); }
-
     .wtp-guess-btn {
-      height: 40px;
-      padding: 0 16px;
-      border-radius: 7px;
-      background: #0DBF7A;
-      border: none;
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 16px;
-      color: #021a0d;
-      letter-spacing: 0.06em;
-      cursor: pointer;
-      white-space: nowrap;
-      flex-shrink: 0;
+      background: #1a4a6a; border: 1px solid #1a5a8a; border-radius: 8px;
+      padding: 0.75rem 1.25rem; color: #3498db; font-family: 'Barlow Condensed',sans-serif;
+      font-weight: 700; font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase;
+      cursor: pointer; transition: background 0.2s; white-space: nowrap;
     }
-    .wtp-guess-btn:hover { background: #0aab6c; }
-
+    .wtp-guess-btn:hover { background: #1a5a8a; }
     .wtp-reveal-btn {
-      width: 100%;
-      height: 32px;
-      border-radius: 7px;
-      border: 1px solid #1e3a24;
-      background: transparent;
-      color: #2a4a30;
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: all 0.2s;
+      width: 100%; margin-top: 0.625rem; background: transparent;
+      border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;
+      padding: 0.625rem; color: rgba(255,255,255,0.3);
+      font-family: 'Barlow Condensed',sans-serif; font-weight: 700;
+      font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase;
+      cursor: pointer; transition: all 0.2s;
     }
-    .wtp-reveal-btn:hover { border-color: #0DBF7A; color: #0DBF7A; }
-
-    /* ── RESULT SCREEN ── */
-    .wtp-result-shell {
-      flex: 1;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      padding: 1.5rem 1rem 2rem;
+    .wtp-reveal-btn:hover { border-color: rgba(255,255,255,0.15); color: rgba(255,255,255,0.5); }
+    .wtp-score-strip {
+      background: rgba(2,13,26,0.8); border-top: 1px solid rgba(52,152,219,0.1);
+      padding: 0.875rem 1.5rem; display: flex; align-items: center;
+      justify-content: space-between; flex-wrap: wrap; gap: 1rem;
     }
-    .wtp-result {
-      border-radius: 16px;
-      padding: 2rem 1.5rem;
-      text-align: center;
-      max-width: 500px;
-      margin: 0 auto;
-    }
-    .wtp-result.correct { background: linear-gradient(135deg, #021a02, #080c2e); border: 1px solid rgba(0,214,143,0.3); }
-    .wtp-result.wrong   { background: linear-gradient(135deg, #1a0202, #080c2e); border: 1px solid rgba(255,77,109,0.3); }
-    .wtp-result-main {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(2.5rem, 10vw, 3.5rem);
-      text-transform: uppercase;
-      line-height: 1;
-      margin: 0.5rem 0;
-    }
+    .wtp-score-item { text-align: center; }
+    .wtp-score-val { font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 1.4rem; color: #3498db; line-height: 1; }
+    .wtp-score-lbl { font-family: 'Barlow Condensed',sans-serif; font-weight: 600; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(52,152,219,0.4); margin-top: 2px; }
+    .wtp-divider { width: 1px; height: 28px; background: rgba(52,152,219,0.1); }
+    .wtp-result { border-radius: 20px; padding: 2.5rem; text-align: center; }
+    .wtp-result.correct { background: linear-gradient(135deg, #021a02, #020d1a); border: 1px solid rgba(0,214,143,0.3); }
+    .wtp-result.wrong { background: linear-gradient(135deg, #1a0202, #020d1a); border: 1px solid rgba(255,77,109,0.3); }
+    .wtp-result-main { font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 3.5rem; text-transform: uppercase; line-height: 1; margin: 0.75rem 0; }
     .wtp-result.correct .wtp-result-main { color: var(--success); }
-    .wtp-result.wrong   .wtp-result-main { color: var(--error); }
+    .wtp-result.wrong .wtp-result-main { color: var(--error); }
     .wtp-player-reveal {
-      display: flex;
-      align-items: center;
-      gap: 1.25rem;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 12px;
-      padding: 1rem 1.25rem;
-      margin: 1.25rem 0;
+      display: flex; align-items: center; gap: 1.5rem;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; padding: 1.25rem 1.5rem; margin: 1.5rem 0;
       text-align: left;
     }
-    .wtp-player-img-reveal { width: 72px; height: 72px; object-fit: cover; object-position: top; border-radius: 10px; }
-    .wtp-player-name { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; text-transform: uppercase; color: var(--white); line-height: 1; }
-    .wtp-player-details { font-size: 0.82rem; color: var(--gray); margin-top: 0.3rem; }
+    .wtp-player-img-reveal { width: 80px; height: 80px; object-fit: cover; object-position: top; border-radius: 10px; }
+    .wtp-player-name { font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 1.75rem; text-transform: uppercase; color: var(--white); line-height: 1; }
+    .wtp-player-details { font-size: 0.85rem; color: var(--gray); margin-top: 0.35rem; }
+    .guess-feedback { text-align: center; padding: 0.5rem; font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.9rem; letter-spacing: 0.08em; text-transform: uppercase; min-height: 2rem; }
+    .guess-feedback.wrong-guess { color: var(--error); }
+    .guess-feedback.close-guess { color: var(--gold); }
+    @media (max-width: 600px) {
+      .wtp-body { grid-template-columns: 1fr; }
+      .wtp-silhouette-panel { border-right: none; border-bottom: 1px solid rgba(52,152,219,0.1); min-height: 200px; }
+    }
+  
+/* ── TECHNICAL FOUL OVERLAY ── */
+#tech-foul-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  background: rgba(0,0,0,0.95);
+  z-index: 999999;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  padding: 2rem;
+  font-family: 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+#tech-foul-overlay.active {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+}
+.tf-whistle { font-size: 4rem; margin-bottom: 0.5rem; }
+.tf-title { font-size: clamp(2.5rem, 10vw, 4.5rem); font-weight: 900; color: #E8470A; letter-spacing: 0.05em; text-transform: uppercase; line-height: 1; margin-bottom: 0.5rem; }
+.tf-subtitle { font-size: clamp(1rem, 4vw, 1.3rem); color: #f0f0f8; margin-bottom: 0.5rem; font-weight: 600; }
+.tf-rule { font-size: 0.95rem; color: #8888aa; margin-bottom: 2rem; max-width: 400px; line-height: 1.5; font-family: sans-serif; font-weight: 400; }
+.tf-score { font-size: clamp(3rem, 12vw, 5rem); font-weight: 900; color: #F5B800; line-height: 1; margin-bottom: 0.25rem; }
+.tf-score-label { font-size: 0.85rem; color: #8888aa; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2rem; }
+.tf-btn { background: #E8470A; color: #fff; border: none; border-radius: 10px; padding: 14px 40px; font-family: 'Barlow Condensed', Arial, sans-serif; font-size: 1.1rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; }
+.tf-btn:hover { background: #c93d08; }
 
-    /* ── TECH FOUL OVERLAY ── */
-    #tech-foul-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.95);
-      z-index: 999999;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      text-align: center;
-      padding: 2rem;
-      font-family: 'Bebas Neue', Arial, sans-serif;
-      overflow-y: auto;
-    }
-    #tech-foul-overlay.active {
-      display: flex;
-    }
-    .tf-whistle { font-size: 3.5rem; margin-bottom: 0.5rem; }
-    .tf-title { font-size: clamp(2.5rem, 10vw, 4.5rem); font-weight: 900; color: #E8470A; letter-spacing: 0.05em; text-transform: uppercase; line-height: 1; margin-bottom: 0.5rem; }
-    .tf-subtitle { font-size: clamp(1rem, 4vw, 1.3rem); color: #f0f0f8; margin-bottom: 0.5rem; font-weight: 600; font-family: 'Barlow Condensed', sans-serif; }
-    .tf-score { font-size: clamp(3rem, 12vw, 5rem); color: #F5B800; line-height: 1; margin-bottom: 0.25rem; }
-    .tf-score-label { font-size: 0.85rem; color: #8888aa; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2rem; font-family: 'Barlow Condensed', sans-serif; }
-    .tf-rule { font-size: 0.9rem; color: #8888aa; margin-bottom: 2rem; max-width: 380px; line-height: 1.5; font-family: 'Barlow', sans-serif; }
-    .tf-btn { background: #E8470A; color: #fff; border: none; border-radius: 10px; padding: 12px 36px; font-family: 'Barlow Condensed', Arial, sans-serif; font-size: 1.1rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; }
-    .tf-btn:hover { background: #c93d08; }
-  </style>
+</style>
 </head>
 <body>
-
 <nav>
   <a class="nav-logo" href="/"><img src="/images/logo-yeti-orange.png" alt="FlurrySports" style="height:48px;width:auto;"></a>
   <ul class="nav-links">
@@ -390,96 +207,180 @@
   </div>
 </nav>
 
-<div class="wtp-page">
-  <div class="wtp-card" id="wtp-container">
-    <div class="spinner" style="margin:auto;"></div>
+<div class="wtp-shell">
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;">
+    <a href="/" style="color:var(--gray);text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.9rem;letter-spacing:0.08em;text-transform:uppercase;">← Back to Games</a>
   </div>
-</div>
-
-<!-- Tech Foul Overlay -->
-<div id="tech-foul-overlay">
-  <div class="tf-whistle">📋</div>
-  <div class="tf-title">Technical Foul!</div>
-  <div class="tf-subtitle">You left the game early</div>
-  <div class="tf-score" id="tf-final-score">0</div>
-  <div class="tf-score-label">Points Forfeited</div>
-  <div class="tf-rule">Leaving mid-game costs you your score. Come back tomorrow for a new challenge!</div>
-  <a href="/" class="tf-btn">Back to Games</a>
+  <div id="wtp-container"><div class="spinner"></div></div>
 </div>
 
 <script src="/js/auth.js"></script>
 <script>
 function getPacificOffsetMinutes(d) {
     const y = d.getUTCFullYear();
-    const marchSecond = new Date(Date.UTC(y, 2, 8, 2, 0, 0));
-    marchSecond.setUTCDate(8 + (7 - marchSecond.getUTCDay()) % 7);
-    const novFirst = new Date(Date.UTC(y, 10, 1, 2, 0, 0));
-    novFirst.setUTCDate(1 + (7 - novFirst.getUTCDay()) % 7);
-    return (d >= marchSecond && d < novFirst) ? -420 : -480;
-}
-function dateSeed() {
+    const dstStart = new Date(Date.UTC(y, 2, 14 - (new Date(Date.UTC(y, 2, 1)).getUTCDay() + 6) % 7, 10));
+    const dstEnd   = new Date(Date.UTC(y, 10, 7  - (new Date(Date.UTC(y, 10, 1)).getUTCDay() + 6) % 7, 9));
+    return (d >= dstStart && d < dstEnd) ? -7*60 : -8*60;
+  }
+  function dateSeed() {
     const d = new Date();
-    const offset = d.getTime() + getPacificOffsetMinutes(d) * 60000;
-    const s = new Date(offset).toISOString().slice(0,10).replace(/-/g,'');
-    return parseInt(s);
-}
+    const ms = getPacificOffsetMinutes(d) * 60000;
+    const pac = new Date(d.getTime() + ms);
+    return parseInt(pac.toISOString().slice(0,10).replace(/-/g,''));
+  }
+  function seededRandom(seed) {
+    let s = seed;
+    return function() { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+  }
 
+  // ── Photo fallback chain ──────────────────────────────────────
+  // Primary: ESPN combiner URL  
+  // Fallback: ESPN direct PNG (no combiner params)
+  // Final: show SVG silhouette
+  function handleImgError(img, espnId, league) {
+    var tried = img.dataset.fallback || '0';
+    if (tried === '0' && espnId) {
+      img.dataset.fallback = '1';
+      if (league === 'NBA') {
+        var nbaId = img.dataset.nbaId || espnId;
+        img.src = 'https://cdn.nba.com/headshots/nba/latest/260x190/' + nbaId + '.png';
+      } else {
+        img.src = 'https://a.espncdn.com/i/headshots/nfl/players/full/' + espnId + '.png';
+      }
+    } else {
+      img.style.display = 'none';
+      var svg = document.getElementById('fallback-svg');
+      if (svg) svg.style.display = 'block';
+    }
+  }
+
+  function handleRevealImgError(img, espnId, league) {
+    var tried = img.dataset.fallback || '0';
+    if (tried === '0' && espnId) {
+      img.dataset.fallback = '1';
+      if (league === 'NBA') {
+        var nbaId = img.dataset.nbaId || espnId;
+        img.src = 'https://cdn.nba.com/headshots/nba/latest/260x190/' + nbaId + '.png';
+      } else {
+        img.src = 'https://a.espncdn.com/i/headshots/nfl/players/full/' + espnId + '.png';
+      }
+    } else {
+      img.style.opacity = '0.3';
+    }
+  }else {
+      img.style.opacity = '0.3';
+    }
+  }
+
+  // ── Player pools (pre-shuffled, 52 NFL + 59 NBA, zero repeats for 90+ days) ──
+  // ── Player pools (50 NFL + 50 NBA) ─────────────────────────────
   var NFL_PLAYERS = [
-    {name:"Patrick Mahomes",espnId:"3139477",pos:"QB",team:"Kansas City Chiefs",college:"Texas Tech",drafted:"2017 · 1st · Pick 10",clues:[{label:"Position",text:"Quarterback in the AFC West"},{label:"College",text:"Played at Texas Tech"},{label:"Draft",text:"10th overall pick in 2017"},{label:"Titles",text:"Multiple Super Bowl wins with Kansas City"},{label:"Award",text:"Won the NFL MVP in just his second season as a starter"}]},
-    {name:"Josh Allen",espnId:"3918298",pos:"QB",team:"Buffalo Bills",college:"Wyoming",drafted:"2018 · 1st · Pick 7",clues:[{label:"Position",text:"Quarterback in the AFC East"},{label:"College",text:"Played at Wyoming, was not a top recruit"},{label:"Draft",text:"7th overall pick in 2018"},{label:"Style",text:"Known for elite arm strength and rushing ability"},{label:"Leader",text:"Rebuilt the Buffalo Bills into consistent playoff contenders"}]},
-    {name:"Jalen Hurts",espnId:"4040715",pos:"QB",team:"Philadelphia Eagles",college:"Alabama/Oklahoma",drafted:"2020 · 2nd · Pick 53",clues:[{label:"Position",text:"Quarterback in the NFC East"},{label:"College",text:"Started at Alabama, transferred to Oklahoma"},{label:"Draft",text:"53rd overall pick in 2020"},{label:"Rise",text:"Won the starting job from Carson Wentz in his rookie year"},{label:"Season",text:"Led the Eagles to the Super Bowl in the 2022 season"}]},
-    {name:"Lamar Jackson",espnId:"3916387",pos:"QB",team:"Baltimore Ravens",college:"Louisville",drafted:"2018 · 1st · Pick 32",clues:[{label:"Position",text:"Quarterback in the AFC North"},{label:"College",text:"Won the Heisman Trophy at Louisville"},{label:"Draft",text:"32nd pick — last in the first round in 2018"},{label:"Award",text:"Won the NFL MVP in 2019 and 2023"},{label:"Style",text:"Revolutionized the QB position with his rushing ability"}]},
-    {name:"Joe Burrow",espnId:"3915511",pos:"QB",team:"Cincinnati Bengals",college:"LSU",drafted:"2020 · 1st · Pick 1",clues:[{label:"Position",text:"Quarterback in the AFC North"},{label:"College",text:"Won the Heisman Trophy and National Championship at LSU"},{label:"Draft",text:"#1 overall pick in 2020"},{label:"Rise",text:"Led Cincinnati to the Super Bowl in just his second season"},{label:"Injury",text:"Has dealt with significant injuries throughout his career"}]},
-    {name:"Justin Jefferson",espnId:"4262921",pos:"WR",team:"Minnesota Vikings",college:"LSU",drafted:"2020 · 1st · Pick 22",clues:[{label:"Position",text:"Wide Receiver in the NFC North"},{label:"College",text:"Played at LSU alongside Joe Burrow"},{label:"Draft",text:"22nd overall pick in 2020"},{label:"Record",text:"Set the NFL record for receiving yards in a player's first two seasons"},{label:"Award",text:"Won the NFL Offensive Player of the Year in 2022"}]},
-    {name:"Tyreek Hill",espnId:"3054188",pos:"WR",team:"Miami Dolphins",college:"West Alabama",drafted:"2016 · 5th · Pick 165",clues:[{label:"Position",text:"Wide Receiver in the AFC East"},{label:"College",text:"Played at West Alabama after being dismissed from Oklahoma State"},{label:"Draft",text:"5th round pick in 2016"},{label:"Nickname",text:"Known as Cheetah for his elite speed"},{label:"Trade",text:"Was traded from Kansas City to Miami in 2022"}]},
-    {name:"Travis Kelce",espnId:"15847",pos:"TE",team:"Kansas City Chiefs",college:"Cincinnati",drafted:"2013 · 3rd · Pick 63",clues:[{label:"Position",text:"Tight End in the AFC West"},{label:"College",text:"Played at the University of Cincinnati"},{label:"Draft",text:"63rd overall pick in 2013"},{label:"Records",text:"The most prolific receiving tight end in NFL history"},{label:"Titles",text:"Multiple Super Bowl championships with the Chiefs"}]},
-    {name:"Nick Bosa",espnId:"3728263",pos:"DE",team:"San Francisco 49ers",college:"Ohio State",drafted:"2019 · 1st · Pick 2",clues:[{label:"Position",text:"Defensive End in the NFC West"},{label:"College",text:"Played at Ohio State before a foot injury ended his season early"},{label:"Draft",text:"2nd overall pick in 2019"},{label:"Award",text:"Won the NFL Defensive Player of the Year in 2022"},{label:"Family",text:"His father and brother both played in the NFL"}]},
-    {name:"T.J. Watt",espnId:"3052876",pos:"LB",team:"Pittsburgh Steelers",college:"Wisconsin",drafted:"2017 · 1st · Pick 30",clues:[{label:"Position",text:"Linebacker in the AFC North"},{label:"College",text:"Played at Wisconsin"},{label:"Draft",text:"30th overall pick in 2017"},{label:"Record",text:"Tied the all-time NFL sack record in a single season"},{label:"Award",text:"Won the NFL Defensive Player of the Year award"},{label:"Family",text:"His brother J.J. Watt is a three-time DPOY"}]},
-    {name:"Davante Adams",espnId:"16737",pos:"WR",team:"New York Jets",college:"Fresno State",drafted:"2014 · 2nd · Pick 53",clues:[{label:"Position",text:"Wide Receiver in the AFC East"},{label:"College",text:"Played at Fresno State"},{label:"Draft",text:"53rd overall pick in 2014"},{label:"Partnership",text:"One of the best WR-QB duos with Aaron Rodgers in Green Bay"},{label:"Trade",text:"Was traded to the Raiders to reunite with his college QB"}]},
-    {name:"CeeDee Lamb",espnId:"4259545",pos:"WR",team:"Dallas Cowboys",college:"Oklahoma",drafted:"2020 · 1st · Pick 17",clues:[{label:"Position",text:"Wide Receiver in the NFC East"},{label:"College",text:"Played at Oklahoma"},{label:"Draft",text:"17th overall pick in 2020"},{label:"Surprise",text:"Fell to Dallas due to off-field concerns, considered a steal"},{label:"Season",text:"Broke the Cowboys single-season receiving record in 2023"}]},
-    {name:"Stefon Diggs",espnId:"2980453",pos:"WR",team:"Houston Texans",college:"Maryland",drafted:"2015 · 5th · Pick 145",clues:[{label:"Position",text:"Wide Receiver in the AFC South"},{label:"College",text:"Played at Maryland"},{label:"Draft",text:"5th round pick in 2015"},{label:"Miracle",text:"Caught the Minneapolis Miracle in the 2017 NFC playoffs"},{label:"Trade",text:"Was traded from Minnesota to Buffalo in 2020"}]},
-    {name:"Micah Parsons",espnId:"4569618",pos:"LB",team:"Dallas Cowboys",college:"Penn State",drafted:"2021 · 1st · Pick 12",clues:[{label:"Position",text:"Linebacker in the NFC East"},{label:"College",text:"Played at Penn State"},{label:"Draft",text:"12th overall pick in 2021"},{label:"Rookie",text:"Was a Defensive Rookie of the Year finalist in 2021"},{label:"Versatility",text:"Lines up as both a linebacker and edge rusher"}]},
-    {name:"Cooper Kupp",espnId:"3054220",pos:"WR",team:"Los Angeles Rams",college:"Eastern Washington",drafted:"2017 · 3rd · Pick 69",clues:[{label:"Position",text:"Wide Receiver in the NFC West"},{label:"College",text:"Came from small-school Eastern Washington"},{label:"Draft",text:"69th overall pick in 2017"},{label:"Season",text:"Had one of the greatest receiving seasons in NFL history in 2021"},{label:"Award",text:"Won the Super Bowl MVP and Triple Crown in 2021"}]},
-    {name:"Quenton Nelson",espnId:"3915400",pos:"G",team:"Indianapolis Colts",college:"Notre Dame",drafted:"2018 · 1st · Pick 6",clues:[{label:"Position",text:"Offensive Guard in the AFC South"},{label:"College",text:"Played at Notre Dame"},{label:"Draft",text:"6th overall pick in 2018"},{label:"Debut",text:"Made the Pro Bowl in his rookie season"},{label:"Style",text:"Known for his rare ability to pull and lead block at his size"}]},
-    {name:"Darius Leonard",espnId:"3051922",pos:"LB",team:"Indianapolis Colts",college:"South Carolina State",drafted:"2018 · 2nd · Pick 36",clues:[{label:"Position",text:"Linebacker in the AFC South"},{label:"College",text:"Came from South Carolina State, an HBCU"},{label:"Draft",text:"36th overall pick in 2018"},{label:"Rookie",text:"Won Defensive Rookie of the Year in 2018"},{label:"Nickname",text:"Known as the Maniac for his relentless play style"}]},
-    {name:"Demario Davis",espnId:"14975",pos:"LB",team:"New Orleans Saints",college:"Arkansas State",drafted:"2012 · 3rd · Pick 77",clues:[{label:"Position",text:"Linebacker in the NFC South"},{label:"College",text:"Played at Arkansas State"},{label:"Draft",text:"3rd round pick in 2012"},{label:"Longevity",text:"Has been a consistent Pro Bowler well into his 30s"},{label:"Leadership",text:"Known as one of the most respected team leaders in the league"}]},
-    {name:"Dalvin Cook",espnId:"3054245",pos:"RB",team:"Free Agent",college:"Florida State",drafted:"2017 · 2nd · Pick 41",clues:[{label:"Position",text:"Running Back, most recently with the Jets"},{label:"College",text:"Played at Florida State"},{label:"Draft",text:"41st overall pick in 2017"},{label:"Injury",text:"Suffered a torn ACL in his rookie season"},{label:"Peak",text:"Had back-to-back 1,000+ yard seasons for the Vikings"}]},
+    {name:"Patrick Mahomes",espnId:"3139477",pos:"QB",team:"Kansas City Chiefs",college:"Texas Tech",drafted:"2017 \u00b7 1st \u00b7 Pick 10",clues:[{label:"Position",text:"Quarterback for an AFC powerhouse"},{label:"College",text:"Played at Texas Tech before the NFL"},{label:"Draft",text:"10th overall pick in 2017"},{label:"Record",text:"Threw 50 TD passes in his first full season as starter"},{label:"Family",text:"His father pitched in MLB for over a decade"}]},
+    {name:"Josh Allen",espnId:"3918298",pos:"QB",team:"Buffalo Bills",college:"Wyoming",drafted:"2018 \u00b7 1st \u00b7 Pick 7",clues:[{label:"Position",text:"Quarterback in the AFC East"},{label:"College",text:"Came out of Wyoming, a smaller school"},{label:"Draft",text:"7th overall pick in 2018"},{label:"Rushing",text:"One of the most dangerous dual-threat QBs in the league"},{label:"Season",text:"Threw 49 touchdowns in a breakout 2020 season"}]},
+    {name:"Lamar Jackson",espnId:"3916387",pos:"QB",team:"Baltimore Ravens",college:"Louisville",drafted:"2018 \u00b7 1st \u00b7 Pick 32",clues:[{label:"Position",text:"Quarterback in the AFC North"},{label:"College",text:"Won the Heisman Trophy at Louisville"},{label:"Draft",text:"Last pick of the first round in 2018"},{label:"Record",text:"Holds the NFL record for most rushing yards by a QB in a season"},{label:"Awards",text:"Has won multiple NFL MVP awards"}]},
+    {name:"Jalen Hurts",espnId:"4040715",pos:"QB",team:"Philadelphia Eagles",college:"Oklahoma/Alabama",drafted:"2020 \u00b7 2nd \u00b7 Pick 53",clues:[{label:"Position",text:"Quarterback in the NFC East"},{label:"College",text:"Transferred from Alabama to Oklahoma"},{label:"Draft",text:"2nd round, 53rd overall in 2020"},{label:"Season",text:"Led his team to the Super Bowl in his second year as starter"},{label:"Style",text:"One of the most effective rushing QBs in the league"}]},
+    {name:"Joe Burrow",espnId:"4241479",pos:"QB",team:"Cincinnati Bengals",college:"LSU",drafted:"2020 \u00b7 1st \u00b7 Pick 1",clues:[{label:"Position",text:"Quarterback in the AFC North"},{label:"College",text:"Won the Heisman and a national title at LSU"},{label:"Draft",text:"#1 overall pick in 2020"},{label:"Injury",text:"Tore his ACL in his rookie season"},{label:"Success",text:"Led Cincinnati to the Super Bowl in just his second year"}]},
+    {name:"Justin Herbert",espnId:"4038941",pos:"QB",team:"Los Angeles Chargers",college:"Oregon",drafted:"2020 \u00b7 1st \u00b7 Pick 6",clues:[{label:"Position",text:"Quarterback in the AFC West"},{label:"College",text:"Played at the University of Oregon"},{label:"Draft",text:"6th overall pick in 2020"},{label:"Record",text:"Set the record for most TD passes by a rookie QB"},{label:"Style",text:"Known for his elite arm strength and quick release"}]},
+    {name:"Dak Prescott",espnId:"2577417",pos:"QB",team:"Dallas Cowboys",college:"Mississippi State",drafted:"2016 \u00b7 4th \u00b7 Pick 135",clues:[{label:"Position",text:"Quarterback for America's Team"},{label:"College",text:"Played at Mississippi State"},{label:"Draft",text:"4th round steal in the 2016 Draft"},{label:"Debut",text:"Won Offensive Rookie of the Year in 2016"},{label:"Contract",text:"Signed one of the largest QB contracts in NFL history"}]},
+    {name:"Tua Tagovailoa",espnId:"4241470",pos:"QB",team:"Miami Dolphins",college:"Alabama",drafted:"2020 \u00b7 1st \u00b7 Pick 5",clues:[{label:"Position",text:"Quarterback in the AFC East"},{label:"College",text:"Won a national championship at Alabama"},{label:"Draft",text:"5th overall pick in 2020"},{label:"Style",text:"Known for his quick release and accuracy"},{label:"Milestone",text:"Led the NFL in passer rating in the 2022 season"}]},
+    {name:"Geno Smith",espnId:"15864",pos:"QB",team:"Seattle Seahawks",college:"West Virginia",drafted:"2013 \u00b7 2nd \u00b7 Pick 39",clues:[{label:"Position",text:"Quarterback in the NFC West"},{label:"College",text:"Played at West Virginia"},{label:"Draft",text:"2nd round pick in 2013"},{label:"Journey",text:"Spent years as a backup before reclaiming a starting role"},{label:"Award",text:"Won NFL Comeback Player of the Year in 2022"}]},
+    {name:"Brock Purdy",espnId:"4430737",pos:"QB",team:"San Francisco 49ers",college:"Iowa State",drafted:"2022 \u00b7 7th \u00b7 Pick 262",clues:[{label:"Position",text:"Quarterback in the NFC West"},{label:"Draft",text:"The very last pick of the 2022 Draft - Mr. Irrelevant"},{label:"Rise",text:"Became a starter when two QBs ahead of him were injured"},{label:"Success",text:"Led San Francisco to the NFC Championship Game in his first full season"},{label:"Stats",text:"Posted one of the highest passer ratings in NFL history in his breakout year"}]},
+    {name:"CeeDee Lamb",espnId:"4241389",pos:"WR",team:"Dallas Cowboys",college:"Oklahoma",drafted:"2020 \u00b7 1st \u00b7 Pick 17",clues:[{label:"Position",text:"Wide Receiver in the NFC East"},{label:"College",text:"Played at Oklahoma"},{label:"Draft",text:"17th overall pick in 2020"},{label:"Season",text:"Led the entire NFL in receiving yards in 2024"},{label:"Class",text:"Part of arguably the greatest WR draft class ever"}]},
+    {name:"Justin Jefferson",espnId:"4241464",pos:"WR",team:"Minnesota Vikings",college:"LSU",drafted:"2020 \u00b7 1st \u00b7 Pick 22",clues:[{label:"Position",text:"Wide Receiver in the NFC North"},{label:"College",text:"Won a national title at LSU in 2019"},{label:"Draft",text:"22nd overall pick in 2020"},{label:"Record",text:"Most receiving yards through the first four NFL seasons ever"},{label:"Celebration",text:"Famous for the Griddy touchdown celebration"}]},
+    {name:"Tyreek Hill",espnId:"3054211",pos:"WR",team:"Miami Dolphins",college:"West Alabama",drafted:"2016 \u00b7 5th \u00b7 Pick 165",clues:[{label:"Position",text:"Wide Receiver in the AFC East"},{label:"Background",text:"Was a competitive track athlete in college"},{label:"Trade",text:"Traded from Kansas City to Miami in 2022"},{label:"Nickname",text:"Known as the Cheetah for elite speed"},{label:"Record",text:"Set the single-game receiving yards record with 215"}]},
+    {name:"Davante Adams",espnId:"2976499",pos:"WR",team:"Las Vegas Raiders",college:"Fresno State",drafted:"2014 \u00b7 2nd \u00b7 Pick 53",clues:[{label:"Position",text:"Wide Receiver in the AFC West"},{label:"College",text:"Played at Fresno State"},{label:"Connection",text:"Longtime college and pro teammate with his QB"},{label:"Style",text:"Known for his elite route running"},{label:"Trade",text:"Reunited with his college QB after a trade to Las Vegas"}]},
+    {name:"Stefon Diggs",espnId:"2976592",pos:"WR",team:"Houston Texans",college:"Maryland",drafted:"2015 \u00b7 5th \u00b7 Pick 146",clues:[{label:"Position",text:"Wide Receiver in the AFC South"},{label:"College",text:"Played at Maryland"},{label:"Miracle",text:"Caught the Minneapolis Miracle touchdown in the 2017 playoffs"},{label:"Trade",text:"Was traded from Minnesota to Buffalo in 2020"},{label:"Production",text:"Has four 1,000-yard receiving seasons in his career"}]},
+    {name:"A.J. Brown",espnId:"4047365",pos:"WR",team:"Philadelphia Eagles",college:"Ole Miss",drafted:"2019 \u00b7 2nd \u00b7 Pick 51",clues:[{label:"Position",text:"Wide Receiver in the NFC East"},{label:"College",text:"Played at Ole Miss"},{label:"Trade",text:"Was traded from Tennessee to Philadelphia in 2022"},{label:"Style",text:"Known for his physicality after the catch"},{label:"Season",text:"Had over 1,400 receiving yards in his first Eagles season"}]},
+    {name:"Ja'Marr Chase",espnId:"4362628",pos:"WR",team:"Cincinnati Bengals",college:"LSU",drafted:"2021 \u00b7 1st \u00b7 Pick 5",clues:[{label:"Position",text:"Wide Receiver in the AFC North"},{label:"College",text:"Played with his current NFL QB at LSU"},{label:"Draft",text:"5th overall pick in 2021"},{label:"Record",text:"Set the NFL record for most receiving yards by a rookie"},{label:"Decision",text:"Opted out of the 2020 college season to prepare for the draft"}]},
+    {name:"Cooper Kupp",espnId:"3054010",pos:"WR",team:"Los Angeles Rams",college:"Eastern Washington",drafted:"2017 \u00b7 3rd \u00b7 Pick 69",clues:[{label:"Position",text:"Wide Receiver in the NFC West"},{label:"College",text:"Came from Eastern Washington, an FCS school"},{label:"Season",text:"Had the greatest receiving season in NFL history in 2021"},{label:"Awards",text:"Won Offensive Player of the Year and Super Bowl MVP in the same season"},{label:"Style",text:"Known for precise route running despite lacking elite speed"}]},
+    {name:"Amari Cooper",espnId:"2976212",pos:"WR",team:"Cleveland Browns",college:"Alabama",drafted:"2015 \u00b7 1st \u00b7 Pick 4",clues:[{label:"Position",text:"Wide Receiver in the AFC North"},{label:"College",text:"Won the Biletnikoff Award at Alabama"},{label:"Draft",text:"4th overall pick in 2015"},{label:"Teams",text:"Has played for the Raiders, Cowboys, Browns, and Bills"},{label:"Style",text:"Known for his smooth routes and reliable hands"}]},
+    {name:"DeAndre Hopkins",espnId:"15795",pos:"WR",team:"Tennessee Titans",college:"Clemson",drafted:"2013 \u00b7 1st \u00b7 Pick 27",clues:[{label:"Position",text:"Wide Receiver in the AFC South"},{label:"College",text:"Played at Clemson"},{label:"Draft",text:"27th overall pick in 2013"},{label:"Catch",text:"Made the famous Hail Murray catch in the 2020 playoffs"},{label:"Style",text:"Known as one of the best jump-ball receivers ever"}]},
+    {name:"Travis Kelce",espnId:"2576336",pos:"TE",team:"Kansas City Chiefs",college:"Cincinnati",drafted:"2013 \u00b7 3rd \u00b7 Pick 63",clues:[{label:"Position",text:"Tight End for an AFC powerhouse"},{label:"Family",text:"His brother Jason also played in the NFL as a center"},{label:"Record",text:"Most career receiving yards ever by a tight end"},{label:"Championships",text:"Has won multiple Super Bowls with his team"},{label:"Culture",text:"Became a major pop culture figure off the field"}]},
+    {name:"Sam LaPorta",espnId:"4685720",pos:"TE",team:"Detroit Lions",college:"Iowa",drafted:"2023 \u00b7 2nd \u00b7 Pick 34",clues:[{label:"Position",text:"Tight End in the NFC North"},{label:"College",text:"Played at Iowa"},{label:"Draft",text:"34th overall pick in the 2023 Draft"},{label:"Record",text:"Set the record for most receiving yards by a rookie TE"},{label:"Team",text:"Part of Detroit's ascent as an NFC contender"}]},
+    {name:"Mark Andrews",espnId:"3728253",pos:"TE",team:"Baltimore Ravens",college:"Oklahoma",drafted:"2018 \u00b7 3rd \u00b7 Pick 86",clues:[{label:"Position",text:"Tight End in the AFC North"},{label:"College",text:"Played at Oklahoma"},{label:"Draft",text:"3rd round pick in 2018"},{label:"Connection",text:"Lamar Jackson's favorite target"},{label:"Awards",text:"Multiple Pro Bowl selections as one of the top TEs in the NFL"}]},
+    {name:"George Kittle",espnId:"3054209",pos:"TE",team:"San Francisco 49ers",college:"Iowa",drafted:"2017 \u00b7 5th \u00b7 Pick 146",clues:[{label:"Position",text:"Tight End in the NFC West"},{label:"College",text:"Played at Iowa"},{label:"Record",text:"Set the single-season receiving yards record for a TE in 2018"},{label:"Style",text:"Known as one of the best blocking TEs in NFL history"},{label:"Personality",text:"Known for animated celebrations and passionate play"}]},
+    {name:"Kyle Pitts",espnId:"4373678",pos:"TE",team:"Atlanta Falcons",college:"Florida",drafted:"2021 \u00b7 1st \u00b7 Pick 4",clues:[{label:"Position",text:"Tight End in the NFC South"},{label:"College",text:"Was a dominant pass-catcher at Florida"},{label:"Draft",text:"4th overall pick - highest ever for a TE"},{label:"Rookie",text:"Set the record for most receiving yards by a TE in their rookie season"},{label:"Size",text:"Uses wide receiver athleticism in a tight end's body"}]},
+    {name:"Derrick Henry",espnId:"3054023",pos:"RB",team:"Baltimore Ravens",college:"Alabama",drafted:"2016 \u00b7 2nd \u00b7 Pick 45",clues:[{label:"Position",text:"Running Back in the AFC North"},{label:"College",text:"Won the Heisman Trophy at Alabama"},{label:"Style",text:"Known as King Henry for his bruising, physical running style"},{label:"Season",text:"Ran for 2,000 yards in the 2019 season"},{label:"Record",text:"One of only a handful of players to ever rush for 2,000+ yards in a season"}]},
+    {name:"Christian McCaffrey",espnId:"3054220",pos:"RB",team:"San Francisco 49ers",college:"Stanford",drafted:"2017 \u00b7 1st \u00b7 Pick 8",clues:[{label:"Position",text:"Running Back in the NFC West"},{label:"College",text:"Played at Stanford"},{label:"Draft",text:"8th overall pick in 2017"},{label:"Season",text:"Had 1,000 rushing AND 1,000 receiving yards in the same season"},{label:"Award",text:"Won the Offensive Player of the Year award in 2023"}]},
+    {name:"Nick Chubb",espnId:"3915513",pos:"RB",team:"Cleveland Browns",college:"Georgia",drafted:"2018 \u00b7 2nd \u00b7 Pick 35",clues:[{label:"Position",text:"Running Back in the AFC North"},{label:"College",text:"Played at Georgia, broke Herschel Walker's school records"},{label:"Draft",text:"35th overall pick in 2018"},{label:"Injury",text:"Suffered a devastating knee injury in the 2023 season"},{label:"Style",text:"Known as one of the most efficient pure runners in the league"}]},
+    {name:"Saquon Barkley",espnId:"3929630",pos:"RB",team:"Philadelphia Eagles",college:"Penn State",drafted:"2018 \u00b7 1st \u00b7 Pick 2",clues:[{label:"Position",text:"Running Back in the NFC East"},{label:"College",text:"Played at Penn State"},{label:"Draft",text:"2nd overall pick in 2018"},{label:"Rookie",text:"Won Offensive Rookie of the Year"},{label:"Season",text:"Had an incredible 2,000+ yard rushing season in 2024"}]},
+    {name:"Breece Hall",espnId:"4431611",pos:"RB",team:"New York Jets",college:"Iowa State",drafted:"2022 \u00b7 2nd \u00b7 Pick 36",clues:[{label:"Position",text:"Running Back in the AFC East"},{label:"College",text:"Played at Iowa State"},{label:"Draft",text:"36th overall pick in 2022"},{label:"Injury",text:"Tore his ACL midway through his rookie season"},{label:"Return",text:"Came back and became a Pro Bowl player in 2023"}]},
+    {name:"De'Von Achane",espnId:"4567246",pos:"RB",team:"Miami Dolphins",college:"Texas A&M",drafted:"2023 \u00b7 3rd \u00b7 Pick 84",clues:[{label:"Position",text:"Running Back in the AFC East"},{label:"College",text:"Played at Texas A&M"},{label:"Speed",text:"One of the fastest players in the NFL"},{label:"Breakout",text:"Had a record-setting game with 5 TDs in 2023"},{label:"Draft",text:"3rd round pick who became a star immediately"}]},
+    {name:"Josh Jacobs",espnId:"3915419",pos:"RB",team:"Green Bay Packers",college:"Alabama",drafted:"2019 \u00b7 1st \u00b7 Pick 24",clues:[{label:"Position",text:"Running Back in the NFC North"},{label:"College",text:"Played at Alabama"},{label:"Draft",text:"24th overall pick in 2019"},{label:"Season",text:"Won the NFL rushing title in 2022 with over 1,600 yards"},{label:"Journey",text:"Left Las Vegas for Green Bay as a free agent"}]},
+    {name:"Tony Pollard",espnId:"3918389",pos:"RB",team:"Tennessee Titans",college:"Memphis",drafted:"2019 \u00b7 4th \u00b7 Pick 128",clues:[{label:"Position",text:"Running Back in the AFC South"},{label:"College",text:"Played at Memphis"},{label:"Role",text:"Spent years as a backup before becoming a full-time starter"},{label:"Team",text:"Left Dallas after 2023 to sign with Tennessee"},{label:"Style",text:"Known for his speed and explosiveness in the open field"}]},
+    {name:"Micah Parsons",espnId:"4373199",pos:"LB",team:"Dallas Cowboys",college:"Penn State",drafted:"2021 \u00b7 1st \u00b7 Pick 12",clues:[{label:"Position",text:"Linebacker / Edge Rusher in the NFC East"},{label:"College",text:"Played at Penn State"},{label:"Draft",text:"12th overall pick in 2021"},{label:"Award",text:"Won Defensive Rookie of the Year"},{label:"Versatility",text:"Lines up as both a pass rusher and a linebacker"}]},
+    {name:"Myles Garrett",espnId:"3126486",pos:"DE",team:"Cleveland Browns",college:"Texas A&M",drafted:"2017 \u00b7 1st \u00b7 Pick 1",clues:[{label:"Position",text:"Defensive End in the AFC North"},{label:"College",text:"Played at Texas A&M"},{label:"Draft",text:"#1 overall pick in 2017"},{label:"Award",text:"Won Defensive Player of the Year in 2023"},{label:"Style",text:"Considered one of the most dominant pass rushers in NFL history"}]},
+    {name:"Nick Bosa",espnId:"4039282",pos:"DE",team:"San Francisco 49ers",college:"Ohio State",drafted:"2019 \u00b7 1st \u00b7 Pick 2",clues:[{label:"Position",text:"Defensive End in the NFC West"},{label:"Family",text:"His brother Joey also plays DE in the NFL"},{label:"Draft",text:"2nd overall pick in 2019"},{label:"Award",text:"Won Defensive Player of the Year in 2022"},{label:"Injury",text:"Tore his ACL in week 2 of his second season"}]},
+    {name:"Maxx Crosby",espnId:"3918804",pos:"DE",team:"Las Vegas Raiders",college:"Eastern Michigan",drafted:"2019 \u00b7 4th \u00b7 Pick 106",clues:[{label:"Position",text:"Defensive End in the AFC West"},{label:"College",text:"Came from Eastern Michigan"},{label:"Draft",text:"4th round pick who became a perennial Pro Bowler"},{label:"Style",text:"Known for his motor and non-stop effort every play"},{label:"Contract",text:"Signed a major extension to stay in Las Vegas"}]},
+    {name:"T.J. Watt",espnId:"3054191",pos:"LB",team:"Pittsburgh Steelers",college:"Wisconsin",drafted:"2017 \u00b7 1st \u00b7 Pick 30",clues:[{label:"Position",text:"Outside Linebacker in the AFC North"},{label:"Family",text:"His brother J.J. Watt is also an NFL legend"},{label:"Draft",text:"30th overall pick in 2017"},{label:"Record",text:"Tied the NFL single-season sack record with 22.5 in 2021"},{label:"Award",text:"Won Defensive Player of the Year in 2021"}]},
+    {name:"Sauce Gardner",espnId:"4432577",pos:"CB",team:"New York Jets",college:"Cincinnati",drafted:"2022 \u00b7 1st \u00b7 Pick 4",clues:[{label:"Position",text:"Cornerback in the AFC East"},{label:"College",text:"Never gave up a TD during his college career at Cincinnati"},{label:"Draft",text:"4th overall pick in 2022"},{label:"Award",text:"Won Defensive Rookie of the Year in 2022"},{label:"Nickname",text:"Named after his love of sauce on food"}]},
+    {name:"Patrick Surtain II",espnId:"4569618",pos:"CB",team:"Denver Broncos",college:"Alabama",drafted:"2021 \u00b7 1st \u00b7 Pick 9",clues:[{label:"Position",text:"Cornerback in the AFC West"},{label:"Family",text:"His father Patrick Surtain Sr. also played CB in the NFL"},{label:"College",text:"Won a national championship at Alabama"},{label:"Draft",text:"9th overall pick in 2021"},{label:"Style",text:"Considered one of the best man-coverage corners in the NFL"}]},
+    {name:"Trevon Diggs",espnId:"3922925",pos:"CB",team:"Dallas Cowboys",college:"Alabama",drafted:"2020 \u00b7 2nd \u00b7 Pick 51",clues:[{label:"Position",text:"Cornerback in the NFC East"},{label:"Family",text:"His brother Stefon Diggs is also an NFL wide receiver"},{label:"College",text:"Played at Alabama"},{label:"Season",text:"Set an NFL record with 11 interceptions in 2021"},{label:"Style",text:"Known for his aggressive ball-hawking style"}]},
+    {name:"Roquan Smith",espnId:"3728270",pos:"LB",team:"Baltimore Ravens",college:"Georgia",drafted:"2018 \u00b7 1st \u00b7 Pick 8",clues:[{label:"Position",text:"Linebacker in the AFC North"},{label:"College",text:"Won a national championship at Georgia"},{label:"Draft",text:"8th overall pick in 2018"},{label:"Trade",text:"Was traded from Chicago to Baltimore in 2022"},{label:"Award",text:"Won Defensive Player of the Year in 2023"}]},
+    {name:"Fred Warner",espnId:"3054223",pos:"LB",team:"San Francisco 49ers",college:"BYU",drafted:"2018 \u00b7 3rd \u00b7 Pick 70",clues:[{label:"Position",text:"Linebacker in the NFC West"},{label:"College",text:"Played at BYU"},{label:"Draft",text:"3rd round pick in 2018"},{label:"Style",text:"Known as one of the most complete linebackers in the game"},{label:"Contract",text:"Signed a massive extension to stay in San Francisco"}]},
+    {name:"Jalen Ramsey",espnId:"2978459",pos:"CB",team:"Los Angeles Rams",college:"Florida State",drafted:"2016 \u00b7 1st \u00b7 Pick 5",clues:[{label:"Position",text:"Cornerback in the NFC West"},{label:"College",text:"Played at Florida State"},{label:"Draft",text:"5th overall pick in 2016"},{label:"Trade",text:"Was traded from Jacksonville to the Rams for two first-round picks"},{label:"Style",text:"Known as one of the most confident and trash-talking CBs ever"}]},
+    {name:"Zack Martin",espnId:"16747",pos:"G",team:"Dallas Cowboys",college:"Notre Dame",drafted:"2014 \u00b7 1st \u00b7 Pick 16",clues:[{label:"Position",text:"Offensive Guard in the NFC East"},{label:"College",text:"Played at Notre Dame"},{label:"Draft",text:"16th overall pick in 2014"},{label:"Consistency",text:"Made the Pro Bowl in each of his first seven seasons"},{label:"Reputation",text:"Considered one of the best offensive guards in NFL history"}]},
+    {name:"Quenton Nelson",espnId:"3915400",pos:"G",team:"Indianapolis Colts",college:"Notre Dame",drafted:"2018 \u00b7 1st \u00b7 Pick 6",clues:[{label:"Position",text:"Offensive Guard in the AFC South"},{label:"College",text:"Played at Notre Dame"},{label:"Draft",text:"6th overall pick in 2018"},{label:"Debut",text:"Made the Pro Bowl in his rookie season"},{label:"Style",text:"Known for his rare ability to pull and lead block at his size"}]},
+    {name:"Darius Leonard",espnId:"3051922",pos:"LB",team:"Indianapolis Colts",college:"South Carolina State",drafted:"2018 \u00b7 2nd \u00b7 Pick 36",clues:[{label:"Position",text:"Linebacker in the AFC South"},{label:"College",text:"Came from South Carolina State, an HBCU"},{label:"Draft",text:"36th overall pick in 2018"},{label:"Rookie",text:"Won Defensive Rookie of the Year in 2018"},{label:"Nickname",text:"Known as the Maniac for his relentless play style"}]},
+    {name:"Demario Davis",espnId:"14975",pos:"LB",team:"New Orleans Saints",college:"Arkansas State",drafted:"2012 \u00b7 3rd \u00b7 Pick 77",clues:[{label:"Position",text:"Linebacker in the NFC South"},{label:"College",text:"Played at Arkansas State"},{label:"Draft",text:"3rd round pick in 2012"},{label:"Longevity",text:"Has been a consistent Pro Bowler well into his 30s"},{label:"Leadership",text:"Known as one of the most respected team leaders in the league"}]},
+    {name:"Dalvin Cook",espnId:"3054245",pos:"RB",team:"Free Agent",college:"Florida State",drafted:"2017 \u00b7 2nd \u00b7 Pick 41",clues:[{label:"Position",text:"Running Back, most recently with the Jets"},{label:"College",text:"Played at Florida State"},{label:"Draft",text:"41st overall pick in 2017"},{label:"Injury",text:"Suffered a torn ACL in his rookie season"},{label:"Peak",text:"Had back-to-back 1,000+ yard seasons for the Vikings"}]},
     {name:"Austin Ekeler",espnId:"3054246",pos:"RB",team:"Free Agent",college:"Western Colorado",drafted:"Undrafted 2017",clues:[{label:"Position",text:"Running Back, currently a free agent"},{label:"College",text:"Came from Division II Western Colorado, went undrafted"},{label:"Receiving",text:"One of the best pass-catching backs in the NFL"},{label:"Season",text:"Had 20 total touchdowns in the 2022 season"},{label:"Contract",text:"Became a starter after holding out and renegotiating his deal"}]}
   ];
 
   var NBA_PLAYERS = [
-    {name:"LeBron James",espnId:"1966",nbaId:"2544",pos:"SF",team:"Los Angeles Lakers",college:"None (HS)",drafted:"2003 · 1st · Pick 1",clues:[{label:"Position",text:"Small Forward in the Western Conference"},{label:"Draft",text:"#1 pick straight from high school in Akron, Ohio"},{label:"Record",text:"The NBA's all-time leading scorer"},{label:"Championships",text:"4 NBA titles with 3 different franchises"},{label:"Nickname",text:"Known as The King and LBJ"}]},
-    {name:"Stephen Curry",espnId:"3975",nbaId:"201939",pos:"PG",team:"Golden State Warriors",college:"Davidson",drafted:"2009 · 1st · Pick 7",clues:[{label:"Position",text:"Point Guard in the Western Conference"},{label:"College",text:"Played at small-school Davidson, wasn't recruited by major programs"},{label:"Draft",text:"7th overall pick in 2009"},{label:"Impact",text:"Transformed basketball with his historic three-point shooting"},{label:"Championships",text:"4 NBA titles, all with the Warriors"}]},
-    {name:"Kevin Durant",espnId:"3202",nbaId:"201142",pos:"SF",team:"Phoenix Suns",college:"Texas",drafted:"2007 · 1st · Pick 2",clues:[{label:"Position",text:"Small Forward in the Western Conference"},{label:"College",text:"Played one season at Texas"},{label:"Draft",text:"2nd overall pick in 2007"},{label:"Awards",text:"Multiple scoring titles and an NBA MVP award"},{label:"Championships",text:"Won 2 NBA titles with the Golden State Warriors"}]},
-    {name:"Giannis Antetokounmpo",espnId:"3032977",nbaId:"203507",pos:"PF",team:"Milwaukee Bucks",college:"International",drafted:"2013 · 1st · Pick 15",clues:[{label:"Position",text:"Power Forward in the Eastern Conference"},{label:"Origin",text:"Grew up in Greece with Nigerian heritage"},{label:"Nickname",text:"Known as The Greek Freak"},{label:"Championship",text:"Led Milwaukee to their first title in 50 years"},{label:"Awards",text:"Won back-to-back MVP awards in 2019 and 2020"}]},
-    {name:"Nikola Jokic",espnId:"3112335",nbaId:"203999",pos:"C",team:"Denver Nuggets",college:"International",drafted:"2014 · 2nd · Pick 41",clues:[{label:"Position",text:"Center in the Western Conference"},{label:"Draft",text:"41st pick - announced during a Taco Bell commercial"},{label:"Awards",text:"3 MVP awards in 4 seasons"},{label:"Championship",text:"Led Denver to their first NBA title in 2023"},{label:"Skill",text:"Considered the greatest passing center in NBA history"}]},
-    {name:"Luka Doncic",espnId:"3945274",nbaId:"1629029",pos:"PG",team:"Dallas Mavericks",college:"International",drafted:"2018 · 1st · Pick 3",clues:[{label:"Position",text:"Point Guard in the Western Conference"},{label:"Pre-NBA",text:"Won EuroLeague MVP before coming to the NBA"},{label:"Draft",text:"Drafted by Atlanta, traded to Dallas on draft night"},{label:"Country",text:"Led Slovenia to the Olympics"},{label:"Signature",text:"Known for his step-back three and elite court vision"}]},
-    {name:"Joel Embiid",espnId:"3059318",nbaId:"203954",pos:"C",team:"Philadelphia 76ers",college:"Kansas",drafted:"2014 · 1st · Pick 3",clues:[{label:"Position",text:"Center in the Eastern Conference"},{label:"Origin",text:"Grew up in Cameroon, didn't play basketball until his teens"},{label:"Award",text:"Won the 2022-23 NBA MVP"},{label:"Era",text:"The cornerstone of Philadelphia's Process rebuild"},{label:"College",text:"Played one year at Kansas before the draft"}]},
-    {name:"Jayson Tatum",espnId:"4065648",nbaId:"1628369",pos:"SF",team:"Boston Celtics",college:"Duke",drafted:"2017 · 1st · Pick 3",clues:[{label:"Position",text:"Small Forward in the Eastern Conference"},{label:"College",text:"One-and-done at Duke"},{label:"Idol",text:"Grew up idolizing Kobe Bryant"},{label:"Finals",text:"Led Boston to back-to-back Finals in 2022 and 2024"},{label:"Championship",text:"Won the 2024 NBA title and Finals MVP"}]},
-    {name:"Shai Gilgeous-Alexander",espnId:"4278073",nbaId:"1628983",pos:"PG",team:"Oklahoma City Thunder",college:"Kentucky",drafted:"2018 · 1st · Pick 11",clues:[{label:"Position",text:"Point Guard in the Western Conference"},{label:"College",text:"Played one year at Kentucky"},{label:"Trade",text:"Drafted by Charlotte, came to OKC via the Clippers"},{label:"Country",text:"From Canada, known by his initials SGA"},{label:"Award",text:"Won the 2024-25 NBA MVP"}]},
-    {name:"Devin Booker",espnId:"3136195",nbaId:"1626164",pos:"SG",team:"Phoenix Suns",college:"Kentucky",drafted:"2015 · 1st · Pick 13",clues:[{label:"Position",text:"Shooting Guard in the Western Conference"},{label:"College",text:"Played one year at Kentucky"},{label:"Draft",text:"13th overall pick in 2015"},{label:"Record",text:"Scored 70 points in a single game at just 20 years old"},{label:"Olympics",text:"Won a gold medal with Team USA at the Tokyo Olympics"}]},
-    {name:"Anthony Edwards",espnId:"4432174",nbaId:"1630162",pos:"SG",team:"Minnesota Timberwolves",college:"Georgia",drafted:"2020 · 1st · Pick 1",clues:[{label:"Position",text:"Shooting Guard in the Western Conference"},{label:"College",text:"One-and-done at the University of Georgia"},{label:"Draft",text:"#1 overall pick in 2020"},{label:"Nickname",text:"Known as Ant-Man"},{label:"Team",text:"Led Minnesota to the Western Conference Finals in 2024"}]},
-    {name:"Ja Morant",espnId:"4279888",nbaId:"1629630",pos:"PG",team:"Memphis Grizzlies",college:"Murray State",drafted:"2019 · 1st · Pick 2",clues:[{label:"Position",text:"Point Guard in the Western Conference"},{label:"College",text:"Came from small-school Murray State"},{label:"Award",text:"Won Rookie of the Year in 2019-20"},{label:"Athleticism",text:"Known for some of the most explosive dunks in NBA history"},{label:"Stats",text:"Averaged 25+ points per game during his peak seasons"}]},
-    {name:"Damian Lillard",espnId:"6606",nbaId:"203081",pos:"PG",team:"Milwaukee Bucks",college:"Weber State",drafted:"2012 · 1st · Pick 6",clues:[{label:"Position",text:"Point Guard in the Eastern Conference"},{label:"College",text:"Came from mid-major Weber State"},{label:"Draft",text:"6th overall pick in 2012"},{label:"Loyalty",text:"Spent over a decade in Portland before being traded"},{label:"Signature",text:"Known for hitting clutch shots from well beyond the arc"}]},
-    {name:"Kawhi Leonard",espnId:"6450",nbaId:"202695",pos:"SF",team:"Los Angeles Clippers",college:"San Diego State",drafted:"2011 · 1st · Pick 15",clues:[{label:"Position",text:"Small Forward in the Western Conference"},{label:"College",text:"Played at San Diego State"},{label:"Championships",text:"Won titles with two different franchises"},{label:"Nickname",text:"Known as The Klaw for his large hands and defensive dominance"},{label:"Award",text:"Won Finals MVP with both of his championship teams"}]},
-    {name:"Jimmy Butler",espnId:"6430",nbaId:"202710",pos:"SF",team:"Golden State Warriors",college:"Marquette",drafted:"2011 · 1st · Pick 30",clues:[{label:"Position",text:"Small Forward in the Western Conference"},{label:"College",text:"Played at Marquette"},{label:"Draft",text:"30th pick - last in the first round in 2011"},{label:"Rise",text:"Went from a late first-round pick to a perennial All-Star"},{label:"Style",text:"Known for his unmatched competitiveness and big-game performances"}]},
-    {name:"Bam Adebayo",espnId:"4066697",nbaId:"1628389",pos:"C",team:"Miami Heat",college:"Kentucky",drafted:"2017 · 1st · Pick 14",clues:[{label:"Position",text:"Center in the Eastern Conference"},{label:"College",text:"Played one year at Kentucky"},{label:"Draft",text:"14th overall pick in 2017"},{label:"Defense",text:"Won the NBA Defensive Player of the Year award"},{label:"Style",text:"Known for his versatility guarding multiple positions"}]},
-    {name:"Karl-Anthony Towns",espnId:"3136195",nbaId:"1626157",pos:"C",team:"New York Knicks",college:"Kentucky",drafted:"2015 · 1st · Pick 1",clues:[{label:"Position",text:"Center in the Eastern Conference"},{label:"College",text:"Played one year at Kentucky"},{label:"Draft",text:"#1 overall pick in 2015"},{label:"Skill",text:"One of the best shooting big men in NBA history"},{label:"Trade",text:"Was traded from Minnesota to New York in 2024"}]},
-    {name:"Rudy Gobert",espnId:"3032976",nbaId:"203497",pos:"C",team:"Minnesota Timberwolves",college:"International",drafted:"2013 · 1st · Pick 27",clues:[{label:"Position",text:"Center in the Western Conference"},{label:"Country",text:"From France, known for his elite wingspan"},{label:"Award",text:"Has won Defensive Player of the Year four times"},{label:"Trade",text:"Was traded from Utah to Minnesota for a massive package of picks"},{label:"Nickname",text:"Known as the Stifle Tower"}]},
-    {name:"Draymond Green",espnId:"6589",nbaId:"203110",pos:"PF",team:"Golden State Warriors",college:"Michigan State",drafted:"2012 · 2nd · Pick 35",clues:[{label:"Position",text:"Power Forward in the Western Conference"},{label:"College",text:"Played four years at Michigan State"},{label:"Draft",text:"35th pick in 2012"},{label:"Championships",text:"4 NBA titles with Golden State"},{label:"Style",text:"Known more for defense and playmaking than scoring"}]},
-    {name:"Klay Thompson",espnId:"6475",nbaId:"202691",pos:"SG",team:"Dallas Mavericks",college:"Washington State",drafted:"2011 · 1st · Pick 11",clues:[{label:"Position",text:"Shooting Guard in the Western Conference"},{label:"College",text:"Played at Washington State"},{label:"Draft",text:"11th overall pick in 2011"},{label:"Record",text:"Once hit 14 three-pointers in a single game"},{label:"Championships",text:"Won 4 NBA titles with the Golden State Warriors"}]},
-    {name:"Kyrie Irving",espnId:"6442",nbaId:"202681",pos:"PG",team:"Dallas Mavericks",college:"Duke",drafted:"2011 · 1st · Pick 1",clues:[{label:"Position",text:"Point Guard in the Western Conference"},{label:"College",text:"One-and-done at Duke"},{label:"Draft",text:"#1 overall pick in 2011"},{label:"Championship",text:"Hit the go-ahead three in Game 7 of the 2016 Finals"},{label:"Teams",text:"Has played for Cleveland, Boston, Brooklyn, and Dallas"}]},
-    {name:"James Harden",espnId:"3992",nbaId:"201935",pos:"PG",team:"Los Angeles Clippers",college:"Arizona State",drafted:"2009 · 1st · Pick 3",clues:[{label:"Position",text:"Point Guard in the Western Conference"},{label:"College",text:"Played at Arizona State"},{label:"Style",text:"Perfected the step-back three into a signature move"},{label:"Award",text:"Won the NBA MVP award in 2017-18"},{label:"Season",text:"Averaged 36.1 points per game in 2018-19"}]},
-    {name:"Zion Williamson",espnId:"4395628",nbaId:"1629627",pos:"PF",team:"New Orleans Pelicans",college:"Duke",drafted:"2019 · 1st · Pick 1",clues:[{label:"Position",text:"Power Forward in the Western Conference"},{label:"College",text:"One-and-done at Duke, was a massive recruit"},{label:"Draft",text:"#1 overall pick in 2019"},{label:"Athleticism",text:"Known for an incredibly rare combination of size and explosiveness"},{label:"Injury",text:"Has been hampered by foot and leg injuries throughout his career"}]},
-    {name:"Brandon Ingram",espnId:"3913176",nbaId:"1627742",pos:"SF",team:"New Orleans Pelicans",college:"Duke",drafted:"2016 · 1st · Pick 2",clues:[{label:"Position",text:"Small Forward in the Western Conference"},{label:"College",text:"One-and-done at Duke"},{label:"Draft",text:"2nd overall pick in 2016"},{label:"Trade",text:"Was part of the Anthony Davis blockbuster trade to LA"},{label:"Award",text:"Won the NBA Most Improved Player award in 2019-20"}]},
-    {name:"Trae Young",espnId:"4277905",nbaId:"1629027",pos:"PG",team:"Atlanta Hawks",college:"Oklahoma",drafted:"2018 · 1st · Pick 5",clues:[{label:"Position",text:"Point Guard in the Eastern Conference"},{label:"College",text:"Played one year at Oklahoma, led NCAA in scoring"},{label:"Draft",text:"5th pick - traded to Atlanta from Dallas on draft night"},{label:"Signature",text:"Known for deep pull-up threes from 30+ feet out"},{label:"Playoff",text:"Led Atlanta on a Cinderella run to the 2021 ECF"}]},
-    {name:"Donovan Mitchell",espnId:"3908809",nbaId:"1628378",pos:"SG",team:"Cleveland Cavaliers",college:"Louisville",drafted:"2017 · 1st · Pick 13",clues:[{label:"Position",text:"Shooting Guard in the Eastern Conference"},{label:"College",text:"Played at Louisville"},{label:"Draft",text:"13th pick - traded to Utah on draft night"},{label:"Nickname",text:"Known as Spida"},{label:"Trade",text:"Was traded from Utah to Cleveland in a blockbuster deal"}]},
-    {name:"Victor Wembanyama",espnId:"5104157",nbaId:"1641705",pos:"C",team:"San Antonio Spurs",college:"International",drafted:"2023 · 1st · Pick 1",clues:[{label:"Position",text:"Center in the Western Conference"},{label:"Country",text:"From France, considered the most unique prospect in NBA history"},{label:"Draft",text:"#1 overall pick in 2023"},{label:"Size",text:"Stands over 7 feet tall with an 8-foot wingspan"},{label:"Award",text:"Won Rookie of the Year in 2023-24"}]},
-    {name:"Cade Cunningham",espnId:"4432816",nbaId:"1630595",pos:"PG",team:"Detroit Pistons",college:"Oklahoma State",drafted:"2021 · 1st · Pick 1",clues:[{label:"Position",text:"Point Guard in the Eastern Conference"},{label:"College",text:"Played one year at Oklahoma State"},{label:"Draft",text:"#1 overall pick in 2021"},{label:"Role",text:"The face of Detroit's rebuilding franchise"},{label:"Style",text:"Known for his size and playmaking at point guard"}]},
-    {name:"Tyrese Haliburton",espnId:"4396993",nbaId:"1630169",pos:"PG",team:"Indiana Pacers",college:"Iowa State",drafted:"2020 · 1st · Pick 12",clues:[{label:"Position",text:"Point Guard in the Eastern Conference"},{label:"College",text:"Played two years at Iowa State"},{label:"Draft",text:"12th overall pick in 2020"},{label:"Trade",text:"Was traded from Sacramento to Indiana in 2022"},{label:"Season",text:"Led the NBA in assists in the 2023-24 season"}]},
-    {name:"Alperen Sengun",espnId:"4871144",nbaId:"1631094",pos:"C",team:"Houston Rockets",college:"International",drafted:"2021 · 1st · Pick 16",clues:[{label:"Position",text:"Center in the Western Conference"},{label:"Country",text:"From Turkey, played professionally in Europe before the NBA"},{label:"Draft",text:"16th overall pick in 2021"},{label:"Skill",text:"Known for his elite post moves and passing for a big man"},{label:"Rise",text:"Emerged as an All-Star caliber player in his third NBA season"}]}
+    {name:"LeBron James",espnId:"1966",nbaId:"2544",pos:"SF",team:"Los Angeles Lakers",college:"None (HS)",drafted:"2003 \u00b7 1st \u00b7 Pick 1",clues:[{label:"Position",text:"Small Forward in the Western Conference"},{label:"Draft",text:"#1 pick straight from high school in Akron, Ohio"},{label:"Record",text:"The NBA's all-time leading scorer"},{label:"Championships",text:"4 NBA titles with 3 different franchises"},{label:"Nickname",text:"Known as The King and LBJ"}]},
+    {name:"Stephen Curry",espnId:"3975",nbaId:"201939",pos:"PG",team:"Golden State Warriors",college:"Davidson",drafted:"2009 \u00b7 1st \u00b7 Pick 7",clues:[{label:"Position",text:"Point Guard in the Western Conference"},{label:"College",text:"Played at small-school Davidson, wasn't recruited by major programs"},{label:"Draft",text:"7th overall pick in 2009"},{label:"Impact",text:"Transformed basketball with his historic three-point shooting"},{label:"Championships",text:"4 NBA titles, all with the Warriors"}]},
+    {name:"Kevin Durant",espnId:"3202",nbaId:"201142",pos:"SF",team:"Phoenix Suns",college:"Texas",drafted:"2007 \u00b7 1st \u00b7 Pick 2",clues:[{label:"Position",text:"Small Forward in the Western Conference"},{label:"College",text:"Played one season at Texas"},{label:"Draft",text:"2nd overall pick in 2007"},{label:"Awards",text:"Multiple scoring titles and an NBA MVP award"},{label:"Championships",text:"Won 2 NBA titles with the Golden State Warriors"}]},
+    {name:"Giannis Antetokounmpo",espnId:"3032977",nbaId:"203507",pos:"PF",team:"Milwaukee Bucks",college:"International",drafted:"2013 \u00b7 1st \u00b7 Pick 15",clues:[{label:"Position",text:"Power Forward in the Eastern Conference"},{label:"Origin",text:"Grew up in Greece with Nigerian heritage"},{label:"Nickname",text:"Known as The Greek Freak"},{label:"Championship",text:"Led Milwaukee to their first title in 50 years"},{label:"Awards",text:"Won back-to-back MVP awards in 2019 and 2020"}]},
+    {name:"Nikola Jokic",espnId:"3112335",nbaId:"203999",pos:"C",team:"Denver Nuggets",college:"International",drafted:"2014 \u00b7 2nd \u00b7 Pick 41",clues:[{label:"Position",text:"Center in the Western Conference"},{label:"Draft",text:"41st pick - announced during a Taco Bell commercial"},{label:"Awards",text:"3 MVP awards in 4 seasons"},{label:"Championship",text:"Led Denver to their first NBA title in 2023"},{label:"Skill",text:"Considered the greatest passing center in NBA history"}]},
+    {name:"Luka Doncic",espnId:"3945274",nbaId:"1629029",pos:"PG",team:"Dallas Mavericks",college:"International",drafted:"2018 \u00b7 1st \u00b7 Pick 3",clues:[{label:"Position",text:"Point Guard in the Western Conference"},{label:"Pre-NBA",text:"Won EuroLeague MVP before coming to the NBA"},{label:"Draft",text:"Drafted by Atlanta, traded to Dallas on draft night"},{label:"Country",text:"Led Slovenia to the Olympics"},{label:"Signature",text:"Known for his step-back three and elite court vision"}]},
+    {name:"Joel Embiid",espnId:"3059318",nbaId:"203954",pos:"C",team:"Philadelphia 76ers",college:"Kansas",drafted:"2014 \u00b7 1st \u00b7 Pick 3",clues:[{label:"Position",text:"Center in the Eastern Conference"},{label:"Origin",text:"Grew up in Cameroon, didn't play basketball until his teens"},{label:"Award",text:"Won the 2022-23 NBA MVP"},{label:"Era",text:"The cornerstone of Philadelphia's Process rebuild"},{label:"College",text:"Played one year at Kansas before the draft"}]},
+    {name:"Jayson Tatum",espnId:"4065648",nbaId:"1628369",pos:"SF",team:"Boston Celtics",college:"Duke",drafted:"2017 \u00b7 1st \u00b7 Pick 3",clues:[{label:"Position",text:"Small Forward in the Eastern Conference"},{label:"College",text:"One-and-done at Duke"},{label:"Idol",text:"Grew up idolizing Kobe Bryant"},{label:"Finals",text:"Led Boston to back-to-back Finals in 2022 and 2024"},{label:"Championship",text:"Won the 2024 NBA title and Finals MVP"}]},
+    {name:"Shai Gilgeous-Alexander",espnId:"4278073",nbaId:"1628983",pos:"PG",team:"Oklahoma City Thunder",college:"Kentucky",drafted:"2018 \u00b7 1st \u00b7 Pick 11",clues:[{label:"Position",text:"Point Guard in the Western Conference"},{label:"College",text:"Played one year at Kentucky"},{label:"Trade",text:"Drafted by Charlotte, came to OKC via the Clippers"},{label:"Country",text:"From Canada, known by his initials SGA"},{label:"Award",text:"Won the 2024-25 NBA MVP"}]},
+    {name:"Devin Booker",espnId:"3136195",nbaId:"1626164",pos:"SG",team:"Phoenix Suns",college:"Kentucky",drafted:"2015 \u00b7 1st \u00b7 Pick 13",clues:[{label:"Position",text:"Shooting Guard in the Western Conference"},{label:"College",text:"Played one year at Kentucky"},{label:"Draft",text:"13th overall pick in 2015"},{label:"Record",text:"Scored 70 points in a single game at just 20 years old"},{label:"Olympics",text:"Won a gold medal with Team USA at the Tokyo Olympics"}]},
+    {name:"Anthony Edwards",espnId:"4432174",nbaId:"1630162",pos:"SG",team:"Minnesota Timberwolves",college:"Georgia",drafted:"2020 \u00b7 1st \u00b7 Pick 1",clues:[{label:"Position",text:"Shooting Guard in the Western Conference"},{label:"College",text:"One-and-done at the University of Georgia"},{label:"Draft",text:"#1 overall pick in 2020"},{label:"Nickname",text:"Known as Ant-Man"},{label:"Team",text:"Led Minnesota to the Western Conference Finals in 2024"}]},
+    {name:"Ja Morant",espnId:"4279888",nbaId:"1629630",pos:"PG",team:"Memphis Grizzlies",college:"Murray State",drafted:"2019 \u00b7 1st \u00b7 Pick 2",clues:[{label:"Position",text:"Point Guard in the Western Conference"},{label:"College",text:"Came from small-school Murray State"},{label:"Award",text:"Won Rookie of the Year in 2019-20"},{label:"Athleticism",text:"Known for some of the most explosive dunks in NBA history"},{label:"Stats",text:"Averaged 25+ points per game during his peak seasons"}]},
+    {name:"Damian Lillard",espnId:"6606",nbaId:"203081",pos:"PG",team:"Milwaukee Bucks",college:"Weber State",drafted:"2012 \u00b7 1st \u00b7 Pick 6",clues:[{label:"Position",text:"Point Guard in the Eastern Conference"},{label:"College",text:"Came from mid-major Weber State"},{label:"Draft",text:"6th overall pick in 2012"},{label:"Loyalty",text:"Spent over a decade in Portland before being traded"},{label:"Signature",text:"Known for hitting clutch shots from well beyond the arc"}]},
+    {name:"Kawhi Leonard",espnId:"6450",nbaId:"202695",pos:"SF",team:"Los Angeles Clippers",college:"San Diego State",drafted:"2011 \u00b7 1st \u00b7 Pick 15",clues:[{label:"Position",text:"Small Forward in the Western Conference"},{label:"College",text:"Played at San Diego State"},{label:"Championships",text:"Won titles with two different franchises"},{label:"Nickname",text:"Known as The Klaw for his large hands and defensive dominance"},{label:"Award",text:"Won Finals MVP with both of his championship teams"}]},
+    {name:"Paul George",espnId:"4251",nbaId:"202331",pos:"SF",team:"Philadelphia 76ers",college:"Fresno State",drafted:"2010 \u00b7 1st \u00b7 Pick 10",clues:[{label:"Position",text:"Small Forward in the Eastern Conference"},{label:"College",text:"Played at Fresno State"},{label:"Injury",text:"Suffered a horrific leg injury during a Team USA scrimmage in 2014"},{label:"Nickname",text:"Known as PG-13"},{label:"Teams",text:"Has played for Indiana, Oklahoma City, the Clippers, and Philadelphia"}]},
+    {name:"Jimmy Butler",espnId:"6430",nbaId:"202710",pos:"SF",team:"Golden State Warriors",college:"Marquette",drafted:"2011 \u00b7 1st \u00b7 Pick 30",clues:[{label:"Position",text:"Small Forward in the Western Conference"},{label:"College",text:"Played at Marquette"},{label:"Draft",text:"30th pick - last in the first round in 2011"},{label:"Rise",text:"Went from a late first-round pick to a perennial All-Star"},{label:"Style",text:"Known for his unmatched competitiveness and big-game performances"}]},
+    {name:"Bam Adebayo",espnId:"4066697",nbaId:"1628389",pos:"C",team:"Miami Heat",college:"Kentucky",drafted:"2017 \u00b7 1st \u00b7 Pick 14",clues:[{label:"Position",text:"Center in the Eastern Conference"},{label:"College",text:"Played one year at Kentucky"},{label:"Draft",text:"14th overall pick in 2017"},{label:"Defense",text:"Won the NBA Defensive Player of the Year award"},{label:"Style",text:"Known for his versatility guarding multiple positions"}]},
+    {name:"Karl-Anthony Towns",espnId:"3136195",nbaId:"1626157",pos:"C",team:"New York Knicks",college:"Kentucky",drafted:"2015 \u00b7 1st \u00b7 Pick 1",clues:[{label:"Position",text:"Center in the Eastern Conference"},{label:"College",text:"Played one year at Kentucky"},{label:"Draft",text:"#1 overall pick in 2015"},{label:"Skill",text:"One of the best shooting big men in NBA history"},{label:"Trade",text:"Was traded from Minnesota to New York in 2024"}]},
+    {name:"Rudy Gobert",espnId:"3032976",nbaId:"203497",pos:"C",team:"Minnesota Timberwolves",college:"International",drafted:"2013 \u00b7 1st \u00b7 Pick 27",clues:[{label:"Position",text:"Center in the Western Conference"},{label:"Country",text:"From France, known for his elite wingspan"},{label:"Award",text:"Has won Defensive Player of the Year four times"},{label:"Trade",text:"Was traded from Utah to Minnesota for a massive package of picks"},{label:"Nickname",text:"Known as the Stifle Tower"}]},
+    {name:"Draymond Green",espnId:"6589",nbaId:"203110",pos:"PF",team:"Golden State Warriors",college:"Michigan State",drafted:"2012 \u00b7 2nd \u00b7 Pick 35",clues:[{label:"Position",text:"Power Forward in the Western Conference"},{label:"College",text:"Played four years at Michigan State"},{label:"Draft",text:"35th pick in 2012"},{label:"Championships",text:"4 NBA titles with Golden State"},{label:"Style",text:"Known more for defense and playmaking than scoring"}]},
+    {name:"Klay Thompson",espnId:"6475",nbaId:"202691",pos:"SG",team:"Dallas Mavericks",college:"Washington State",drafted:"2011 \u00b7 1st \u00b7 Pick 11",clues:[{label:"Position",text:"Shooting Guard in the Western Conference"},{label:"College",text:"Played at Washington State"},{label:"Draft",text:"11th overall pick in 2011"},{label:"Record",text:"Once hit 14 three-pointers in a single game"},{label:"Championships",text:"Won 4 NBA titles with the Golden State Warriors"}]},
+    {name:"Kyrie Irving",espnId:"6442",nbaId:"202681",pos:"PG",team:"Dallas Mavericks",college:"Duke",drafted:"2011 \u00b7 1st \u00b7 Pick 1",clues:[{label:"Position",text:"Point Guard in the Western Conference"},{label:"College",text:"One-and-done at Duke"},{label:"Draft",text:"#1 overall pick in 2011"},{label:"Championship",text:"Hit the go-ahead three in Game 7 of the 2016 Finals"},{label:"Teams",text:"Has played for Cleveland, Boston, Brooklyn, and Dallas"}]},
+    {name:"James Harden",espnId:"3992",nbaId:"201935",pos:"PG",team:"Los Angeles Clippers",college:"Arizona State",drafted:"2009 \u00b7 1st \u00b7 Pick 3",clues:[{label:"Position",text:"Point Guard in the Western Conference"},{label:"College",text:"Played at Arizona State"},{label:"Style",text:"Perfected the step-back three into a signature move"},{label:"Award",text:"Won the NBA MVP award in 2017-18"},{label:"Season",text:"Averaged 36.1 points per game in 2018-19"}]},
+    {name:"Zion Williamson",espnId:"4395628",nbaId:"1629627",pos:"PF",team:"New Orleans Pelicans",college:"Duke",drafted:"2019 \u00b7 1st \u00b7 Pick 1",clues:[{label:"Position",text:"Power Forward in the Western Conference"},{label:"College",text:"One-and-done at Duke, was a massive recruit"},{label:"Draft",text:"#1 overall pick in 2019"},{label:"Athleticism",text:"Known for an incredibly rare combination of size and explosiveness"},{label:"Injury",text:"Has been hampered by foot and leg injuries throughout his career"}]},
+    {name:"Brandon Ingram",espnId:"3913176",nbaId:"1627742",pos:"SF",team:"New Orleans Pelicans",college:"Duke",drafted:"2016 \u00b7 1st \u00b7 Pick 2",clues:[{label:"Position",text:"Small Forward in the Western Conference"},{label:"College",text:"One-and-done at Duke"},{label:"Draft",text:"2nd overall pick in 2016"},{label:"Trade",text:"Was part of the Anthony Davis blockbuster trade to LA"},{label:"Award",text:"Won the NBA Most Improved Player award in 2019-20"}]},
+    {name:"Trae Young",espnId:"4277905",nbaId:"1629027",pos:"PG",team:"Atlanta Hawks",college:"Oklahoma",drafted:"2018 \u00b7 1st \u00b7 Pick 5",clues:[{label:"Position",text:"Point Guard in the Eastern Conference"},{label:"College",text:"Played one year at Oklahoma, led NCAA in scoring"},{label:"Draft",text:"5th pick - traded to Atlanta from Dallas on draft night"},{label:"Signature",text:"Known for deep pull-up threes from 30+ feet out"},{label:"Playoff",text:"Led Atlanta on a Cinderella run to the 2021 ECF"}]},
+    {name:"Donovan Mitchell",espnId:"3908809",nbaId:"1628378",pos:"SG",team:"Cleveland Cavaliers",college:"Louisville",drafted:"2017 \u00b7 1st \u00b7 Pick 13",clues:[{label:"Position",text:"Shooting Guard in the Eastern Conference"},{label:"College",text:"Played at Louisville"},{label:"Draft",text:"13th pick - traded to Utah on draft night"},{label:"Nickname",text:"Known as Spida"},{label:"Trade",text:"Was traded from Utah to Cleveland in a blockbuster deal"}]},
+    {name:"Darius Garland",espnId:"4395651",nbaId:"1629636",pos:"PG",team:"Cleveland Cavaliers",college:"Vanderbilt",drafted:"2019 \u00b7 1st \u00b7 Pick 5",clues:[{label:"Position",text:"Point Guard in the Eastern Conference"},{label:"College",text:"Played just 5 games at Vanderbilt before the draft"},{label:"Draft",text:"5th overall pick in 2019"},{label:"Tandem",text:"Forms one of the best young backcourts with his teammate"},{label:"Style",text:"Known for his creative floaters and playmaking ability"}]},
+    {name:"Evan Mobley",espnId:"4432815",nbaId:"1630596",pos:"C",team:"Cleveland Cavaliers",college:"USC",drafted:"2021 \u00b7 1st \u00b7 Pick 3",clues:[{label:"Position",text:"Center in the Eastern Conference"},{label:"College",text:"Played one year at USC"},{label:"Draft",text:"3rd overall pick in 2021"},{label:"Defense",text:"Finalist for Defensive Player of the Year in his rookie season"},{label:"Family",text:"His father Eric Mobley also played in the NBA"}]},
+    {name:"Jaren Jackson Jr.",espnId:"4277961",nbaId:"1628991",pos:"PF",team:"Memphis Grizzlies",college:"Michigan State",drafted:"2018 \u00b7 1st \u00b7 Pick 4",clues:[{label:"Position",text:"Power Forward in the Western Conference"},{label:"College",text:"Played one year at Michigan State"},{label:"Draft",text:"4th overall pick in 2018"},{label:"Award",text:"Won Defensive Player of the Year in 2022-23"},{label:"Family",text:"His father Jaren Jackson Sr. also played in the NBA"}]},
+    {name:"Desmond Bane",espnId:"4066320",nbaId:"1629022",pos:"SG",team:"Memphis Grizzlies",college:"TCU",drafted:"2020 \u00b7 1st \u00b7 Pick 30",clues:[{label:"Position",text:"Shooting Guard in the Western Conference"},{label:"College",text:"Played four years at TCU"},{label:"Draft",text:"30th pick - last in the first round in 2020"},{label:"Development",text:"Became a starter and All-Star after being drafted as a role player"},{label:"Shooting",text:"One of the most accurate three-point shooters in the NBA"}]},
+    {name:"Jaylen Brown",espnId:"3917376",nbaId:"1627759",pos:"SG",team:"Boston Celtics",college:"California",drafted:"2016 \u00b7 1st \u00b7 Pick 3",clues:[{label:"Position",text:"Shooting Guard in the Eastern Conference"},{label:"College",text:"One-and-done at UC Berkeley"},{label:"Draft",text:"3rd overall pick in 2016"},{label:"Championship",text:"Won the 2024 NBA title alongside his star teammate"},{label:"Contract",text:"Signed the largest contract in NBA history at the time"}]},
+    {name:"Pascal Siakam",espnId:"3149673",nbaId:"1627783",pos:"PF",team:"Indiana Pacers",college:"New Mexico State",drafted:"2016 \u00b7 1st \u00b7 Pick 27",clues:[{label:"Position",text:"Power Forward in the Eastern Conference"},{label:"Background",text:"Grew up in Cameroon, didn't start playing basketball until age 16"},{label:"Award",text:"Won the Most Improved Player award in 2018-19"},{label:"Championship",text:"Won an NBA title with Toronto in 2019"},{label:"Trade",text:"Was traded from Toronto to Indiana in 2024"}]},
+    {name:"OG Anunoby",espnId:"3934719",nbaId:"1628384",pos:"SF",team:"New York Knicks",college:"Indiana",drafted:"2017 \u00b7 1st \u00b7 Pick 23",clues:[{label:"Position",text:"Small Forward in the Eastern Conference"},{label:"College",text:"Played at Indiana"},{label:"Draft",text:"23rd pick in 2017"},{label:"Defense",text:"Named to the All-Defensive team multiple times"},{label:"Trade",text:"Was traded from Toronto to the Knicks at the 2024 deadline"}]},
+    {name:"Scottie Barnes",espnId:"4432814",nbaId:"1630567",pos:"PF",team:"Toronto Raptors",college:"Florida State",drafted:"2021 \u00b7 1st \u00b7 Pick 4",clues:[{label:"Position",text:"Power Forward in the Eastern Conference"},{label:"College",text:"One-and-done at Florida State"},{label:"Draft",text:"4th overall pick in 2021"},{label:"Award",text:"Won Rookie of the Year in 2021-22"},{label:"Style",text:"Known for his versatility and playmaking at his size"}]},
+    {name:"Victor Wembanyama",espnId:"5104157",nbaId:"1641705",pos:"C",team:"San Antonio Spurs",college:"International",drafted:"2023 \u00b7 1st \u00b7 Pick 1",clues:[{label:"Position",text:"Center in the Western Conference"},{label:"Country",text:"From France, considered the most unique prospect in NBA history"},{label:"Draft",text:"#1 overall pick in 2023"},{label:"Size",text:"Stands over 7 feet tall with an 8-foot wingspan"},{label:"Award",text:"Won Rookie of the Year in 2023-24"}]},
+    {name:"Cade Cunningham",espnId:"4432816",nbaId:"1630595",pos:"PG",team:"Detroit Pistons",college:"Oklahoma State",drafted:"2021 \u00b7 1st \u00b7 Pick 1",clues:[{label:"Position",text:"Point Guard in the Eastern Conference"},{label:"College",text:"Played one year at Oklahoma State"},{label:"Draft",text:"#1 overall pick in 2021"},{label:"Role",text:"The face of Detroit's rebuilding franchise"},{label:"Style",text:"Known for his size and playmaking at point guard"}]},
+    {name:"Jalen Green",espnId:"4437244",nbaId:"1630224",pos:"SG",team:"Houston Rockets",college:"None (G League)",drafted:"2021 \u00b7 1st \u00b7 Pick 2",clues:[{label:"Position",text:"Shooting Guard in the Western Conference"},{label:"Path",text:"Skipped college to play in the G League Ignite program"},{label:"Draft",text:"2nd overall pick in 2021"},{label:"Scoring",text:"One of the most explosive scorers of his generation"},{label:"Team",text:"Part of Houston's young core alongside another top pick"}]},
+    {name:"Alperen Sengun",espnId:"4871144",nbaId:"1631094",pos:"C",team:"Houston Rockets",college:"International",drafted:"2021 \u00b7 1st \u00b7 Pick 16",clues:[{label:"Position",text:"Center in the Western Conference"},{label:"Country",text:"From Turkey, played professionally in Europe before the NBA"},{label:"Draft",text:"16th overall pick in 2021"},{label:"Skill",text:"Known for his elite post moves and passing for a big man"},{label:"Rise",text:"Emerged as an All-Star caliber player in his third NBA season"}]},
+    {name:"Tyrese Haliburton",espnId:"4396993",nbaId:"1630169",pos:"PG",team:"Indiana Pacers",college:"Iowa State",drafted:"2020 \u00b7 1st \u00b7 Pick 12",clues:[{label:"Position",text:"Point Guard in the Eastern Conference"},{label:"College",text:"Played two years at Iowa State"},{label:"Draft",text:"12th overall pick in 2020"},{label:"Trade",text:"Was traded from Sacramento to Indiana in 2022"},{label:"Season",text:"Led the NBA in assists in the 2023-24 season"}]},
+    {name:"De'Aaron Fox",espnId:"4066259",nbaId:"1628368",pos:"PG",team:"San Antonio Spurs",college:"Kentucky",drafted:"2017 \u00b7 1st \u00b7 Pick 5",clues:[{label:"Position",text:"Point Guard in the Western Conference"},{label:"College",text:"One-and-done at Kentucky"},{label:"Draft",text:"5th overall pick in 2017"},{label:"Speed",text:"Considered one of the fastest players in the NBA"},{label:"Trade",text:"Was traded from Sacramento to San Antonio in 2025"}]},
+    {name:"Domantas Sabonis",espnId:"3155942",nbaId:"1627734",pos:"C",team:"Sacramento Kings",college:"Gonzaga",drafted:"2016 \u00b7 1st \u00b7 Pick 11",clues:[{label:"Position",text:"Center in the Western Conference"},{label:"College",text:"Played at Gonzaga"},{label:"Family",text:"His father Arvydas won Olympic gold for the Soviet Union and Lithuania"},{label:"Draft",text:"11th overall pick in 2016"},{label:"Style",text:"Known as one of the best rebounders and passers at his position"}]},
+    {name:"Andrew Wiggins",espnId:"3059319",nbaId:"203952",pos:"SF",team:"Golden State Warriors",college:"Kansas",drafted:"2014 \u00b7 1st \u00b7 Pick 1",clues:[{label:"Position",text:"Small Forward in the Western Conference"},{label:"College",text:"One-and-done at Kansas"},{label:"Draft",text:"#1 overall pick in 2014"},{label:"Trade",text:"Was traded from Minnesota to Golden State in 2020"},{label:"Championship",text:"Won an NBA title and made the All-Star team with the Warriors"}]},
+    {name:"CJ McCollum",espnId:"2490149",nbaId:"203468",pos:"SG",team:"New Orleans Pelicans",college:"Lehigh",drafted:"2013 \u00b7 1st \u00b7 Pick 10",clues:[{label:"Position",text:"Shooting Guard in the Western Conference"},{label:"College",text:"Came from mid-major Lehigh, scored 30 in an NCAA upset win"},{label:"Draft",text:"10th overall pick in 2013"},{label:"Longevity",text:"Has been a consistent scorer throughout his career"},{label:"Journalism",text:"Has a journalism degree and has been active in sports media"}]},
+    {name:"Marcus Smart",espnId:"2990992",nbaId:"203935",pos:"PG",team:"Memphis Grizzlies",college:"Oklahoma State",drafted:"2014 \u00b7 1st \u00b7 Pick 6",clues:[{label:"Position",text:"Point Guard in the Western Conference"},{label:"College",text:"Stayed three years at Oklahoma State"},{label:"Draft",text:"6th overall pick in 2014"},{label:"Award",text:"Won Defensive Player of the Year in 2021-22"},{label:"Trade",text:"Was traded from Boston to Memphis after 8 seasons in green"}]},
+    {name:"Dejounte Murray",espnId:"3907497",nbaId:"1627749",pos:"PG",team:"New Orleans Pelicans",college:"Washington",drafted:"2016 \u00b7 1st \u00b7 Pick 29",clues:[{label:"Position",text:"Point Guard in the Western Conference"},{label:"College",text:"Played one year at Washington"},{label:"Draft",text:"29th pick in 2016"},{label:"Defense",text:"Won the NBA Steals title and made the All-Defensive team"},{label:"Trade",text:"Was traded from San Antonio to Atlanta, then to New Orleans"}]},
+    {name:"Tyler Herro",espnId:"4395725",nbaId:"1629639",pos:"SG",team:"Miami Heat",college:"Kentucky",drafted:"2019 \u00b7 1st \u00b7 Pick 13",clues:[{label:"Position",text:"Shooting Guard in the Eastern Conference"},{label:"College",text:"One-and-done at Kentucky"},{label:"Draft",text:"13th overall pick in 2019"},{label:"Playoff",text:"Scored 37 off the bench in Game 4 of the 2020 Eastern Conference Finals"},{label:"Award",text:"Won the NBA Sixth Man of the Year award in 2021-22"}]},
+    {name:"Russell Westbrook",espnId:"3468",nbaId:"201566",pos:"PG",team:"Free Agent",college:"UCLA",drafted:"2008 \u00b7 1st \u00b7 Pick 4",clues:[{label:"Position",text:"Point Guard, currently a free agent"},{label:"College",text:"Played at UCLA"},{label:"Draft",text:"4th overall pick in 2008"},{label:"Record",text:"Broke Oscar Robertson's all-time triple-double record"},{label:"Award",text:"Won the NBA MVP award in 2016-17"}]},
+    {name:"Chris Paul",espnId:"2779",nbaId:"101108",pos:"PG",team:"San Antonio Spurs",college:"Wake Forest",drafted:"2005 \u00b7 1st \u00b7 Pick 4",clues:[{label:"Position",text:"Point Guard in the Western Conference"},{label:"College",text:"Played at Wake Forest"},{label:"Nickname",text:"Known as CP3 and the Point God"},{label:"Style",text:"Considered the greatest pure point guard of his generation"},{label:"Longevity",text:"Still playing at an elite level well into his late 30s"}]},
+    {name:"Jordan Poole",espnId:"4278129",nbaId:"1629673",pos:"SG",team:"Washington Wizards",college:"Michigan",drafted:"2019 \u00b7 1st \u00b7 Pick 28",clues:[{label:"Position",text:"Shooting Guard in the Eastern Conference"},{label:"College",text:"Won a national championship at Michigan"},{label:"Draft",text:"28th pick in 2019"},{label:"Incident",text:"Was punched by a teammate during a Warriors practice"},{label:"Trade",text:"Was traded from Golden State to Washington in the Klay Thompson extension"}]}
   ];
 
+  // ── Shuffle-based rotation: no repeat for 50 days per league ────
   function shufflePool(arr, seed) {
     var a = arr.slice();
     var s = seed;
@@ -512,20 +413,26 @@ function dateSeed() {
 
   const player = getDailyPlayer();
 
+  // Photo URLs — use official league CDNs, not ESPN (ESPN blocks hotlinking)
+  // NBA: cdn.nba.com uses NBA.com PERSON_IDs (nbaId field)
+  // NFL: static.www.nfl.com uses ESPN IDs (works reliably for NFL)
   function getPlayerPhotoUrl(player) {
     if (player.league === 'NBA') {
       var id = player.nbaId || player.espnId;
       return 'https://cdn.nba.com/headshots/nba/latest/1040x760/' + id + '.png';
     } else {
+      // NFL CDN — reliable, no hotlink blocking
       return 'https://static.www.nfl.com/image/private/t_headshot_desktop/league/players/' + player.espnId;
     }
   }
 
   function getPlayerPhotoFallback(player) {
     if (player.league === 'NBA') {
+      // NBA fallback: smaller size
       var id = player.nbaId || player.espnId;
       return 'https://cdn.nba.com/headshots/nba/latest/260x190/' + id + '.png';
     } else {
+      // NFL fallback: ESPN direct URL
       return 'https://a.espncdn.com/i/headshots/nfl/players/full/' + player.espnId + '.png';
     }
   }
@@ -538,18 +445,34 @@ function dateSeed() {
   let pointsAvailable = POINT_VALUES[0];
   let won = false;
 
-  function leagueColor() { return player.league === 'NFL' ? '#e8a020' : '#0DBF7A'; }
-  function leagueBg()    { return player.league === 'NFL' ? 'rgba(232,160,32,0.15)' : 'rgba(13,191,122,0.12)'; }
+  function leagueColor() {
+    if (player.league === 'NFL') return '#e8a020';
+    if (player.league === 'MLB') return '#e84040';
+    return '#0DBF7A'; // NBA default
+  }
+  function leagueBg() {
+    if (player.league === 'NFL') return 'rgba(232,160,32,0.15)';
+    if (player.league === 'MLB') return 'rgba(232,64,64,0.15)';
+    return 'rgba(13,191,122,0.12)'; // NBA default
+  }
 
-  var wtpDateKey   = 'wtp_result_' + dateSeed();
+  // Date-based storage keys — survive any seed formula changes
+  var wtpDateKey = 'wtp_result_' + dateSeed();
   var wtpPlayedKey = 'wtp_played_' + dateSeed();
-  function saveWTPResult(data)  { try { localStorage.setItem(wtpDateKey, JSON.stringify(data)); } catch(e) {} }
+  function saveWTPResult(data) {
+    try { localStorage.setItem(wtpDateKey, JSON.stringify(data)); } catch(e) {}
+  }
   function loadWTPResult() {
     try {
       var r = localStorage.getItem(wtpDateKey);
       if (r) return JSON.parse(r);
+      // Check all old key formats
       var seed = dateSeed();
-      var oldKeys = ['fs_wtp_wtp-' + seed, 'fs_wtp_wtp-' + (seed + 166), 'fs_wtp_wtp-' + (seed + 56)];
+      var oldKeys = [
+        'fs_wtp_wtp-' + seed,
+        'fs_wtp_wtp-' + (seed + 166),
+        'fs_wtp_wtp-' + (seed + 56),
+      ];
       for (var i = 0; i < oldKeys.length; i++) {
         var r2 = localStorage.getItem(oldKeys[i]);
         if (r2) { localStorage.setItem(wtpDateKey, r2); return JSON.parse(r2); }
@@ -557,7 +480,9 @@ function dateSeed() {
       return null;
     } catch(e) { return null; }
   }
-  function markWTPPlayed()  { try { localStorage.setItem(wtpPlayedKey, '1'); } catch(e) {} }
+  function markWTPPlayed() {
+    try { localStorage.setItem(wtpPlayedKey, '1'); } catch(e) {}
+  }
   function hasWTPPlayed() {
     if (localStorage.getItem(wtpPlayedKey) === '1') return true;
     try {
@@ -567,100 +492,131 @@ function dateSeed() {
     } catch(e) { return false; }
   }
 
-  function handleImgError(img, espnId, league) {
-    var fb = getPlayerPhotoFallback({espnId, league, nbaId: img.dataset.nbaId});
-    if (img.src !== fb) { img.src = fb; } else { img.style.display = 'none'; }
-  }
-  function handleRevealImgError(img, espnId, league) {
-    var fb = getPlayerPhotoFallback({espnId, league, nbaId: img.dataset.nbaId});
-    if (img.src !== fb) { img.src = fb; } else { img.style.display = 'none'; }
-  }
-
-  /* ── BUILD GAME HTML ── */
   function renderGame() {
-    var today = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'});
-    var container = document.getElementById('wtp-container');
+    // Use AI-generated player from Supabase if available
+    if (window._wtpPlayerOverride) {
+      Object.assign(player, window._wtpPlayerOverride);
+    }
+    const container = document.getElementById('wtp-container');
     container.innerHTML = `
-      <div class="wtp-topbar">
-        <div class="wtp-topbar-title">Who's That, Player?</div>
-        <div class="wtp-topbar-badge" style="color:${leagueColor()}">${player.league} · ${today}</div>
-      </div>
-
       <div class="wtp-hero">
-        <div class="wtp-silhouette-box" id="sil-box">
-          <img id="silhouette-img"
-            src="${window._wtpValidatedPhoto || espnImg}"
-            alt="mystery player"
-            data-nba-id="${player.nbaId || ''}"
-            onerror="handleImgError(this, '${player.espnId}', '${player.league}')"
-            style="filter:brightness(0) saturate(100%);"
-          />
+        <div class="wtp-hero-top">
+          <div class="wtp-brand">
+            <div class="wtp-brand-icon">❓</div>
+            <div>
+              <div class="wtp-brand-name">Who's That, Player?</div>
+              <div class="wtp-brand-sub">by FlurrySports · Daily Challenge</div>
+            </div>
+          </div>
+          <span class="wtp-league-badge" style="background:${leagueBg()};color:${leagueColor()};border:1px solid ${leagueColor()}33;">${player.league} · Active Player</span>
         </div>
-        <div class="wtp-stats-row">
-          <div class="wtp-stat">
-            <div class="wtp-stat-val" id="pts-available" style="color:${leagueColor()};">${POINT_VALUES[0].toLocaleString()}</div>
-            <div class="wtp-stat-lbl">pts avail</div>
-          </div>
-          <div class="wtp-stat">
-            <div class="wtp-stat-val" id="guesses-left" style="color:${leagueColor()};">0</div>
-            <div class="wtp-stat-lbl">guesses</div>
-          </div>
-          <div class="wtp-stat">
-            <div class="wtp-stat-val identity" style="color:${leagueColor()}">???</div>
-            <div class="wtp-stat-lbl">identity</div>
-          </div>
-        </div>
-      </div>
 
-      <div class="wtp-clues-section" id="clues-list"></div>
+        <div class="wtp-body">
+          <div class="wtp-silhouette-panel">
+            <div class="wtp-who-label">Who's That, Player?</div>
+            <div class="wtp-silhouette-wrap">
+              <img class="wtp-player-img" id="silhouette-img"
+                src="${window._wtpValidatedPhoto || espnImg}"
+                alt="mystery player"
+                data-nba-id="${player.nbaId || ''}"
+                onerror="handleImgError(this, '${player.espnId}', '${player.league}')"
+              />
+              <svg id="fallback-svg" style="display:none;width:100%;height:100%;" viewBox="0 0 140 185" xmlns="http://www.w3.org/2000/svg">
+                <ellipse cx="70" cy="28" rx="22" ry="24" fill="#0a1520"/>
+                <path d="M48 50 Q38 65 35 90 L43 92 Q46 74 52 65 L52 130 L42 130 L36 185 L50 185 L58 138 L70 138 L82 138 L90 185 L104 185 L98 130 L88 130 L88 65 Q94 74 97 92 L105 90 Q102 65 92 50 Z" fill="#0a1520"/>
+                <ellipse cx="70" cy="50" rx="22" ry="6" fill="#0a1520"/>
+                <path d="M35 90 Q28 115 30 140 L42 138 Q40 116 43 92 Z" fill="#08111a"/>
+                <path d="M105 90 Q112 115 110 140 L98 138 Q100 116 97 92 Z" fill="#08111a"/>
+              </svg>
+              <div class="wtp-glow"></div>
+            </div>
+            <div class="wtp-qmarks" id="qmarks">? ? ?</div>
+          </div>
 
-      <div class="wtp-guess-footer">
-        <div class="wtp-feedback" id="guess-feedback"></div>
-        <div class="wtp-input-row">
-          <input class="wtp-guess-input" id="guess-input" type="text" placeholder="Type a player name..." autocomplete="off" />
-          <button class="wtp-guess-btn" onclick="submitGuess()">Guess</button>
+          <div class="wtp-clues-panel">
+            <div class="wtp-clues-header">
+              <span class="wtp-clues-title">Clues Revealed</span>
+              <span class="wtp-clue-count" id="clue-count-display">${revealedClues} of 5</span>
+            </div>
+            <div id="clues-list"></div>
+          </div>
         </div>
-        <button class="wtp-reveal-btn" id="reveal-btn" onclick="revealNextClue()">
-          Reveal Clue 2 · max ${POINT_VALUES[1].toLocaleString()} pts after
-        </button>
+
+        <div class="wtp-guess-section">
+          <div class="wtp-guess-label">Your Guess</div>
+          <div class="wtp-guess-row">
+            <input class="wtp-guess-input" id="guess-input" type="text" placeholder="Type a player name..." autocomplete="off" />
+            <button class="wtp-guess-btn" onclick="submitGuess()">Guess</button>
+          </div>
+          <button class="wtp-reveal-btn" id="reveal-btn" onclick="revealNextClue()">
+            Reveal Next Clue (−${POINT_VALUES[0] - POINT_VALUES[Math.min(revealedClues, 4)]} pts available after)
+          </button>
+          <div class="guess-feedback" id="guess-feedback"></div>
+        </div>
+
+        <div class="wtp-score-strip">
+          <div class="wtp-score-item">
+            <div class="wtp-score-val" id="pts-available" style="color:${leagueColor()};">${POINT_VALUES[0].toLocaleString()}</div>
+            <div class="wtp-score-lbl">Points Available</div>
+          </div>
+          <div class="wtp-divider"></div>
+          <div class="wtp-score-item">
+            <div class="wtp-score-val" id="guesses-left" style="color:${leagueColor()};">∞</div>
+            <div class="wtp-score-lbl">Guesses Used</div>
+          </div>
+          <div class="wtp-divider"></div>
+          <div class="wtp-score-item">
+            <div class="wtp-score-val" style="color:${leagueColor()};">${player.league}</div>
+            <div class="wtp-score-lbl">League</div>
+          </div>
+          <div class="wtp-divider"></div>
+          <div class="wtp-score-item">
+            <div class="wtp-score-val" style="color:${leagueColor()};">${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
+            <div class="wtp-score-lbl">Today's Puzzle</div>
+          </div>
+        </div>
       </div>
     `;
 
     renderClues();
     updateRevealBtn();
+
+    // Enter key submits
     document.getElementById('guess-input').addEventListener('keydown', e => {
       if (e.key === 'Enter') submitGuess();
     });
   }
 
   function renderClues() {
-    var list = document.getElementById('clues-list');
+    const list = document.getElementById('clues-list');
     if (!list) return;
     list.innerHTML = player.clues.map((clue, i) => {
-      var isRevealed = i < revealedClues;
+      const isRevealed = i < revealedClues;
       return `
-        <div class="wtp-clue-row ${isRevealed ? 'active' : ''}" id="clue-${i}">
+        <div class="wtp-clue ${isRevealed ? 'revealed' : 'locked'}" id="clue-${i}">
           <div class="wtp-clue-num">${i + 1}</div>
-          <div class="wtp-clue-inner">
-            <div class="wtp-clue-tag">${clue.label}</div>
-            <div class="wtp-clue-text">${isRevealed ? clue.text : 'Locked'}</div>
+          <div class="wtp-clue-content">
+            <div class="wtp-clue-label">${clue.label}</div>
+            <div class="wtp-clue-text">${isRevealed ? clue.text : '? ? ? ? ?'}</div>
           </div>
-          <div class="wtp-clue-pts">${POINT_VALUES[i].toLocaleString()}</div>
+          <div class="wtp-pts-badge">${POINT_VALUES[i].toLocaleString()} pts</div>
         </div>
       `;
     }).join('');
+    const countEl = document.getElementById('clue-count-display');
+    if (countEl) countEl.textContent = `${revealedClues} of 5`;
   }
 
   function updateRevealBtn() {
-    var btn = document.getElementById('reveal-btn');
+    const btn = document.getElementById('reveal-btn');
     if (!btn) return;
     if (revealedClues >= 5) {
       btn.style.display = 'none';
     } else {
-      var nextPts = POINT_VALUES[revealedClues];
-      btn.textContent = `Reveal Clue ${revealedClues + 1} · max ${nextPts.toLocaleString()} pts after`;
+      const nextPts = POINT_VALUES[revealedClues];
+      btn.textContent = `Reveal Next Clue (max ${nextPts.toLocaleString()} pts after)`;
     }
-    var ptsEl = document.getElementById('pts-available');
+    const ptsEl = document.getElementById('pts-available');
     if (ptsEl) ptsEl.textContent = POINT_VALUES[Math.min(revealedClues - 1, 4)].toLocaleString();
   }
 
@@ -674,35 +630,37 @@ function dateSeed() {
 
   function submitGuess() {
     if (gameOver) return;
-    var input    = document.getElementById('guess-input');
-    var feedback = document.getElementById('guess-feedback');
-    var guess = (input.value || '').trim().toLowerCase();
+    const input = document.getElementById('guess-input');
+    const feedback = document.getElementById('guess-feedback');
+    const guess = (input.value || '').trim().toLowerCase();
     if (!guess) return;
 
     guessesUsed++;
-    var gl = document.getElementById('guesses-left');
-    if (gl) gl.textContent = guessesUsed;
+    document.getElementById('guesses-left').textContent = guessesUsed;
 
-    var correctName = player.name.toLowerCase();
-    var lastName    = correctName.split(' ').slice(-1)[0];
+    const correctName = player.name.toLowerCase();
+    const lastName = correctName.split(' ').slice(-1)[0];
 
-    if (guess === correctName || guess === lastName || (correctName.includes(guess) && guess.length > 3)) {
+    if (guess === correctName || guess === lastName || correctName.includes(guess) && guess.length > 3) {
       gameOver = true;
       won = true;
       markAttemptedLocally(player.id);
       showResult(true, pointsAvailable);
     } else {
+      // Wrong guess — reveal next clue (or end game if on last clue)
       input.value = '';
       if (revealedClues >= 5) {
+        // On last clue — wrong guess = loss
         gameOver = true;
         feedback.textContent = 'Out of clues — the answer was ' + player.name + '!';
-        feedback.className = 'wtp-feedback wrong-guess';
+        feedback.className = 'guess-feedback wrong-guess';
         setTimeout(function() { showResult(false, 0); }, 1500);
       } else {
+        // Reveal next clue automatically
         feedback.textContent = 'Wrong — revealing next clue!';
-        feedback.className = 'wtp-feedback wrong-guess';
+        feedback.className = 'guess-feedback wrong-guess';
         setTimeout(function() {
-          if (feedback) { feedback.textContent = ''; feedback.className = 'wtp-feedback'; }
+          if (feedback) feedback.textContent = '';
           revealedClues++;
           pointsAvailable = POINT_VALUES[revealedClues - 1];
           renderClues();
@@ -713,21 +671,18 @@ function dateSeed() {
   }
 
   async function showResult(correct, pts, isReplay, storedData) {
-    // Switch body to scrollable for result screen
-    document.body.classList.add('wtp-result-active');
-
     if (isReplay && storedData) { correct = storedData.correct; pts = storedData.finalPts || 0; }
-    var noData = isReplay && storedData && storedData.noData;
-    var fire = isOnFire();
-    var finalPts   = correct ? (fire && !isReplay ? Math.round(pts * 1.10) : pts) : 0;
-    var cluesUsed  = isReplay ? (storedData.cluesUsed || 5) : revealedClues;
-    var guessesUsedVal = isReplay ? (storedData.guessesUsed || 0) : guessesUsed;
-    var emojiResult = correct ? '🎉' : '😔';
-    var headline    = correct ? 'Correct!' : 'Nice Try!';
-    var shareEmoji  = correct
+    const noData = isReplay && storedData && storedData.noData;
+    const fire = isOnFire();
+    const finalPts = correct ? (fire && !isReplay ? Math.round(pts * 1.10) : pts) : 0;
+    const cluesUsed = isReplay ? (storedData.cluesUsed || 5) : revealedClues;
+    const guessesUsedVal = isReplay ? (storedData.guessesUsed || 0) : guessesUsed;
+    const emojiResult = correct ? '🎉' : '😔';
+    const headline = correct ? 'Correct!' : 'Nice Try!';
+    const shareEmoji = correct
       ? ('✅ Guessed in ' + cluesUsed + ' clue' + (cluesUsed !== 1 ? 's' : '') + '!')
       : "❌ Couldn't get it today";
-    var shareText = buildShareText(
+    const shareText = buildShareText(
       "Who's That, Player? (" + player.league + ")",
       finalPts,
       shareEmoji,
@@ -736,6 +691,7 @@ function dateSeed() {
     window._lastShareText = shareText;
 
     if (!isReplay) {
+      // Store FIRST before any async
       saveWTPResult({ correct, finalPts, cluesUsed, guessesUsed: guessesUsedVal });
       markWTPPlayed();
       updateStreak();
@@ -745,7 +701,8 @@ function dateSeed() {
     var cluesHtml = player.clues.map(function(cl) {
       return '<div style="padding:0.4rem 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.85rem;">' +
         '<span style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.75rem;color:' + leagueColor() + ';margin-right:0.5rem;">' + cl.label + ':</span>' +
-        '<span style="color:var(--gray-light);">' + cl.text + '</span></div>';
+        '<span style="color:var(--gray-light);">' + cl.text + '</span>' +
+        '</div>';
     }).join('');
 
     var ptsLine = '';
@@ -760,7 +717,7 @@ function dateSeed() {
 
     var container = document.getElementById('wtp-container');
     container.innerHTML =
-      '<div class="wtp-result-shell"><div class="wtp-result ' + (correct ? 'correct' : 'wrong') + '">' +
+      '<div class="wtp-result ' + (correct ? 'correct' : 'wrong') + '">' +
         '<div style="font-size:3rem;margin-bottom:0.5rem;">' + emojiResult + '</div>' +
         '<div class="wtp-result-main">' + (noData ? 'Already Played!' : headline) + '</div>' +
         ptsLine +
@@ -776,24 +733,25 @@ function dateSeed() {
           '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:0.75rem;">All Clues</div>' +
           cluesHtml +
         '</div>' +
-        buildShareSection("Who\'s That, Player? (" + player.league + ')', finalPts, correct ? ('Guessed in ' + cluesUsed + ' clues') : 'Better luck tomorrow!') +
+        buildShareSection("Who's That, Player? (" + player.league + ')', finalPts, correct ? ('Guessed in ' + cluesUsed + ' clues') : 'Better luck tomorrow!') +
         '<div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin:1rem 0;">' +
           '<a href="/" class="btn btn-outline">Back to Games</a>' +
         '</div>' +
-        '<div style="border-top:1px solid rgba(13,191,122,0.15);padding-top:1.25rem;">' +
-          '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:0.75rem;">Try Today\'s Other Games</div>' +
+        '<div style="border-top:1px solid rgba(52,152,219,0.15);padding-top:1.25rem;">' +
+          '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:0.75rem;">Try Today&#39;s Other Games</div>' +
           '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">' +
             '<a href="/daily-quiz.html" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:0.875rem;text-decoration:none;color:var(--white);font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;text-align:center;">🎯 Daily Quiz</a>' +
             '<a href="/snap-decision.html" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:0.875rem;text-decoration:none;color:var(--white);font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;text-align:center;">🏈 Snap Decision</a>' +
           '</div>' +
         '</div>' +
-      '</div></div>';
+      '</div>';
 
+    // Percentile
     try {
       var pct = await getPercentile(player.id, correct ? finalPts : 0);
       var pEl = document.getElementById('wtp-percentile');
       if (pEl && pct !== null && correct) {
-        pEl.innerHTML = '<div style="display:inline-block;background:rgba(13,191,122,0.1);border:1px solid rgba(13,191,122,0.3);border-radius:8px;padding:0.5rem 1.25rem;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.9rem;letter-spacing:0.08em;text-transform:uppercase;color:#0DBF7A;margin-bottom:0.75rem;">Better than ' + pct + '% of players today</div>';
+        pEl.innerHTML = '<div style="display:inline-block;background:rgba(52,152,219,0.1);border:1px solid rgba(52,152,219,0.3);border-radius:8px;padding:0.5rem 1.25rem;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.9rem;letter-spacing:0.08em;text-transform:uppercase;color:#3498db;margin-bottom:0.75rem;">Better than ' + pct + '% of players today</div>';
       }
     } catch(e) {}
 
@@ -810,53 +768,60 @@ function dateSeed() {
   document.addEventListener('DOMContentLoaded', function() {
     updateNavAuth();
 
+    // Check localStorage for today's result — instant, no network
     var stored = loadWTPResult();
     if (stored) {
-      document.body.classList.add('wtp-result-active');
       showResult(stored.correct, stored.finalPts || 0, true, stored);
       return;
     }
 
+    // If played today but result missing
     if (hasWTPPlayed()) {
-      document.body.classList.add('wtp-result-active');
       showResult(false, 0, true, { correct: false, finalPts: 0, noData: true });
       return;
     }
 
-    // Try to get worker-validated photo URL from Supabase first
+    // Fetch today's AI-generated player from Supabase first
+    // Falls back to hardcoded list if the worker hasn't run yet
     (async function() {
       try {
         var today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
         var res = await fetch(
-          SUPABASE_URL + '/rest/v1/wtp_daily?date=eq.' + today + '&select=photo_url',
+          SUPABASE_URL + '/rest/v1/wtp_daily?date=eq.' + today + '&select=player_json,photo_url',
           { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } }
         );
         if (res.ok) {
           var rows = await res.json();
-          if (rows && rows.length > 0 && rows[0].photo_url) {
-            window._wtpValidatedPhoto = rows[0].photo_url;
+          if (rows && rows.length > 0 && rows[0].player_json) {
+            var p = rows[0].player_json;
+            p.id = 'wtp-' + today.replace(/-/g, '');
+            window._wtpPlayerOverride = p;
+            if (rows[0].photo_url) window._wtpValidatedPhoto = rows[0].photo_url;
           }
         }
-      } catch(e) { /* silently fall back to CDN guessing */ }
+      } catch(e) { /* fall back to hardcoded player */ }
       renderGame();
     })();
   });
 
 </script>
 <script>
-// ── TECHNICAL FOUL ──
+// ── TECHNICAL FOUL: fires when player leaves the game ──
 (function() {
   var _tfTriggered = false;
 
   function _isGameActive() {
     try { return typeof gameOver !== 'undefined' && !gameOver && typeof revealedClues !== 'undefined' && revealedClues >= 1; } catch(e) { return false; }
   }
+
   function _getCurrentScore() {
     try { return typeof pointsAvailable !== 'undefined' ? pointsAvailable : 0; } catch(e) { return 0; }
   }
+
   function _endGame() {
     try { if(typeof gameOver!=='undefined'){gameOver=true;} } catch(e) {}
   }
+
   function _showTechFoul() {
     if (_tfTriggered) return;
     if (!_isGameActive()) return;
@@ -867,6 +832,7 @@ function dateSeed() {
     if (el) el.textContent = score.toLocaleString();
     var overlay = document.getElementById('tech-foul-overlay');
     if (overlay) { overlay.style.cssText = 'display:flex !important; position:fixed !important; top:0 !important; left:0 !important; right:0 !important; bottom:0 !important; width:100% !important; height:100% !important; min-height:100vh !important; z-index:999999 !important; background:rgba(0,0,0,0.95) !important; align-items:center !important; justify-content:center !important; flex-direction:column !important; text-align:center !important; padding:2rem !important; box-sizing:border-box !important;'; overlay.classList.add('active'); }
+    // Save forfeit for WTP
     try {
       if (typeof saveAttempt === 'function') saveAttempt(typeof todayGameId !== 'undefined' ? todayGameId : 'wtp-forfeit', score, 0, { forfeit: true }, 'whos_that_player');
       try { localStorage.setItem('wtp_played_' + (typeof seed !== 'undefined' ? seed : ''), '1'); } catch(e2) {}
@@ -876,7 +842,9 @@ function dateSeed() {
   document.addEventListener('visibilitychange', function() {
     if (document.visibilityState === 'hidden') _showTechFoul();
   });
+
   window.addEventListener('pagehide', function() { _showTechFoul(); });
+
   window.addEventListener('blur', function() {
     setTimeout(function() {
       if (document.visibilityState === 'hidden' || !document.hasFocus()) _showTechFoul();
@@ -884,32 +852,43 @@ function dateSeed() {
   });
 })();
 </script>
+
 <script>
-// ── BACK BUTTON ──
+// ── BACK BUTTON: 25% rule for Who's That Player ──
 (function() {
   var _gameStarted = false;
+
   function _pushState() {
-    if (!_gameStarted) { _gameStarted = true; history.pushState({ wtpPlaying: true }, '', window.location.href); }
+    if (!_gameStarted) {
+      _gameStarted = true;
+      history.pushState({ wtpPlaying: true }, '', window.location.href);
+    }
   }
+
   window.addEventListener('popstate', function(e) {
     if (!_gameStarted) return;
     if (typeof gameOver !== 'undefined' && gameOver) return;
+    // revealedClues === 1 and no guess used = before 25%
     var atStart = typeof revealedClues !== 'undefined' && revealedClues === 1 && typeof guessesUsed !== 'undefined' && guessesUsed === 0;
     if (atStart) {
       window.location.reload();
     } else {
       history.pushState({ wtpPlaying: true }, '', window.location.href);
+      // End the game with score 0 — they left mid-game
       if (typeof gameOver !== 'undefined') gameOver = true;
       try { localStorage.setItem('wtp_played_' + (typeof seed !== 'undefined' ? seed : ''), '1'); } catch(e) {}
       if (typeof showResult === 'function') showResult(false, 0, false, null);
     }
   });
-  var _wtpObserver = new MutationObserver(function() {
-    var gameArea = document.getElementById('wtp-container');
-    if (gameArea && gameArea.querySelector('.wtp-clues-section')) { _pushState(); _wtpObserver.disconnect(); }
+
+  // Push state when game renders (player object exists)
+  var _wtpObserver = new MutationObserver(function(mutations) {
+    var gameArea = document.getElementById('wtp-game-area') || document.querySelector('.wtp-silhouette-panel');
+    if (gameArea) { _pushState(); _wtpObserver.disconnect(); }
   });
   _wtpObserver.observe(document.body, { childList: true, subtree: true });
 })();
 </script>
+
 </body>
 </html>

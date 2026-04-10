@@ -73,7 +73,7 @@ async function generateAndStore(env) {
   try {
     // 1. Check if today's quiz already exists
     const existing = await sbFetch(env, 'GET',
-      `/rest/v1/daily_quizzes?date=eq.${today}&select=id`);
+      `/rest/v1/daily_quizzes?date=eq.${today}&select=date`);
     if (existing.length > 0) {
       return { status: 'skipped', reason: 'Quiz already exists for today', date: today };
     }

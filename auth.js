@@ -527,6 +527,9 @@ function openModal(mode = 'login') {
           <div class="form-error hidden" id="auth-error"></div>
           <button type="submit" class="btn btn-primary" style="width:100%;margin-top:0.5rem;justify-content:center;" id="auth-submit-btn">Log In</button>
         </form>
+        <div style="text-align:center;margin-top:0.5rem;" id="forgot-link-row">
+          <a onclick="switchToReset()" style="font-size:0.82rem;color:var(--gray);cursor:pointer;text-decoration:underline;">Forgot your password?</a>
+        </div>
         <div class="auth-switch">
           <span id="auth-switch-text">Don't have an account? </span>
           <a id="auth-switch-link" onclick="switchAuthMode()">Sign Up</a>
@@ -543,8 +546,54 @@ function openModal(mode = 'login') {
 
 function closeModal() { const m = document.getElementById('auth-modal'); if (m) m.style.display = 'none'; }
 function switchAuthMode() { window._authMode = window._authMode === 'login' ? 'signup' : 'login'; if (window._authMode === 'signup') switchToSignup(); else switchToLogin(); }
-function switchToLogin() { document.getElementById('modal-title').textContent='Log In'; document.getElementById('modal-sub').textContent='Welcome back! Sign in to track your scores.'; document.getElementById('username-group').style.display='none'; document.getElementById('auth-submit-btn').textContent='Log In'; document.getElementById('auth-switch-text').textContent="Don't have an account? "; document.getElementById('auth-switch-link').textContent='Sign Up'; }
-function switchToSignup() { document.getElementById('modal-title').textContent='Create Account'; document.getElementById('modal-sub').textContent='Join FlurrySports and compete on the leaderboard!'; document.getElementById('username-group').style.display='block'; document.getElementById('auth-submit-btn').textContent='Create Account'; document.getElementById('auth-switch-text').textContent='Already have an account? '; document.getElementById('auth-switch-link').textContent='Log In'; }
+function switchToLogin() {
+  document.getElementById('modal-title').textContent = 'Log In';
+  document.getElementById('modal-sub').textContent = 'Welcome back! Sign in to track your scores.';
+  document.getElementById('username-group').style.display = 'none';
+  const pwGroup = document.getElementById('auth-password').closest('.form-group');
+  if (pwGroup) pwGroup.style.display = 'block';
+  const forgotRow = document.getElementById('forgot-link-row');
+  if (forgotRow) forgotRow.style.display = 'block';
+  document.getElementById('auth-submit-btn').textContent = 'Log In';
+  document.getElementById('auth-switch-text').textContent = "Don't have an account? ";
+  document.getElementById('auth-switch-link').textContent = 'Sign Up';
+  document.getElementById('auth-switch-link').setAttribute('onclick', 'switchAuthMode()');
+  window._authMode = 'login';
+}
+function switchToSignup() {
+  document.getElementById('modal-title').textContent = 'Create Account';
+  document.getElementById('modal-sub').textContent = 'Join FlurrySports and compete on the leaderboard!';
+  document.getElementById('username-group').style.display = 'block';
+  const pwGroup = document.getElementById('auth-password').closest('.form-group');
+  if (pwGroup) pwGroup.style.display = 'block';
+  const forgotRow = document.getElementById('forgot-link-row');
+  if (forgotRow) forgotRow.style.display = 'none';
+  document.getElementById('auth-submit-btn').textContent = 'Create Account';
+  document.getElementById('auth-switch-text').textContent = 'Already have an account? ';
+  document.getElementById('auth-switch-link').textContent = 'Log In';
+  document.getElementById('auth-switch-link').setAttribute('onclick', 'switchAuthMode()');
+  window._authMode = 'signup';
+}
+
+function switchToReset() {
+  document.getElementById('modal-title').textContent = 'Reset Password';
+  document.getElementById('modal-sub').textContent = 'Enter your email and we'll send you a reset link.';
+  document.getElementById('username-group').style.display = 'none';
+  document.getElementById('auth-password').closest('.form-group').style.display = 'none';
+  document.getElementById('forgot-link-row').style.display = 'none';
+  document.getElementById('auth-submit-btn').textContent = 'Send Reset Link';
+  document.getElementById('auth-switch-text').textContent = 'Remember your password? ';
+  document.getElementById('auth-switch-link').textContent = 'Log In';
+  document.getElementById('auth-switch-link').setAttribute('onclick', 'switchToLogin()');
+  window._authMode = 'reset';
+}
+
+async function sendPasswordReset(email) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + '/reset-password.html'
+  });
+  return error;
+}
 
 async function linkCookieAttemptsToUser(userId) {
   const cookieId = getCookieId();
@@ -567,6 +616,11 @@ async function handleAuth(e) {
     if (data?.user) { await linkCookieAttemptsToUser(data.user.id); await claimPendingScore(data.user.id); }
     showToast('Account created! Check your email to confirm.', 'success');
     closeModal(); updateNavAuth();
+  } else if (window._authMode === 'reset') {
+    const error = await sendPasswordReset(email);
+    if (error) { errEl.textContent = error.message; errEl.classList.remove('hidden'); btn.disabled = false; btn.textContent = 'Send Reset Link'; return; }
+    showToast('Reset link sent! Check your email.', 'success');
+    closeModal();
   } else {
     const { data, error } = await signIn(email, password);
     if (error) { errEl.textContent=error.message; errEl.classList.remove('hidden'); btn.disabled=false; btn.textContent='Log In'; return; }

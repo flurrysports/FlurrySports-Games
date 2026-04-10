@@ -25,173 +25,180 @@
   })();
 </script>
   <style>
-    .wtp-shell { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; position: relative; z-index: 1; }
+    /* ── NO SCROLL LAYOUT: nav=68px, game fills rest ── */
+    html, body { height: 100%; overflow: hidden; }
+    body { display: flex; flex-direction: column; }
+    body.wtp-result-active { overflow: auto; }
+    nav { flex-shrink: 0; }
+
+    .wtp-page {
+      flex: 1; display: flex; flex-direction: column;
+      overflow: hidden; min-height: 0;
+    }
+    .wtp-card {
+      flex: 1; display: flex; flex-direction: column;
+      min-height: 0; max-width: 520px; width: 100%;
+      margin: 0 auto; position: relative; z-index: 1;
+    }
+
+    /* ── TOP BAR ── */
+    .wtp-topbar {
+      background: #0DBF7A; padding: 0 14px;
+      height: clamp(38px, 8vw, 46px);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .wtp-topbar-title {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
+      font-size: clamp(14px, 4vw, 19px); color: #021a0d;
+      letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap;
+    }
+    .wtp-topbar-badge {
+      font-family: 'Barlow Condensed', sans-serif; font-size: clamp(9px, 2.2vw, 11px);
+      font-weight: 700; letter-spacing: 0.12em; color: var(--navy);
+      text-transform: uppercase; white-space: nowrap;
+    }
+
+    /* ── HERO ROW ── */
     .wtp-hero {
-      background: linear-gradient(135deg, #020d1a 0%, #041428 50%, #020d1a 100%);
-      border: 1px solid rgba(52,152,219,0.2);
-      border-radius: 20px; overflow: hidden; margin-bottom: 1.5rem;
+      background: #0a120b; border-bottom: 2px solid #0DBF7A;
+      padding: clamp(6px,2vw,10px) 12px;
+      display: flex; align-items: center; gap: 12px; flex-shrink: 0;
     }
-    .wtp-hero-top {
-      background: linear-gradient(90deg, rgba(52,152,219,0.08), transparent);
-      border-bottom: 1px solid rgba(52,152,219,0.15);
-      padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
+    .wtp-silhouette-box {
+      width: clamp(56px, 14vw, 76px); height: clamp(56px, 14vw, 76px);
+      border-radius: 8px; border: 1px solid rgba(13,191,122,0.3);
+      background: #061209; display: flex; align-items: center;
+      justify-content: center; flex-shrink: 0; overflow: hidden;
     }
-    .wtp-brand { display: flex; align-items: center; gap: 0.75rem; }
-    .wtp-brand-icon {
-      width: 36px; height: 36px; border-radius: 8px;
-      background: rgba(52,152,219,0.2); border: 1px solid rgba(52,152,219,0.4);
-      display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
-    }
-    .wtp-brand-name { font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; color: #3498db; }
-    .wtp-brand-sub { font-family: 'Barlow Condensed',sans-serif; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(52,152,219,0.5); }
-    .wtp-league-badge {
-      font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 0.75rem;
-      letter-spacing: 0.15em; text-transform: uppercase; padding: 0.25rem 0.75rem;
-      border-radius: 20px;
-    }
-    .wtp-body { display: grid; grid-template-columns: 240px 1fr; gap: 0; }
-    .wtp-silhouette-panel {
-      background: linear-gradient(180deg, #010810 0%, #020d1a 100%);
-      border-right: 1px solid rgba(52,152,219,0.1);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 2rem 1.5rem; min-height: 280px; position: relative;
-    }
-    .wtp-who-label {
-      font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.7rem;
-      letter-spacing: 0.25em; text-transform: uppercase; color: rgba(52,152,219,0.3);
-      margin-bottom: 1rem; text-align: center;
-    }
-    .wtp-silhouette-wrap { position: relative; width: 140px; height: 185px; margin-bottom: 1rem; }
     .wtp-player-img {
       width: 100%; height: 100%; object-fit: cover; object-position: top;
       filter: brightness(0) saturate(100%);
     }
-    .wtp-glow {
-      position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
-      width: 100px; height: 30px;
-      background: radial-gradient(ellipse, rgba(52,152,219,0.2) 0%, transparent 70%);
+    .wtp-qmark-big {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
+      font-size: clamp(32px, 9vw, 48px); color: #0DBF7A; opacity: 0.65; line-height: 1;
     }
-    .wtp-qmarks {
-      font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 1.5rem;
-      color: rgba(52,152,219,0.4); letter-spacing: 0.4em; text-align: center;
+    .wtp-stats-row { flex: 1; display: flex; min-width: 0; }
+    .wtp-stat {
+      flex: 1; text-align: center; padding: 0 4px;
+      border-right: 1px solid #1a2e1f;
     }
-    .wtp-clues-panel { padding: 1.5rem; }
-    .wtp-clues-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-    .wtp-clues-title { font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.3); }
-    .wtp-clue-count { font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.8rem; color: #3498db; }
+    .wtp-stat:last-child { border-right: none; }
+    .wtp-stat-val {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
+      font-size: clamp(18px, 5vw, 26px); color: #0DBF7A; line-height: 1;
+    }
+    .wtp-stat-val.identity { font-size: clamp(14px, 4vw, 20px); opacity: 0.25; }
+    .wtp-stat-lbl {
+      font-family: 'Barlow Condensed', sans-serif; font-size: clamp(6px, 1.6vw, 9px);
+      font-weight: 700; color: #2a4a30; letter-spacing: 0.1em;
+      text-transform: uppercase; margin-top: 1px;
+    }
+
+    /* ── CLUES ── */
+    .wtp-clues-section {
+      flex: 1; min-height: 0; display: flex; flex-direction: column;
+      padding: clamp(5px,1.5vw,8px) 10px 4px; gap: clamp(3px,1vw,5px); overflow: hidden;
+    }
     .wtp-clue {
-      display: flex; align-items: flex-start; gap: 0.875rem;
-      padding: 0.875rem 1rem; margin-bottom: 0.625rem;
-      background: rgba(52,152,219,0.05); border: 1px solid rgba(52,152,219,0.1);
-      border-radius: 10px; transition: all 0.3s ease;
+      display: flex; align-items: center; border-radius: 6px;
+      overflow: hidden; border: 1px solid #1a1a1a; flex-shrink: 0;
     }
-    .wtp-clue.locked { opacity: 0.25; background: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.04); }
-    .wtp-clue.revealed { animation: clueReveal 0.4s ease; }
-    @keyframes clueReveal { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
-    .wtp-clue-num { font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 1.3rem; color: #3498db; line-height: 1; min-width: 16px; }
-    .wtp-clue.locked .wtp-clue-num { color: rgba(255,255,255,0.1); }
-    .wtp-clue-content { flex: 1; }
-    .wtp-clue-label { font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.25); margin-bottom: 2px; }
-    .wtp-clue-text { font-size: 0.9rem; font-weight: 600; color: var(--white); line-height: 1.3; }
-    .wtp-clue.locked .wtp-clue-text { color: rgba(255,255,255,0.08); }
-    .wtp-pts-badge { font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.7rem; letter-spacing: 0.08em; padding: 3px 8px; border-radius: 4px; white-space: nowrap; background: rgba(52,152,219,0.1); color: #3498db; border: 1px solid rgba(52,152,219,0.2); }
-    .wtp-clue.locked .wtp-pts-badge { background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.04); }
-    .wtp-guess-section { padding: 1rem 1.5rem 1.5rem; border-top: 1px solid rgba(52,152,219,0.1); }
-    .wtp-guess-label { font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 0.625rem; }
-    .wtp-guess-row { display: flex; gap: 0.625rem; }
-    .wtp-guess-input {
-      flex: 1; background: rgba(52,152,219,0.06); border: 1px solid rgba(52,152,219,0.2);
-      border-radius: 8px; padding: 0.75rem 1rem; color: var(--white);
-      font-family: 'Barlow',sans-serif; font-size: 0.95rem; outline: none;
+    .wtp-clue.revealed { border-color: #0DBF7A; }
+    .wtp-clue-num {
+      width: clamp(24px, 6vw, 30px); align-self: stretch;
+      background: #111; display: flex; align-items: center; justify-content: center;
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
+      font-size: clamp(12px, 3vw, 16px); color: #222; flex-shrink: 0;
     }
-    .wtp-guess-input:focus { border-color: rgba(52,152,219,0.5); background: rgba(52,152,219,0.08); }
-    .wtp-guess-input::placeholder { color: rgba(255,255,255,0.2); }
-    .wtp-guess-btn {
-      background: #1a4a6a; border: 1px solid #1a5a8a; border-radius: 8px;
-      padding: 0.75rem 1.25rem; color: #3498db; font-family: 'Barlow Condensed',sans-serif;
-      font-weight: 700; font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase;
-      cursor: pointer; transition: background 0.2s; white-space: nowrap;
+    .wtp-clue.revealed .wtp-clue-num { background: #0DBF7A; color: #021a0d; }
+    .wtp-clue-content { flex: 1; padding: clamp(4px,1.2vw,6px) 8px; background: #0a0a0a; min-width: 0; }
+    .wtp-clue-label {
+      font-family: 'Barlow Condensed', sans-serif; font-size: clamp(7px,1.7vw,9px);
+      font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      color: #2a2a2a; margin-bottom: 1px;
     }
-    .wtp-guess-btn:hover { background: #1a5a8a; }
-    .wtp-reveal-btn {
-      width: 100%; margin-top: 0.625rem; background: transparent;
-      border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;
-      padding: 0.625rem; color: rgba(255,255,255,0.3);
-      font-family: 'Barlow Condensed',sans-serif; font-weight: 700;
-      font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase;
-      cursor: pointer; transition: all 0.2s;
+    .wtp-clue.revealed .wtp-clue-label { color: rgba(13,191,122,0.55); }
+    .wtp-clue-text {
+      font-family: 'Barlow', sans-serif; font-size: clamp(10px,2.5vw,12px);
+      font-weight: 500; color: #1a1a1a; line-height: 1.3;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .wtp-reveal-btn:hover { border-color: rgba(255,255,255,0.15); color: rgba(255,255,255,0.5); }
-    .wtp-score-strip {
-      background: rgba(2,13,26,0.8); border-top: 1px solid rgba(52,152,219,0.1);
-      padding: 0.875rem 1.5rem; display: flex; align-items: center;
-      justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+    .wtp-clue.revealed .wtp-clue-text { color: rgba(255,255,255,0.88); white-space: normal; }
+    .wtp-pts-badge {
+      padding: 0 8px; background: #0a0a0a; display: flex; align-items: center;
+      font-family: 'Barlow Condensed', sans-serif; font-size: clamp(10px,2.5vw,13px);
+      font-weight: 700; color: #1e3a24; border-left: 1px solid #1a1a1a;
+      flex-shrink: 0; align-self: stretch;
     }
-    .wtp-score-item { text-align: center; }
-    .wtp-score-val { font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 1.4rem; color: #3498db; line-height: 1; }
-    .wtp-score-lbl { font-family: 'Barlow Condensed',sans-serif; font-weight: 600; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(52,152,219,0.4); margin-top: 2px; }
-    .wtp-divider { width: 1px; height: 28px; background: rgba(52,152,219,0.1); }
-    .wtp-result { border-radius: 20px; padding: 2.5rem; text-align: center; }
-    .wtp-result.correct { background: linear-gradient(135deg, #021a02, #020d1a); border: 1px solid rgba(0,214,143,0.3); }
-    .wtp-result.wrong { background: linear-gradient(135deg, #1a0202, #020d1a); border: 1px solid rgba(255,77,109,0.3); }
-    .wtp-result-main { font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 3.5rem; text-transform: uppercase; line-height: 1; margin: 0.75rem 0; }
-    .wtp-result.correct .wtp-result-main { color: var(--success); }
-    .wtp-result.wrong .wtp-result-main { color: var(--error); }
-    .wtp-player-reveal {
-      display: flex; align-items: center; gap: 1.5rem;
-      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 12px; padding: 1.25rem 1.5rem; margin: 1.5rem 0;
-      text-align: left;
+    .wtp-clue.revealed .wtp-pts-badge { color: #0DBF7A; }
+    .wtp-clue.locked { opacity: 0.35; }
+
+    /* ── GUESS FOOTER ── */
+    .wtp-guess-section {
+      flex-shrink: 0; padding: 8px 10px 10px;
+      padding-bottom: max(10px, env(safe-area-inset-bottom));
+      border-top: 1px solid #1a1a1a; background: rgba(8,12,46,0.5);
     }
-    .wtp-player-img-reveal { width: 80px; height: 80px; object-fit: cover; object-position: top; border-radius: 10px; }
-    .wtp-player-name { font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 1.75rem; text-transform: uppercase; color: var(--white); line-height: 1; }
-    .wtp-player-details { font-size: 0.85rem; color: var(--gray); margin-top: 0.35rem; }
-    .guess-feedback { text-align: center; padding: 0.5rem; font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 0.9rem; letter-spacing: 0.08em; text-transform: uppercase; min-height: 2rem; }
+    .guess-feedback {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 11px;
+      font-weight: 700; letter-spacing: 0.08em; text-align: center;
+      height: 16px; margin-bottom: 5px;
+    }
     .guess-feedback.wrong-guess { color: var(--error); }
     .guess-feedback.close-guess { color: var(--gold); }
-    @media (max-width: 600px) {
-      .wtp-body { grid-template-columns: 1fr; }
-      .wtp-silhouette-panel { border-right: none; border-bottom: 1px solid rgba(52,152,219,0.1); min-height: 200px; }
+    .wtp-guess-row { display: flex; gap: 7px; margin-bottom: 6px; }
+    .wtp-guess-input {
+      flex: 1; background: #111; border: 1px solid #1e1e1e;
+      border-radius: 7px; height: clamp(36px,9vw,42px);
+      padding: 0 12px; color: var(--white);
+      font-family: 'Barlow', sans-serif; font-size: 14px; outline: none;
     }
-  
-/* ── TECHNICAL FOUL OVERLAY ── */
-#tech-foul-overlay {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  height: 100%;
-  min-height: 100vh;
-  background: rgba(0,0,0,0.95);
-  z-index: 999999;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  text-align: center;
-  padding: 2rem;
-  font-family: 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
-  -webkit-overflow-scrolling: touch;
-  overflow-y: auto;
-  box-sizing: border-box;
-}
-#tech-foul-overlay.active {
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-}
-.tf-whistle { font-size: 4rem; margin-bottom: 0.5rem; }
-.tf-title { font-size: clamp(2.5rem, 10vw, 4.5rem); font-weight: 900; color: #E8470A; letter-spacing: 0.05em; text-transform: uppercase; line-height: 1; margin-bottom: 0.5rem; }
-.tf-subtitle { font-size: clamp(1rem, 4vw, 1.3rem); color: #f0f0f8; margin-bottom: 0.5rem; font-weight: 600; }
-.tf-rule { font-size: 0.95rem; color: #8888aa; margin-bottom: 2rem; max-width: 400px; line-height: 1.5; font-family: sans-serif; font-weight: 400; }
-.tf-score { font-size: clamp(3rem, 12vw, 5rem); font-weight: 900; color: #F5B800; line-height: 1; margin-bottom: 0.25rem; }
-.tf-score-label { font-size: 0.85rem; color: #8888aa; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2rem; }
-.tf-btn { background: #E8470A; color: #fff; border: none; border-radius: 10px; padding: 14px 40px; font-family: 'Barlow Condensed', Arial, sans-serif; font-size: 1.1rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; }
-.tf-btn:hover { background: #c93d08; }
+    .wtp-guess-input:focus { border-color: rgba(13,191,122,0.4); }
+    .wtp-guess-input::placeholder { color: rgba(255,255,255,0.2); }
+    .wtp-guess-btn {
+      height: clamp(36px,9vw,42px); padding: 0 14px; border-radius: 7px;
+      background: #0DBF7A; border: none;
+      font-family: 'Barlow Condensed', sans-serif; font-size: clamp(13px,3.5vw,16px);
+      font-weight: 700; color: #021a0d; letter-spacing: 0.06em;
+      cursor: pointer; white-space: nowrap; flex-shrink: 0;
+    }
+    .wtp-guess-btn:hover { background: #0aab6c; }
+    .wtp-reveal-btn {
+      width: 100%; height: clamp(28px,7vw,34px); border-radius: 7px;
+      border: 1px solid #1e3a24; background: transparent;
+      color: #2a4a30; font-family: 'Barlow Condensed', sans-serif;
+      font-size: clamp(9px,2.2vw,11px); font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+    }
+    .wtp-reveal-btn:hover { border-color: #0DBF7A; color: #0DBF7A; }
 
-</style>
+    /* ── RESULT SCREEN ── */
+    .wtp-result-shell { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 1.5rem 1rem 2rem; }
+    .wtp-result { border-radius: 16px; padding: 2rem 1.5rem; text-align: center; max-width: 500px; margin: 0 auto; }
+    .wtp-result.correct { background: linear-gradient(135deg, #021a02, #080c2e); border: 1px solid rgba(0,214,143,0.3); }
+    .wtp-result.wrong   { background: linear-gradient(135deg, #1a0202, #080c2e); border: 1px solid rgba(255,77,109,0.3); }
+    .wtp-result-main { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: clamp(2.5rem,10vw,3.5rem); text-transform: uppercase; line-height: 1; margin: 0.5rem 0; }
+    .wtp-result.correct .wtp-result-main { color: var(--success); }
+    .wtp-result.wrong   .wtp-result-main { color: var(--error); }
+    .wtp-player-reveal { display: flex; align-items: center; gap: 1.25rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 1rem 1.25rem; margin: 1.25rem 0; text-align: left; }
+    .wtp-player-img-reveal { width: 68px; height: 68px; object-fit: cover; object-position: top; border-radius: 8px; }
+    .wtp-player-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 1.5rem; text-transform: uppercase; color: var(--white); line-height: 1; }
+    .wtp-player-details { font-size: 0.8rem; color: var(--gray); margin-top: 0.3rem; }
+
+    /* ── TECH FOUL OVERLAY ── */
+    #tech-foul-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 999999; align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 2rem; overflow-y: auto; }
+    #tech-foul-overlay.active { display: flex !important; }
+    .tf-whistle { font-size: 3.5rem; margin-bottom: 0.5rem; }
+    .tf-title { font-size: clamp(2.5rem,10vw,4.5rem); font-weight: 900; color: #E8470A; letter-spacing: 0.05em; text-transform: uppercase; line-height: 1; margin-bottom: 0.5rem; font-family: 'Barlow Condensed', sans-serif; }
+    .tf-subtitle { font-size: clamp(1rem,4vw,1.3rem); color: #f0f0f8; margin-bottom: 0.5rem; font-weight: 600; font-family: 'Barlow Condensed', sans-serif; }
+    .tf-rule { font-size: 0.9rem; color: #8888aa; margin-bottom: 2rem; max-width: 380px; line-height: 1.5; font-family: 'Barlow', sans-serif; }
+    .tf-score { font-size: clamp(3rem,12vw,5rem); font-weight: 900; color: #F5B800; line-height: 1; margin-bottom: 0.25rem; font-family: 'Barlow Condensed', sans-serif; }
+    .tf-score-label { font-size: 0.85rem; color: #8888aa; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2rem; font-family: 'Barlow Condensed', sans-serif; }
+    .tf-btn { background: #E8470A; color: #fff; border: none; border-radius: 10px; padding: 12px 36px; font-family: 'Barlow Condensed', sans-serif; font-size: 1.1rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; }
+    .tf-btn:hover { background: #c93d08; }
+  </style>
 </head>
 <body>
 <nav>
@@ -207,11 +214,10 @@
   </div>
 </nav>
 
-<div class="wtp-shell">
-  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;">
-    <a href="/" style="color:var(--gray);text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.9rem;letter-spacing:0.08em;text-transform:uppercase;">← Back to Games</a>
+<div class="wtp-page">
+  <div class="wtp-card" id="wtp-container">
+    <div class="spinner" style="margin:auto;"></div>
   </div>
-  <div id="wtp-container"><div class="spinner"></div></div>
 </div>
 
 <script src="/js/auth.js"></script>
@@ -496,85 +502,50 @@ function getPacificOffsetMinutes(d) {
     }
     const container = document.getElementById('wtp-container');
     container.innerHTML = `
+      <div class="wtp-topbar">
+        <div class="wtp-topbar-title">Who's That, Player?</div>
+        <div class="wtp-topbar-badge" style="color:${leagueColor()}">${player.league} · ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
+      </div>
+
       <div class="wtp-hero">
-        <div class="wtp-hero-top">
-          <div class="wtp-brand">
-            <div class="wtp-brand-icon">❓</div>
-            <div>
-              <div class="wtp-brand-name">Who's That, Player?</div>
-              <div class="wtp-brand-sub">by FlurrySports · Daily Challenge</div>
-            </div>
-          </div>
-          <span class="wtp-league-badge" style="background:${leagueBg()};color:${leagueColor()};border:1px solid ${leagueColor()}33;">${player.league} · Active Player</span>
+        <div class="wtp-silhouette-box" id="sil-box">
+          <img class="wtp-player-img" id="silhouette-img"
+            src="${window._wtpValidatedPhoto || espnImg}"
+            alt="mystery player"
+            data-nba-id="${player.nbaId || ''}"
+            onerror="handleImgError(this, '${player.espnId}', '${player.league}')"
+            style="filter:brightness(0) saturate(100%);"
+          />
         </div>
-
-        <div class="wtp-body">
-          <div class="wtp-silhouette-panel">
-            <div class="wtp-who-label">Who's That, Player?</div>
-            <div class="wtp-silhouette-wrap">
-              <img class="wtp-player-img" id="silhouette-img"
-                src="${window._wtpValidatedPhoto || espnImg}"
-                alt="mystery player"
-                data-nba-id="${player.nbaId || ''}"
-                onerror="handleImgError(this, '${player.espnId}', '${player.league}')"
-              />
-              <svg id="fallback-svg" style="display:none;width:100%;height:100%;" viewBox="0 0 140 185" xmlns="http://www.w3.org/2000/svg">
-                <ellipse cx="70" cy="28" rx="22" ry="24" fill="#0a1520"/>
-                <path d="M48 50 Q38 65 35 90 L43 92 Q46 74 52 65 L52 130 L42 130 L36 185 L50 185 L58 138 L70 138 L82 138 L90 185 L104 185 L98 130 L88 130 L88 65 Q94 74 97 92 L105 90 Q102 65 92 50 Z" fill="#0a1520"/>
-                <ellipse cx="70" cy="50" rx="22" ry="6" fill="#0a1520"/>
-                <path d="M35 90 Q28 115 30 140 L42 138 Q40 116 43 92 Z" fill="#08111a"/>
-                <path d="M105 90 Q112 115 110 140 L98 138 Q100 116 97 92 Z" fill="#08111a"/>
-              </svg>
-              <div class="wtp-glow"></div>
-            </div>
-            <div class="wtp-qmarks" id="qmarks">? ? ?</div>
+        <div class="wtp-stats-row">
+          <div class="wtp-stat">
+            <div class="wtp-stat-val" id="pts-available" style="color:${leagueColor()};">${POINT_VALUES[0].toLocaleString()}</div>
+            <div class="wtp-stat-lbl">pts avail</div>
           </div>
-
-          <div class="wtp-clues-panel">
-            <div class="wtp-clues-header">
-              <span class="wtp-clues-title">Clues Revealed</span>
-              <span class="wtp-clue-count" id="clue-count-display">${revealedClues} of 5</span>
-            </div>
-            <div id="clues-list"></div>
+          <div class="wtp-stat">
+            <div class="wtp-stat-val" id="guesses-left" style="color:${leagueColor()};">0</div>
+            <div class="wtp-stat-lbl">guesses</div>
           </div>
-        </div>
-
-        <div class="wtp-guess-section">
-          <div class="wtp-guess-label">Your Guess</div>
-          <div class="wtp-guess-row">
-            <input class="wtp-guess-input" id="guess-input" type="text" placeholder="Type a player name..." autocomplete="off" />
-            <button class="wtp-guess-btn" onclick="submitGuess()">Guess</button>
-          </div>
-          <button class="wtp-reveal-btn" id="reveal-btn" onclick="revealNextClue()">
-            Reveal Next Clue (−${POINT_VALUES[0] - POINT_VALUES[Math.min(revealedClues, 4)]} pts available after)
-          </button>
-          <div class="guess-feedback" id="guess-feedback"></div>
-        </div>
-
-        <div class="wtp-score-strip">
-          <div class="wtp-score-item">
-            <div class="wtp-score-val" id="pts-available" style="color:${leagueColor()};">${POINT_VALUES[0].toLocaleString()}</div>
-            <div class="wtp-score-lbl">Points Available</div>
-          </div>
-          <div class="wtp-divider"></div>
-          <div class="wtp-score-item">
-            <div class="wtp-score-val" id="guesses-left" style="color:${leagueColor()};">∞</div>
-            <div class="wtp-score-lbl">Guesses Used</div>
-          </div>
-          <div class="wtp-divider"></div>
-          <div class="wtp-score-item">
-            <div class="wtp-score-val" style="color:${leagueColor()};">${player.league}</div>
-            <div class="wtp-score-lbl">League</div>
-          </div>
-          <div class="wtp-divider"></div>
-          <div class="wtp-score-item">
-            <div class="wtp-score-val" style="color:${leagueColor()};">${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
-            <div class="wtp-score-lbl">Today's Puzzle</div>
+          <div class="wtp-stat">
+            <div class="wtp-stat-val identity" style="color:${leagueColor()}">???</div>
+            <div class="wtp-stat-lbl">identity</div>
           </div>
         </div>
       </div>
-    `;
 
+      <div class="wtp-clues-section" id="clues-list"></div>
+
+      <div class="wtp-guess-section">
+        <div class="guess-feedback" id="guess-feedback"></div>
+        <div class="wtp-guess-row">
+          <input class="wtp-guess-input" id="guess-input" type="text" placeholder="Type a player name..." autocomplete="off" />
+          <button class="wtp-guess-btn" onclick="submitGuess()">Guess</button>
+        </div>
+        <button class="wtp-reveal-btn" id="reveal-btn" onclick="revealNextClue()">
+          Reveal Clue 2 · max ${POINT_VALUES[1].toLocaleString()} pts after
+        </button>
+      </div>
+    `
     renderClues();
     updateRevealBtn();
 
@@ -594,14 +565,12 @@ function getPacificOffsetMinutes(d) {
           <div class="wtp-clue-num">${i + 1}</div>
           <div class="wtp-clue-content">
             <div class="wtp-clue-label">${clue.label}</div>
-            <div class="wtp-clue-text">${isRevealed ? clue.text : '? ? ? ? ?'}</div>
+            <div class="wtp-clue-text">${isRevealed ? clue.text : 'Locked'}</div>
           </div>
-          <div class="wtp-pts-badge">${POINT_VALUES[i].toLocaleString()} pts</div>
+          <div class="wtp-pts-badge">${POINT_VALUES[i].toLocaleString()}</div>
         </div>
       `;
     }).join('');
-    const countEl = document.getElementById('clue-count-display');
-    if (countEl) countEl.textContent = `${revealedClues} of 5`;
   }
 
   function updateRevealBtn() {
@@ -611,7 +580,7 @@ function getPacificOffsetMinutes(d) {
       btn.style.display = 'none';
     } else {
       const nextPts = POINT_VALUES[revealedClues];
-      btn.textContent = `Reveal Next Clue (max ${nextPts.toLocaleString()} pts after)`;
+      btn.textContent = `Reveal Clue ${revealedClues + 1} · max ${nextPts.toLocaleString()} pts after`;
     }
     const ptsEl = document.getElementById('pts-available');
     if (ptsEl) ptsEl.textContent = POINT_VALUES[Math.min(revealedClues - 1, 4)].toLocaleString();
@@ -699,7 +668,7 @@ function getPacificOffsetMinutes(d) {
       return '<div style="padding:0.4rem 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.85rem;">' +
         '<span style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.75rem;color:' + leagueColor() + ';margin-right:0.5rem;">' + cl.label + ':</span>' +
         '<span style="color:var(--gray-light);">' + cl.text + '</span>' +
-        '</div>';
+        '</div></div>';
     }).join('');
 
     var ptsLine = '';
@@ -712,9 +681,10 @@ function getPacificOffsetMinutes(d) {
       ptsLine = '<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:1rem;color:var(--gray);margin-bottom:1.5rem;">Better luck tomorrow!</div>';
     }
 
+    document.body.classList.add('wtp-result-active');
     var container = document.getElementById('wtp-container');
     container.innerHTML =
-      '<div class="wtp-result ' + (correct ? 'correct' : 'wrong') + '">' +
+      '<div class="wtp-result-shell"><div class="wtp-result ' + (correct ? 'correct' : 'wrong') + '">' +
         '<div style="font-size:3rem;margin-bottom:0.5rem;">' + emojiResult + '</div>' +
         '<div class="wtp-result-main">' + (noData ? 'Already Played!' : headline) + '</div>' +
         ptsLine +

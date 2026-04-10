@@ -98,9 +98,10 @@
 
     /* ── CLUES ── */
     .wtp-clues-section {
-      flex: 1; min-height: 0; display: flex; flex-direction: column;
-      padding: clamp(5px,1.5vw,8px) 10px 4px; gap: clamp(3px,1vw,5px); overflow: hidden;
+      flex: 0 0 auto; display: flex; flex-direction: column;
+      padding: clamp(5px,1.5vw,8px) 10px 4px; gap: clamp(3px,1vw,5px);
     }
+    .wtp-spacer { flex: 1; min-height: 8px; max-height: 40px; }
     .wtp-clue {
       display: flex; align-items: center; border-radius: 6px;
       overflow: hidden; border: 1px solid #1a1a1a; flex-shrink: 0;
@@ -534,7 +535,7 @@ function getPacificOffsetMinutes(d) {
       </div>
 
       <div class="wtp-clues-section" id="clues-list"></div>
-
+      <div class="wtp-spacer"></div>
       <div class="wtp-guess-section">
         <div class="guess-feedback" id="guess-feedback"></div>
         <div class="wtp-guess-row">

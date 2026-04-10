@@ -786,18 +786,16 @@ function getPacificOffsetMinutes(d) {
     (async function() {
       try {
         var today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
-        var res = await fetch(
-          SUPABASE_URL + '/rest/v1/wtp_daily?date=eq.' + today + '&select=player_json,photo_url',
-          { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } }
-        );
-        if (res.ok) {
-          var rows = await res.json();
-          if (rows && rows.length > 0 && rows[0].player_json) {
-            var p = rows[0].player_json;
-            p.id = 'wtp-' + today.replace(/-/g, '');
-            window._wtpPlayerOverride = p;
-            if (rows[0].photo_url) window._wtpValidatedPhoto = rows[0].photo_url;
-          }
+        var { data: rows, error } = await window.supabase
+          .from('wtp_daily')
+          .select('player_json, photo_url')
+          .eq('date', today)
+          .limit(1);
+        if (!error && rows && rows.length > 0 && rows[0].player_json) {
+          var p = rows[0].player_json;
+          p.id = 'wtp-' + today.replace(/-/g, '');
+          window._wtpPlayerOverride = p;
+          if (rows[0].photo_url) window._wtpValidatedPhoto = rows[0].photo_url;
         }
       } catch(e) { /* fall back to hardcoded player */ }
       renderGame();

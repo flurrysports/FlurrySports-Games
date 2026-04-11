@@ -91,7 +91,7 @@ async function generatePlayer(env, recentNames = []) {
 You pick a real, well-known, currently active ${league} player and write 5 progressive clues from vague to specific.
 Return ONLY valid JSON. No markdown, no backticks, no extra text.`;
 
-  const user = `Pick one well-known, currently active ${league} player and write 5 clues.
+  const user = `Pick one well-known, currently active ${league} player who is on a roster right now — no free agents, no retired players.
 Clue 1 = vague (position/conference only, not guessable alone).
 Clue 5 = very specific signature fact that makes the answer obvious.${avoidStr}
 

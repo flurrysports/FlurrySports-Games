@@ -302,56 +302,49 @@ Return this exact JSON:
   const issues = [];
   let passed = true;
 
-  // Check each item: flag if label disagrees with verified answer
-  for (const c of checks) {
-    if (c.qualifies === 'uncertain') {
-      issues.push(`UNCERTAIN: ${c.name} — ${c.reason}`);
-      passed = false;
-    } else if (c.labeled === 'correct' && c.qualifies === 'no') {
-      issues.push(`WRONG CORRECT: ${c.name} does NOT qualify — ${c.reason}`);
-      passed = false;
-    } else if (c.labeled === 'decoy' && c.qualifies === 'yes') {
-      issues.push(`WRONG DECOY: ${c.name} DOES qualify — ${c.reason}`);
-      passed = false;
-    }
-  }
-
-  // Rebuild correct/decoy lists based on verified answers — fix mislabeled items
-  const verifiedCorrect = checks.filter(c => c.qualifies === 'yes').map(c => c.name);
-  const verifiedDecoy   = checks.filter(c => c.qualifies === 'no').map(c => c.name);
-  const uncertain       = checks.filter(c => c.qualifies === 'uncertain').map(c => c.name);
+  // Step 1: Auto-fix mislabeled items and remove uncertain ones
+  // Do this BEFORE deciding pass/fail — fixing is preferred over regenerating
+  const uncertain = checks.filter(c => c.qualifies === 'uncertain').map(c => c.name);
 
   // Remove uncertain items from both lists
   puzzle.correct_tiles = puzzle.correct_tiles.filter(n => !uncertain.includes(n));
   puzzle.decoy_tiles   = puzzle.decoy_tiles.filter(n => !uncertain.includes(n));
 
-  // Fix any mislabeled items
+  // Move any mislabeled items to the correct list
   for (const c of checks) {
     if (c.qualifies === 'yes' && c.labeled === 'decoy') {
-      // Move to correct
+      // Was labeled decoy but actually qualifies — move to correct
       puzzle.decoy_tiles   = puzzle.decoy_tiles.filter(n => n !== c.name);
       if (!puzzle.correct_tiles.includes(c.name)) puzzle.correct_tiles.push(c.name);
+      issues.push(`FIXED: moved ${c.name} from decoy to correct — ${c.reason}`);
     } else if (c.qualifies === 'no' && c.labeled === 'correct') {
-      // Move to decoy
+      // Was labeled correct but does not qualify — move to decoy
       puzzle.correct_tiles = puzzle.correct_tiles.filter(n => n !== c.name);
       if (!puzzle.decoy_tiles.includes(c.name)) puzzle.decoy_tiles.push(c.name);
+      issues.push(`FIXED: moved ${c.name} from correct to decoy — ${c.reason}`);
     }
   }
 
-  // Validate correct count is 4-7
+  // Step 2: After fixing, validate counts — only fail if counts are broken
   const correctCount = puzzle.correct_tiles.length;
+  const total = puzzle.correct_tiles.length + puzzle.decoy_tiles.length;
+
   if (correctCount < 4) {
-    issues.push(`Too few correct answers after verification: ${correctCount} (need 4-7)`);
+    issues.push(`Too few correct answers after verification: ${correctCount} (need 4-7) — regenerate`);
     passed = false;
   } else if (correctCount > 7) {
-    issues.push(`Too many correct answers after verification: ${correctCount} (need 4-7)`);
+    issues.push(`Too many correct answers after verification: ${correctCount} (need 4-7) — regenerate`);
     passed = false;
   }
 
-  // Validate total is still 9
-  const total = puzzle.correct_tiles.length + puzzle.decoy_tiles.length;
   if (total !== 9) {
-    issues.push(`Total tiles after verification: ${total} (need exactly 9)`);
+    issues.push(`Total tiles after verification: ${total} (need exactly 9) — regenerate`);
+    passed = false;
+  }
+
+  // More than 2 uncertain items is a sign of a bad prompt — regenerate
+  if (uncertain.length > 2) {
+    issues.push(`Too many uncertain items (${uncertain.length}) — regenerate with a clearer prompt`);
     passed = false;
   }
 
@@ -359,7 +352,6 @@ Return this exact JSON:
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CLAUDE API CALL// ─────────────────────────────────────────────────────────────────────────────
 // CLAUDE API CALL
 // ─────────────────────────────────────────────────────────────────────────────
 async function claudeCall(env, system, user, maxTokens = 1000) {

@@ -208,6 +208,11 @@ ACCURACY RULES — THIS IS CRITICAL:
 - Do not confuse similar players, similar team names, or similar award names
 - When in doubt, leave a player out of the correct list
 
+COMPLETENESS RULES:
+- AVOID prompts where the full answer set is too large or hard to enumerate (e.g. "all coaches who ever won an NCAA title" — too many, too risky)
+- PREFER prompts with a bounded, well-known answer set (e.g. "won 3+ NBA championships in the 2010s", "2023 NFL first-round QBs")
+- If you cannot confidently verify every name you include, choose a different prompt
+
 TILE RULES:
 - 4 to 7 correct answers (players who genuinely meet the criterion)
 - Enough decoys to total exactly 9 tiles (9 minus correct count)
@@ -246,61 +251,46 @@ Return this exact JSON:
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// VERIFY PUZZLE — strict independent fact-check
+// VERIFY PUZZLE — per-item yes/no fact-check + correct count validation
 // ─────────────────────────────────────────────────────────────────────────────
 async function verifyPuzzle(env, puzzle) {
-  const system = `You are an extremely strict sports fact-checker. You are reviewing puzzles built by someone else and your job is to FIND ERRORS. 
-Be skeptical. Do not give the benefit of the doubt. If you are not 100% certain a claim is true, flag it.
-You know that puzzle generators frequently make mistakes with:
-- Players who are close but don't quite meet a threshold
-- Players who qualify for a similar but different criterion
-- Stats that are slightly off (e.g. "3 titles" when they won 4, or confusing regular season vs playoff stats)
-- Players who qualified at one point but the prompt implies a current or specific timeframe
+  const system = `You are an extremely strict sports fact-checker. For each person listed, answer a single yes/no question based solely on the prompt criterion. Be precise — do not guess. If you are not 100% certain, answer "uncertain".
 Return ONLY valid JSON. No markdown, no backticks.`;
 
   const allTiles = [
-    ...puzzle.correct_tiles.map(n => ({ name: n, claimed: 'CORRECT — should qualify' })),
-    ...puzzle.decoy_tiles.map(n => ({ name: n, claimed: 'DECOY — should NOT qualify' }))
+    ...puzzle.correct_tiles.map(n => ({ name: n, labeled: 'correct' })),
+    ...puzzle.decoy_tiles.map(n => ({ name: n, labeled: 'decoy' }))
   ];
 
-  const user = `Fact-check this sports trivia puzzle. Be critical and look for errors.
+  const user = `For each person below, independently answer: does this person meet the criterion?
 
-PROMPT: "${puzzle.prompt}"
+CRITERION: "${puzzle.prompt}"
 SPORT: ${puzzle.sport_category}
 
-For each player below, independently determine whether they meet the criterion in the prompt.
-Do NOT trust the label — verify from your own knowledge.
+${allTiles.map((t, i) => `${i+1}. ${t.name}`).join('\n')}
 
-${allTiles.map((t, i) => `${i+1}. ${t.name} (labeled: ${t.claimed})`).join('\n')}
+For each person, answer only:
+- "yes" — they definitely meet the criterion
+- "no" — they definitely do NOT meet the criterion  
+- "uncertain" — you are not 100% sure
 
-Rules:
-- Mark as WRONG if a player labeled CORRECT actually does NOT meet the criterion
-- Mark as WRONG if a player labeled DECOY actually DOES meet the criterion  
-- If you are less than 90% confident about any player, mark it UNCERTAIN
-- Be especially careful about edge cases and exact thresholds
+Do NOT consider how they are labeled. Judge each independently based only on the criterion.
 
-Return this exact JSON (no other text):
+Return this exact JSON:
 {
-  "results": [
+  "checks": [
     {
-      "name": "Player Name",
-      "labeled_correct": true,
-      "actually_qualifies": true,
-      "verdict": "OK" | "WRONG" | "UNCERTAIN",
-      "reason": "one sentence explanation — required for WRONG or UNCERTAIN"
+      "name": "Person Name",
+      "labeled": "correct" | "decoy",
+      "qualifies": "yes" | "no" | "uncertain",
+      "reason": "one short sentence"
     }
-  ],
-  "passed": true,
-  "issues": []
-}
-
-Set "passed" to false if ANY result has verdict "WRONG".
-Set "passed" to false if MORE THAN ONE result has verdict "UNCERTAIN".
-List all problems in "issues" array.`;
+  ]
+}`;
 
   const raw = await claudeCall(env, system, user, 1500);
   const cleaned = raw.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
-  
+
   let result;
   try {
     result = JSON.parse(cleaned);
@@ -308,25 +298,68 @@ List all problems in "issues" array.`;
     throw new Error(`Verification JSON parse failed: ${e.message}. Raw: ${raw.substring(0, 200)}`);
   }
 
-  // Extra safety: re-check passed flag ourselves based on results array
-  // Don't trust Claude's self-reported passed value alone
-  if (result.results) {
-    const wrongs = result.results.filter(r => r.verdict === 'WRONG');
-    const uncertains = result.results.filter(r => r.verdict === 'UNCERTAIN');
-    if (wrongs.length > 0 || uncertains.length > 1) {
-      result.passed = false;
-      result.issues = [
-        ...wrongs.map(r => `WRONG: ${r.name} — ${r.reason}`),
-        ...uncertains.map(r => `UNCERTAIN: ${r.name} — ${r.reason}`),
-        ...(result.issues || [])
-      ];
+  const checks = result.checks || [];
+  const issues = [];
+  let passed = true;
+
+  // Check each item: flag if label disagrees with verified answer
+  for (const c of checks) {
+    if (c.qualifies === 'uncertain') {
+      issues.push(`UNCERTAIN: ${c.name} — ${c.reason}`);
+      passed = false;
+    } else if (c.labeled === 'correct' && c.qualifies === 'no') {
+      issues.push(`WRONG CORRECT: ${c.name} does NOT qualify — ${c.reason}`);
+      passed = false;
+    } else if (c.labeled === 'decoy' && c.qualifies === 'yes') {
+      issues.push(`WRONG DECOY: ${c.name} DOES qualify — ${c.reason}`);
+      passed = false;
     }
   }
 
-  return result;
+  // Rebuild correct/decoy lists based on verified answers — fix mislabeled items
+  const verifiedCorrect = checks.filter(c => c.qualifies === 'yes').map(c => c.name);
+  const verifiedDecoy   = checks.filter(c => c.qualifies === 'no').map(c => c.name);
+  const uncertain       = checks.filter(c => c.qualifies === 'uncertain').map(c => c.name);
+
+  // Remove uncertain items from both lists
+  puzzle.correct_tiles = puzzle.correct_tiles.filter(n => !uncertain.includes(n));
+  puzzle.decoy_tiles   = puzzle.decoy_tiles.filter(n => !uncertain.includes(n));
+
+  // Fix any mislabeled items
+  for (const c of checks) {
+    if (c.qualifies === 'yes' && c.labeled === 'decoy') {
+      // Move to correct
+      puzzle.decoy_tiles   = puzzle.decoy_tiles.filter(n => n !== c.name);
+      if (!puzzle.correct_tiles.includes(c.name)) puzzle.correct_tiles.push(c.name);
+    } else if (c.qualifies === 'no' && c.labeled === 'correct') {
+      // Move to decoy
+      puzzle.correct_tiles = puzzle.correct_tiles.filter(n => n !== c.name);
+      if (!puzzle.decoy_tiles.includes(c.name)) puzzle.decoy_tiles.push(c.name);
+    }
+  }
+
+  // Validate correct count is 4-7
+  const correctCount = puzzle.correct_tiles.length;
+  if (correctCount < 4) {
+    issues.push(`Too few correct answers after verification: ${correctCount} (need 4-7)`);
+    passed = false;
+  } else if (correctCount > 7) {
+    issues.push(`Too many correct answers after verification: ${correctCount} (need 4-7)`);
+    passed = false;
+  }
+
+  // Validate total is still 9
+  const total = puzzle.correct_tiles.length + puzzle.decoy_tiles.length;
+  if (total !== 9) {
+    issues.push(`Total tiles after verification: ${total} (need exactly 9)`);
+    passed = false;
+  }
+
+  return { passed, issues, checks };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// CLAUDE API CALL// ─────────────────────────────────────────────────────────────────────────────
 // CLAUDE API CALL
 // ─────────────────────────────────────────────────────────────────────────────
 async function claudeCall(env, system, user, maxTokens = 1000) {

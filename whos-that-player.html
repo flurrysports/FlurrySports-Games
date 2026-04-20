@@ -598,13 +598,19 @@ function getPacificOffsetMinutes(d) {
     if (gameOver) return;
     const input = document.getElementById('guess-input');
     const feedback = document.getElementById('guess-feedback');
-    const guess = (input.value || '').trim().toLowerCase();
-    if (!guess) return;
+    const raw = (input.value || '').trim().toLowerCase();
+    if (!raw) return;
 
     guessesUsed++;
     document.getElementById('guesses-left').textContent = guessesUsed;
 
-    const correctName = player.name.toLowerCase();
+    // Strip diacritics so "Doncic" matches "Dončić", "Jokic" matches "Jokić", etc.
+    function stripAccents(s) {
+      return s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+    }
+
+    const guess = stripAccents(raw);
+    const correctName = stripAccents(player.name.toLowerCase());
     const lastName = correctName.split(' ').slice(-1)[0];
 
     if (guess === correctName || guess === lastName || correctName.includes(guess) && guess.length > 3) {

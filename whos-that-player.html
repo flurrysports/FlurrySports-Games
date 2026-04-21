@@ -342,7 +342,7 @@ function getPacificOffsetMinutes(d) {
     {name:"Devin Booker",espnId:"3136195",nbaId:"1626164",pos:"SG",team:"Phoenix Suns",college:"Kentucky",drafted:"2015 \u00b7 1st \u00b7 Pick 13",clues:[{label:"Position",text:"Shooting Guard in the Western Conference"},{label:"College",text:"Played one year at Kentucky"},{label:"Draft",text:"13th overall pick in 2015"},{label:"Record",text:"Scored 70 points in a single game at just 20 years old"},{label:"Olympics",text:"Won a gold medal with Team USA at the Tokyo Olympics"}]},
     {name:"Anthony Edwards",espnId:"4432174",nbaId:"1630162",pos:"SG",team:"Minnesota Timberwolves",college:"Georgia",drafted:"2020 \u00b7 1st \u00b7 Pick 1",clues:[{label:"Position",text:"Shooting Guard in the Western Conference"},{label:"College",text:"One-and-done at the University of Georgia"},{label:"Draft",text:"#1 overall pick in 2020"},{label:"Nickname",text:"Known as Ant-Man"},{label:"Team",text:"Led Minnesota to the Western Conference Finals in 2024"}]},
     {name:"Ja Morant",espnId:"4279888",nbaId:"1629630",pos:"PG",team:"Memphis Grizzlies",college:"Murray State",drafted:"2019 \u00b7 1st \u00b7 Pick 2",clues:[{label:"Position",text:"Point Guard in the Western Conference"},{label:"College",text:"Came from small-school Murray State"},{label:"Award",text:"Won Rookie of the Year in 2019-20"},{label:"Athleticism",text:"Known for some of the most explosive dunks in NBA history"},{label:"Stats",text:"Averaged 25+ points per game during his peak seasons"}]},
-    {name:"Damian Lillard",espnId:"6606",nbaId:"203081",pos:"PG",team:"Milwaukee Bucks",college:"Weber State",drafted:"2012 \u00b7 1st \u00b7 Pick 6",clues:[{label:"Position",text:"Point Guard in the Eastern Conference"},{label:"College",text:"Came from mid-major Weber State"},{label:"Draft",text:"6th overall pick in 2012"},{label:"Loyalty",text:"Spent over a decade in Portland before being traded"},{label:"Signature",text:"Known for hitting clutch shots from well beyond the arc"}]},
+    {name:"Damian Lillard",espnId:"6606",nbaId:"203081",pos:"PG",team:"Portland Trail Blazers",college:"Weber State",drafted:"2012 \u00b7 1st \u00b7 Pick 6",clues:[{label:"Position",text:"Point Guard in the Western Conference"},{label:"College",text:"Came from mid-major Weber State"},{label:"Draft",text:"6th overall pick in 2012"},{label:"Loyalty",text:"Spent over a decade in Portland before being traded"},{label:"Signature",text:"Known for hitting clutch shots from well beyond the arc"}]},
     {name:"Kawhi Leonard",espnId:"6450",nbaId:"202695",pos:"SF",team:"Los Angeles Clippers",college:"San Diego State",drafted:"2011 \u00b7 1st \u00b7 Pick 15",clues:[{label:"Position",text:"Small Forward in the Western Conference"},{label:"College",text:"Played at San Diego State"},{label:"Championships",text:"Won titles with two different franchises"},{label:"Nickname",text:"Known as The Klaw for his large hands and defensive dominance"},{label:"Award",text:"Won Finals MVP with both of his championship teams"}]},
     {name:"Paul George",espnId:"4251",nbaId:"202331",pos:"SF",team:"Philadelphia 76ers",college:"Fresno State",drafted:"2010 \u00b7 1st \u00b7 Pick 10",clues:[{label:"Position",text:"Small Forward in the Eastern Conference"},{label:"College",text:"Played at Fresno State"},{label:"Injury",text:"Suffered a horrific leg injury during a Team USA scrimmage in 2014"},{label:"Nickname",text:"Known as PG-13"},{label:"Teams",text:"Has played for Indiana, Oklahoma City, the Clippers, and Philadelphia"}]},
     {name:"Jimmy Butler",espnId:"6430",nbaId:"202710",pos:"SF",team:"Golden State Warriors",college:"Marquette",drafted:"2011 \u00b7 1st \u00b7 Pick 30",clues:[{label:"Position",text:"Small Forward in the Western Conference"},{label:"College",text:"Played at Marquette"},{label:"Draft",text:"30th pick - last in the first round in 2011"},{label:"Rise",text:"Went from a late first-round pick to a perennial All-Star"},{label:"Style",text:"Known for his unmatched competitiveness and big-game performances"}]},
@@ -756,20 +756,34 @@ function getPacificOffsetMinutes(d) {
 
     // Fetch today's AI-generated player from Supabase first
     // Falls back to hardcoded list if the worker hasn't run yet
+    // Also caches to sessionStorage so re-entry within the same session always gets the right player
     (async function() {
       try {
         var today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
-        var { data: rows, error } = await window.supabase
-          .from('wtp_daily')
-          .select('player_json, photo_url')
-          .eq('date', today)
-          .limit(1);
-        if (!error && rows && rows.length > 0 && rows[0].player_json) {
-          var p = rows[0].player_json;
-          // Store game ID separately — do NOT set p.id as it conflicts with nbaId/mlbId lookups
+        var sessionKey = 'wtp_session_player_' + today;
+
+        // Check sessionStorage first — avoids flicker/wrong player on re-entry
+        var cached = null;
+        try { cached = JSON.parse(sessionStorage.getItem(sessionKey)); } catch(e2) {}
+        if (cached && cached.player_json) {
           window._wtpGameId = 'wtp-' + today.replace(/-/g, '');
-          window._wtpPlayerOverride = p;
-          if (rows[0].photo_url) window._wtpValidatedPhoto = rows[0].photo_url;
+          window._wtpPlayerOverride = cached.player_json;
+          if (cached.photo_url) window._wtpValidatedPhoto = cached.photo_url;
+        } else {
+          // Fetch from Supabase
+          var { data: rows, error } = await window.supabase
+            .from('wtp_daily')
+            .select('player_json, photo_url')
+            .eq('date', today)
+            .limit(1);
+          if (!error && rows && rows.length > 0 && rows[0].player_json) {
+            var p = rows[0].player_json;
+            window._wtpGameId = 'wtp-' + today.replace(/-/g, '');
+            window._wtpPlayerOverride = p;
+            if (rows[0].photo_url) window._wtpValidatedPhoto = rows[0].photo_url;
+            // Cache for re-entry within same session
+            try { sessionStorage.setItem(sessionKey, JSON.stringify({ player_json: p, photo_url: rows[0].photo_url || null })); } catch(e2) {}
+          }
         }
       } catch(e) { /* fall back to hardcoded player */ }
       renderGame();

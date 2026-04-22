@@ -499,17 +499,29 @@ function hasAttemptedLocally(id) {
 </div>
 
 <script>
-// Update start button if already played today
+// Daily snap: clean up old static key and stale results, update start button
 (function() {
   try {
     const today = (function(){const d=new Date();return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');})();
-    const stored = JSON.parse(localStorage.getItem("fs_snap_result_" + today));
-    const gameId = "snap-decision-" + today;
-    const attempted = JSON.parse(localStorage.getItem("fs_attempted") || "[]").includes(gameId);
+    const gameId = 'snap-decision-' + today;
+
+    // Remove old static 'snap-decision-v1' from fs_attempted so it never blocks play
+    try {
+      let att = JSON.parse(localStorage.getItem('fs_attempted') || '[]');
+      att = att.filter(id => id !== 'snap-decision-v1');
+      localStorage.setItem('fs_attempted', JSON.stringify(att));
+    } catch(e2) {}
+
+    // Remove old static result key
+    try { localStorage.removeItem('fs_snap_result_v1'); } catch(e2) {}
+
+    // Only show "played" if BOTH result AND attempted flag are set for today
+    const stored = JSON.parse(localStorage.getItem('fs_snap_result_' + today));
+    const attempted = JSON.parse(localStorage.getItem('fs_attempted') || '[]').includes(gameId);
     if (stored && attempted) {
-      document.addEventListener("DOMContentLoaded", () => {
-        const btn = document.getElementById("start-btn");
-        if (btn) { btn.textContent = "View My Result"; btn.style.background = "#E8470A"; }
+      document.addEventListener('DOMContentLoaded', () => {
+        const btn = document.getElementById('start-btn');
+        if (btn) { btn.textContent = 'View My Result'; btn.style.background = '#E8470A'; }
       });
     }
   } catch(e) {}
@@ -1642,7 +1654,15 @@ async function startGame() {
   PLAYS = getTodayPlays();
   const gameId = getDailyGameId();
 
-  // 1. Check localStorage first
+  // Clean up old static key on every game start
+  try {
+    let att = JSON.parse(localStorage.getItem('fs_attempted') || '[]');
+    att = att.filter(id => id !== 'snap-decision-v1');
+    localStorage.setItem('fs_attempted', JSON.stringify(att));
+    localStorage.removeItem('fs_snap_result_v1');
+  } catch(e) {}
+
+  // 1. Check localStorage first — need BOTH result AND attempted flag
   const stored = getSnapStoredResult();
   if (stored && hasAttemptedLocally(gameId)) {
     document.getElementById('startScreen').style.display = 'none';
@@ -1659,14 +1679,16 @@ async function startGame() {
     }
     return;
   }
-  // 2. Check Supabase for cross-device replay
+  // 2. Check Supabase for cross-device replay (today only)
   try {
     const user = await getCurrentUser();
     if (user) {
+      const todayStart = getTodayString() + 'T00:00:00.000Z';
       const { data: prev } = await supabase.from('attempts')
         .select('score, created_at')
         .eq('quiz_id', gameId)
         .eq('user_id', user.id)
+        .gte('created_at', todayStart)
         .order('created_at', { ascending: false })
         .limit(1)
         .single();

@@ -515,6 +515,19 @@ function hasAttemptedLocally(id) {
     // Remove old static result key
     try { localStorage.removeItem('fs_snap_result_v1'); } catch(e2) {}
 
+    // Clean up any snap result keys that don't match today's LOCAL date (stale UTC entries)
+    try {
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith('fs_snap_result_') && k !== 'fs_snap_result_' + today) {
+          localStorage.removeItem(k);
+        }
+      });
+      // Also remove stale attempted entries for other days
+      let att2 = JSON.parse(localStorage.getItem('fs_attempted') || '[]');
+      att2 = att2.filter(id => !id.startsWith('snap-decision-') || id === gameId);
+      localStorage.setItem('fs_attempted', JSON.stringify(att2));
+    } catch(e2) {}
+
     // Only show "played" if BOTH result AND attempted flag are set for today
     const stored = JSON.parse(localStorage.getItem('fs_snap_result_' + today));
     const attempted = JSON.parse(localStorage.getItem('fs_attempted') || '[]').includes(gameId);

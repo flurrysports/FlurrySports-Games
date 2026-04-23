@@ -502,7 +502,7 @@ function hasAttemptedLocally(id) {
 // Daily snap: clean up old static key and stale results, update start button
 (function() {
   try {
-    const today = (function(){const d=new Date();return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');})();
+    const today = (function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
     const gameId = 'snap-decision-' + today;
 
     // Remove old static 'snap-decision-v1' from fs_attempted so it never blocks play
@@ -1584,7 +1584,7 @@ const ALL_PLAYS = [
 
 function getTodayString() {
   const d = new Date();
-  return d.getUTCFullYear() + '-' + String(d.getUTCMonth()+1).padStart(2,'0') + '-' + String(d.getUTCDate()).padStart(2,'0');
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 
 function getDailyGameId() {
@@ -1683,24 +1683,27 @@ async function startGame() {
   try {
     const user = await getCurrentUser();
     if (user) {
-      const todayStart = getTodayString() + 'T00:00:00.000Z';
       const { data: prev } = await supabase.from('attempts')
-        .select('score, created_at')
+        .select('score, metadata, created_at')
         .eq('quiz_id', gameId)
         .eq('user_id', user.id)
-        .gte('created_at', todayStart)
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
       if (prev) {
-        const rebuilt = { type: 'td', score: prev.score, playHistory: [], decisionTimes: [] };
+        const meta = prev.metadata || {};
+        const wasLoss = meta.forfeit || (meta.playHistory || []).some(p => p && (p.result === 'wrong' || p.result === 'delay'));
+        const rebuilt = wasLoss
+          ? { type: 'loss', score: prev.score, playHistory: meta.playHistory || [], currentPlay: meta.currentPlay || 0, headline: meta.headline || 'TURNOVER!', desc: 'You already played today.', badge: meta.badge || 'Turnover' }
+          : { type: 'td', score: prev.score, playHistory: meta.playHistory || [], decisionTimes: meta.decisionTimes || [] };
         storeSnapResult(rebuilt);
         markAttemptedLocally(gameId);
         document.getElementById('startScreen').style.display = 'none';
         score = prev.score;
-        playHistory = [];
-        decisionTimes = [];
-        showTouchdown(true);
+        playHistory = meta.playHistory || [];
+        decisionTimes = meta.decisionTimes || [];
+        if (rebuilt.type === 'td') showTouchdown(true);
+        else showLoss(rebuilt.headline, rebuilt.desc, rebuilt.badge, true);
         return;
       }
     }

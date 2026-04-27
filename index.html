@@ -451,7 +451,8 @@
       } catch(e) { return false; }
     }
     const quizDone = isDailyQuizDone();
-    const snapDone = hasAttemptedLocally('snap-decision-v1');
+    const snapToday = 'snap-decision-' + getTodayString();
+    const snapDone = hasAttemptedLocally(snapToday);
     const wtpDone  = isWTPDone();
     const csDone   = hasAttemptedLocally('clean-sweep-' + getTodayString());
 

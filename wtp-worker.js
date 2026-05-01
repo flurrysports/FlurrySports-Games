@@ -33,53 +33,96 @@ export default {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN — fills the next 30 days as drafts, generates as many as needed
+// ─────────────────────────────────────────────────────────────────────────────
 async function generateAndStore(env) {
-  const today = getPacificDateString();
+  const today = getDateString(0);
   const log   = [];
+  const results = [];
 
   try {
-    const existing = await sbFetch(env, 'GET', `/rest/v1/wtp_daily?date=eq.${today}&select=date`);
-    if (existing.length > 0) return { status: 'skipped', reason: 'Already exists', date: today };
+    // Find which dates in the next 30 days are missing players
+    const future = getDateString(30);
+    const existing = await sbFetch(env, 'GET',
+      `/rest/v1/wtp_daily?date=gte.${today}&date=lte.${future}&select=date&order=date.asc`);
+    const existingDates = new Set(existing.map(r => r.date));
 
-    const recent = await sbFetch(env, 'GET', `/rest/v1/wtp_daily?select=player_name,league&order=date.desc&limit=14`);
+    const missingDates = [];
+    for (let i = 0; i < 30; i++) {
+      const d = getDateString(i);
+      if (!existingDates.has(d)) missingDates.push(d);
+    }
+
+    log.push(`Existing entries in next 30 days: ${existingDates.size}`);
+    log.push(`Missing dates: ${missingDates.length}`);
+
+    if (missingDates.length === 0) {
+      return { status: 'skipped', reason: 'All 30 days already have players', log };
+    }
+
+    // Fetch recent players for no-repeat check
+    const recent = await sbFetch(env, 'GET',
+      `/rest/v1/wtp_daily?select=player_name,league&order=date.desc&limit=30`);
     const recentNames = recent.map(r => r.player_name);
     log.push(`Avoiding: ${recentNames.join(', ') || 'none'}`);
 
-    let player = null;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      log.push(`Attempt ${attempt}...`);
+    // Generate one player per missing date
+    for (const date of missingDates) {
+      log.push(`\n--- Generating for ${date} ---`);
       try {
-        player = await generatePlayer(env, recentNames);
-        log.push(`Generated: ${player.name} (${player.league})`);
-        break;
-      } catch (e) {
-        log.push(`Attempt ${attempt} failed: ${e.message}`);
-        if (attempt === 3) throw new Error('All 3 generation attempts failed');
+        let player = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          log.push(`Attempt ${attempt}...`);
+          try {
+            player = await generatePlayer(env, recentNames);
+            log.push(`Generated: ${player.name} (${player.league})`);
+            break;
+          } catch (e) {
+            log.push(`Attempt ${attempt} failed: ${e.message}`);
+            if (attempt === 3) throw new Error('All 3 generation attempts failed');
+          }
+        }
+
+        const photoUrl = await resolvePhotoUrl(player);
+        log.push(`Photo: ${photoUrl || 'none'}`);
+
+        await sbFetch(env, 'POST', '/rest/v1/wtp_daily', {
+          date,
+          player_json: player,
+          photo_url:   photoUrl,
+          league:      player.league,
+          player_name: player.name,
+          status:      'draft',
+          created_at:  new Date().toISOString()
+        });
+
+        recentNames.unshift(player.name);
+        log.push(`Stored draft for ${date}`);
+        results.push({ date, status: 'created', player: player.name, league: player.league });
+
+      } catch (err) {
+        log.push(`Failed for ${date}: ${err.message}`);
+        results.push({ date, status: 'error', error: err.message });
       }
     }
 
-    const photoUrl = await resolvePhotoUrl(player);
-    log.push(`Photo: ${photoUrl || 'none'}`);
-
-    await sbFetch(env, 'POST', '/rest/v1/wtp_daily', {
-      date:        today,
-      player_json: player,
-      photo_url:   photoUrl,
-      league:      player.league,
-      player_name: player.name,
-      created_at:  new Date().toISOString()
-    });
-
-    log.push(`Stored for ${today}`);
-    return { status: 'success', date: today, player: player.name, league: player.league, photoUrl, log };
+    return {
+      status: 'success',
+      generated: results.filter(r => r.status === 'created').length,
+      results,
+      log
+    };
 
   } catch (err) {
-    return { status: 'error', error: err.message, date: today, log };
+    return { status: 'error', error: err.message, log };
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// GENERATE PLAYER
+// ─────────────────────────────────────────────────────────────────────────────
 async function generatePlayer(env, recentNames = []) {
-  // Weighted league: 55% NFL, 30% NBA, 15% MLB
   const roll   = Math.random();
   const league = roll < 0.55 ? 'NFL' : roll < 0.85 ? 'NBA' : 'MLB';
 
@@ -137,6 +180,9 @@ Return only the JSON, nothing else.`;
   return player;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// PHOTO RESOLUTION
+// ─────────────────────────────────────────────────────────────────────────────
 async function resolvePhotoUrl(player) {
   for (const url of getPhotoCandidates(player)) {
     try {
@@ -152,7 +198,6 @@ async function resolvePhotoUrl(player) {
 
 function getPhotoCandidates(player) {
   const league = (player.league || '').toUpperCase();
-
   if (league === 'NBA') {
     const id = player.nbaId || player.espnId;
     return [
@@ -161,7 +206,6 @@ function getPhotoCandidates(player) {
       `https://a.espncdn.com/i/headshots/nba/players/full/${player.espnId}.png`
     ];
   }
-
   if (league === 'MLB') {
     const mlbId = player.mlbId || player.espnId;
     return [
@@ -169,14 +213,15 @@ function getPhotoCandidates(player) {
       `https://a.espncdn.com/i/headshots/mlb/players/full/${player.espnId}.png`
     ];
   }
-
-  // NFL
   return [
     `https://a.espncdn.com/i/headshots/nfl/players/full/${player.espnId}.png`,
     `https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/${player.espnId}.png&w=350&h=254`
   ];
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CLAUDE API
+// ─────────────────────────────────────────────────────────────────────────────
 async function claudeCall(env, system, user, maxTokens = 800) {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -197,6 +242,9 @@ async function claudeCall(env, system, user, maxTokens = 800) {
   return data.content[0].text.trim();
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SUPABASE
+// ─────────────────────────────────────────────────────────────────────────────
 async function sbFetch(env, method, path, body = null) {
   const res = await fetch(env.SUPABASE_URL + path, {
     method,
@@ -212,11 +260,14 @@ async function sbFetch(env, method, path, body = null) {
   return res.json();
 }
 
-function getPacificDateString() {
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+function getDateString(daysAhead) {
   const now = new Date();
   const y   = now.getUTCFullYear();
   const dstStart = new Date(Date.UTC(y, 2, 14 - (new Date(Date.UTC(y, 2, 1)).getUTCDay() + 6) % 7, 10));
   const dstEnd   = new Date(Date.UTC(y, 10, 7 - (new Date(Date.UTC(y, 10, 1)).getUTCDay() + 6) % 7, 9));
   const offsetMs = (now >= dstStart && now < dstEnd ? -7 : -8) * 3600000;
-  return new Date(now.getTime() + offsetMs).toISOString().slice(0, 10);
+  return new Date(now.getTime() + offsetMs + daysAhead * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }

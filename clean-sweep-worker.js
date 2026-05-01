@@ -3,8 +3,6 @@
  * Cloudflare Worker with scheduled cron trigger
  *
  * Cron: 0 8 * * *  (8:00 AM UTC = midnight Pacific Standard / 1:00 AM Pacific Daylight)
- * For exact midnight Pacific, use: 0 8 * * * (PST) or 0 7 * * * (PDT)
- * Cloudflare doesn't support dynamic cron, so set to 8 UTC which covers midnight PST.
  *
  * Environment variables (set in Cloudflare dashboard, never commit values):
  *   ANTHROPIC_API_KEY
@@ -22,7 +20,6 @@ export default {
       });
     }
     if (url.pathname === '/preview') {
-      // Preview without saving — for testing
       const result = await generatePuzzle(env, []);
       return new Response(JSON.stringify(result, null, 2), {
         headers: { 'Content-Type': 'application/json' }
@@ -49,13 +46,10 @@ const SPORT_WEIGHTS = [
 ];
 
 function pickSport(usedSports) {
-  // Count recent usage
   const recent = usedSports.slice(0, 20);
   const counts = {};
   SPORT_WEIGHTS.forEach(s => counts[s.sport] = 0);
   recent.forEach(s => { if (counts[s] !== undefined) counts[s]++; });
-
-  // Weighted random with penalty for overuse
   const adjusted = SPORT_WEIGHTS.map(s => ({
     sport: s.sport,
     weight: Math.max(1, s.weight - counts[s.sport] * 3)
@@ -70,80 +64,92 @@ function pickSport(usedSports) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MAIN
+// MAIN — fills the next 30 days as drafts, generates as many as needed
 // ─────────────────────────────────────────────────────────────────────────────
 async function generateAndStore(env) {
   const today = getPacificDateString();
   const log = [];
+  const results = [];
 
   try {
-    // 1. Check if today's puzzle already exists
+    // Find which dates in the next 30 days are missing puzzles
+    const future = getDateString(30);
     const existing = await sbFetch(env, 'GET',
-      `/rest/v1/clean_sweep_puzzles?date=eq.${today}&select=id`);
-    if (existing.length > 0) {
-      return { status: 'skipped', reason: 'Puzzle already exists', date: today };
+      `/rest/v1/clean_sweep_puzzles?date=gte.${today}&date=lte.${future}&select=date&order=date.asc`);
+    const existingDates = new Set(existing.map(r => r.date));
+
+    const missingDates = [];
+    for (let i = 0; i < 30; i++) {
+      const d = getDateString(i);
+      if (!existingDates.has(d)) missingDates.push(d);
     }
 
-    // 2. Fetch last 120 puzzles for no-repeat check
+    log.push(`Existing puzzles in next 30 days: ${existingDates.size}`);
+    log.push(`Missing dates: ${missingDates.length}`);
+
+    if (missingDates.length === 0) {
+      return { status: 'skipped', reason: 'All 30 days already have puzzles', log };
+    }
+
+    // Fetch recent puzzles for no-repeat check
     const recent = await sbFetch(env, 'GET',
       `/rest/v1/clean_sweep_puzzles?select=prompt,sport_category&order=date.desc&limit=120`);
     const usedPrompts = recent.map(p => p.prompt);
     const usedSports  = recent.map(p => p.sport_category);
-    log.push(`Found ${usedPrompts.length} recent puzzles to avoid`);
+    log.push(`Avoiding ${usedPrompts.length} recent prompts`);
 
-    // 3. Pick sport based on distribution
-    const chosenSport = pickSport(usedSports);
-    log.push(`Chosen sport: ${chosenSport}`);
+    // Generate one puzzle per missing date
+    for (const date of missingDates) {
+      log.push(`\n--- Generating for ${date} ---`);
+      try {
+        const chosenSport = pickSport(usedSports);
+        log.push(`Sport: ${chosenSport}`);
 
-    // 4. Generate with Claude
-    log.push('Generating puzzle with Claude...');
-    const puzzle = await generatePuzzle(env, usedPrompts, chosenSport);
-    log.push(`Prompt: "${puzzle.prompt}"`);
-    log.push(`Correct (${puzzle.correct_tiles.length}): ${puzzle.correct_tiles.join(', ')}`);
-    log.push(`Decoys (${puzzle.decoy_tiles.length}): ${puzzle.decoy_tiles.join(', ')}`);
+        let puzzle = null;
+        let verFlag = null;
 
-    // 5. Validate counts
-    if (puzzle.correct_tiles.length < 4 || puzzle.correct_tiles.length > 7) {
-      throw new Error(`Bad correct count: ${puzzle.correct_tiles.length}`);
-    }
-    if (puzzle.correct_tiles.length + puzzle.decoy_tiles.length !== 9) {
-      throw new Error(`Total tiles must = 9, got ${puzzle.correct_tiles.length + puzzle.decoy_tiles.length}`);
-    }
-
-    // 6. Self-verify — up to 3 total attempts
-    log.push('Verifying answers with Claude...');
-    const verified = await verifyPuzzle(env, puzzle);
-    if (!verified.passed) {
-      log.push(`Attempt 1 failed: ${verified.issues.join('; ')}`);
-      log.push('Regenerating (attempt 2)...');
-      const puzzle2 = await generatePuzzle(env, usedPrompts, chosenSport, verified.issues);
-      const verified2 = await verifyPuzzle(env, puzzle2);
-      if (!verified2.passed) {
-        log.push(`Attempt 2 failed: ${verified2.issues.join('; ')}`);
-        log.push('Regenerating (attempt 3)...');
-        const puzzle3 = await generatePuzzle(env, usedPrompts, chosenSport, verified2.issues);
-        const verified3 = await verifyPuzzle(env, puzzle3);
-        if (!verified3.passed) {
-          log.push('All 3 attempts failed — storing attempt 3 with verification_flag for admin review');
-          puzzle3.verification_flag = verified3.issues.join('; ');
-          return await storePuzzle(env, today, puzzle3, log);
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          log.push(`Attempt ${attempt}...`);
+          try {
+            puzzle = await generatePuzzle(env, usedPrompts, chosenSport, attempt > 1 ? [`Previous attempt ${attempt-1} failed verification`] : []);
+            const verified = await verifyPuzzle(env, puzzle);
+            if (verified.passed) {
+              log.push(`Verified OK on attempt ${attempt}`);
+              verFlag = null;
+              break;
+            } else {
+              log.push(`Verification failed: ${verified.issues.join('; ')}`);
+              verFlag = verified.issues.join('; ');
+              if (attempt === 3) {
+                puzzle.verification_flag = verFlag;
+              }
+            }
+          } catch (e) {
+            log.push(`Attempt ${attempt} error: ${e.message}`);
+            if (attempt === 3) throw e;
+          }
         }
-        log.push('Attempt 3 verification passed ✓');
-        return await storePuzzle(env, today, puzzle3, log);
+
+        await storePuzzle(env, date, puzzle, log);
+        usedPrompts.unshift(puzzle.prompt);
+        usedSports.unshift(puzzle.sport_category);
+        results.push({ date, status: 'created', prompt: puzzle.prompt, flagged: !!puzzle.verification_flag });
+
+      } catch (err) {
+        log.push(`Failed for ${date}: ${err.message}`);
+        results.push({ date, status: 'error', error: err.message });
       }
-      log.push('Attempt 2 verification passed ✓');
-      return await storePuzzle(env, today, puzzle2, log);
     }
-    log.push('Attempt 1 verification passed ✓');
-    return await storePuzzle(env, today, puzzle, log);
+
+    return { status: 'success', generated: results.filter(r => r.status === 'created').length, results, log };
 
   } catch (err) {
-    return { status: 'error', error: err.message, date: today, log };
+    return { status: 'error', error: err.message, log };
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// STORE PUZZLE
+// STORE PUZZLE — always as draft for admin review
 // ─────────────────────────────────────────────────────────────────────────────
 async function storePuzzle(env, date, puzzle, log) {
   const tiles_shuffled = shuffle([
@@ -153,19 +159,19 @@ async function storePuzzle(env, date, puzzle, log) {
 
   await sbFetch(env, 'POST', '/rest/v1/clean_sweep_puzzles', {
     date,
-    prompt:           puzzle.prompt,
-    sport_category:   puzzle.sport_category,
-    difficulty:       puzzle.difficulty || 'medium',
-    correct_tiles:    puzzle.correct_tiles,
-    decoy_tiles:      puzzle.decoy_tiles,
+    prompt:            puzzle.prompt,
+    sport_category:    puzzle.sport_category,
+    difficulty:        puzzle.difficulty || 'medium',
+    correct_tiles:     puzzle.correct_tiles,
+    decoy_tiles:       puzzle.decoy_tiles,
     tiles_shuffled,
-    edge_case_note:   puzzle.edge_case_note || null,
+    edge_case_note:    puzzle.edge_case_note || null,
     verification_flag: puzzle.verification_flag || null,
-    created_at:       new Date().toISOString()
+    status:            'draft',
+    created_at:        new Date().toISOString()
   });
 
-  log.push(`Stored puzzle for ${date}`);
-  return { status: 'success', date, puzzle, log };
+  log.push(`Stored draft for ${date}`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -209,15 +215,15 @@ ACCURACY RULES — THIS IS CRITICAL:
 - When in doubt, leave a player out of the correct list
 
 COMPLETENESS RULES:
-- AVOID prompts where the full answer set is too large or hard to enumerate (e.g. "all coaches who ever won an NCAA title" — too many, too risky)
-- PREFER prompts with a bounded, well-known answer set (e.g. "won 3+ NBA championships in the 2010s", "2023 NFL first-round QBs")
+- AVOID prompts where the full answer set is too large or hard to enumerate
+- PREFER prompts with a bounded, well-known answer set
 - If you cannot confidently verify every name you include, choose a different prompt
 
 TILE RULES:
 - 4 to 7 correct answers (players who genuinely meet the criterion)
 - Enough decoys to total exactly 9 tiles (9 minus correct count)
 - Decoys: famous players from same sport/era who do NOT meet criterion — tempt users into wrong picks
-- ALWAYS include at least one edge case: a player who barely qualifies (won the award only once, was on the team only 1 season, hit exactly the minimum stat threshold, etc.)
+- ALWAYS include at least one edge case: a player who barely qualifies
 
 DIFFICULTY SCALING within each puzzle:
 - 1–2 obvious correct answers (all-time legends clearly qualify)
@@ -247,11 +253,17 @@ Return this exact JSON:
   if (!Array.isArray(puzzle.correct_tiles) || !Array.isArray(puzzle.decoy_tiles)) {
     throw new Error('Tile fields must be arrays');
   }
+  if (puzzle.correct_tiles.length < 4 || puzzle.correct_tiles.length > 7) {
+    throw new Error(`Bad correct count: ${puzzle.correct_tiles.length}`);
+  }
+  if (puzzle.correct_tiles.length + puzzle.decoy_tiles.length !== 9) {
+    throw new Error(`Total tiles must = 9, got ${puzzle.correct_tiles.length + puzzle.decoy_tiles.length}`);
+  }
   return puzzle;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// VERIFY PUZZLE — per-item yes/no fact-check + correct count validation
+// VERIFY PUZZLE
 // ─────────────────────────────────────────────────────────────────────────────
 async function verifyPuzzle(env, puzzle) {
   const system = `You are an extremely strict sports fact-checker. For each person listed, answer a single yes/no question based solely on the prompt criterion. Be precise — do not guess. If you are not 100% certain, answer "uncertain".
@@ -271,7 +283,7 @@ ${allTiles.map((t, i) => `${i+1}. ${t.name}`).join('\n')}
 
 For each person, answer only:
 - "yes" — they definitely meet the criterion
-- "no" — they definitely do NOT meet the criterion  
+- "no" — they definitely do NOT meet the criterion
 - "uncertain" — you are not 100% sure
 
 Do NOT consider how they are labeled. Judge each independently based only on the criterion.
@@ -292,67 +304,42 @@ Return this exact JSON:
   const cleaned = raw.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
 
   let result;
-  try {
-    result = JSON.parse(cleaned);
-  } catch(e) {
-    throw new Error(`Verification JSON parse failed: ${e.message}. Raw: ${raw.substring(0, 200)}`);
-  }
+  try { result = JSON.parse(cleaned); }
+  catch(e) { throw new Error(`Verification JSON parse failed: ${e.message}. Raw: ${raw.substring(0, 200)}`); }
 
   const checks = result.checks || [];
   const issues = [];
   let passed = true;
 
-  // Step 1: Auto-fix mislabeled items and remove uncertain ones
-  // Do this BEFORE deciding pass/fail — fixing is preferred over regenerating
   const uncertain = checks.filter(c => c.qualifies === 'uncertain').map(c => c.name);
-
-  // Remove uncertain items from both lists
   puzzle.correct_tiles = puzzle.correct_tiles.filter(n => !uncertain.includes(n));
   puzzle.decoy_tiles   = puzzle.decoy_tiles.filter(n => !uncertain.includes(n));
 
-  // Move any mislabeled items to the correct list
   for (const c of checks) {
     if (c.qualifies === 'yes' && c.labeled === 'decoy') {
-      // Was labeled decoy but actually qualifies — move to correct
       puzzle.decoy_tiles   = puzzle.decoy_tiles.filter(n => n !== c.name);
       if (!puzzle.correct_tiles.includes(c.name)) puzzle.correct_tiles.push(c.name);
       issues.push(`FIXED: moved ${c.name} from decoy to correct — ${c.reason}`);
     } else if (c.qualifies === 'no' && c.labeled === 'correct') {
-      // Was labeled correct but does not qualify — move to decoy
       puzzle.correct_tiles = puzzle.correct_tiles.filter(n => n !== c.name);
       if (!puzzle.decoy_tiles.includes(c.name)) puzzle.decoy_tiles.push(c.name);
       issues.push(`FIXED: moved ${c.name} from correct to decoy — ${c.reason}`);
     }
   }
 
-  // Step 2: After fixing, validate counts — only fail if counts are broken
   const correctCount = puzzle.correct_tiles.length;
   const total = puzzle.correct_tiles.length + puzzle.decoy_tiles.length;
 
-  if (correctCount < 4) {
-    issues.push(`Too few correct answers after verification: ${correctCount} (need 4-7) — regenerate`);
-    passed = false;
-  } else if (correctCount > 7) {
-    issues.push(`Too many correct answers after verification: ${correctCount} (need 4-7) — regenerate`);
-    passed = false;
-  }
-
-  if (total !== 9) {
-    issues.push(`Total tiles after verification: ${total} (need exactly 9) — regenerate`);
-    passed = false;
-  }
-
-  // More than 2 uncertain items is a sign of a bad prompt — regenerate
-  if (uncertain.length > 2) {
-    issues.push(`Too many uncertain items (${uncertain.length}) — regenerate with a clearer prompt`);
-    passed = false;
-  }
+  if (correctCount < 4) { issues.push(`Too few correct answers after verification: ${correctCount} (need 4-7)`); passed = false; }
+  else if (correctCount > 7) { issues.push(`Too many correct answers after verification: ${correctCount} (need 4-7)`); passed = false; }
+  if (total !== 9) { issues.push(`Total tiles after verification: ${total} (need exactly 9)`); passed = false; }
+  if (uncertain.length > 2) { issues.push(`Too many uncertain items (${uncertain.length}) — regenerate with a clearer prompt`); passed = false; }
 
   return { passed, issues, checks };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CLAUDE API CALL
+// CLAUDE API
 // ─────────────────────────────────────────────────────────────────────────────
 async function claudeCall(env, system, user, maxTokens = 1000) {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -369,16 +356,13 @@ async function claudeCall(env, system, user, maxTokens = 1000) {
       messages: [{ role: 'user', content: user }]
     })
   });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Claude API ${res.status}: ${err.slice(0, 200)}`);
-  }
+  if (!res.ok) { const err = await res.text(); throw new Error(`Claude API ${res.status}: ${err.slice(0, 200)}`); }
   const data = await res.json();
   return data.content[0].text.trim();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SUPABASE HELPER
+// SUPABASE
 // ─────────────────────────────────────────────────────────────────────────────
 async function sbFetch(env, method, path, body = null) {
   const res = await fetch(env.SUPABASE_URL + path, {
@@ -391,10 +375,7 @@ async function sbFetch(env, method, path, body = null) {
     },
     body: body ? JSON.stringify(body) : null
   });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Supabase ${method} ${path}: ${res.status} — ${err.slice(0, 200)}`);
-  }
+  if (!res.ok) { const err = await res.text(); throw new Error(`Supabase ${method} ${path}: ${res.status} — ${err.slice(0, 300)}`); }
   return res.json();
 }
 
@@ -402,12 +383,16 @@ async function sbFetch(env, method, path, body = null) {
 // HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 function getPacificDateString() {
+  return getDateString(0);
+}
+
+function getDateString(daysAhead) {
   const now = new Date();
   const y = now.getUTCFullYear();
   const dstStart = new Date(Date.UTC(y, 2, 14 - (new Date(Date.UTC(y, 2, 1)).getUTCDay() + 6) % 7, 10));
   const dstEnd   = new Date(Date.UTC(y, 10, 7 - (new Date(Date.UTC(y, 10, 1)).getUTCDay() + 6) % 7, 9));
   const offsetMs = (now >= dstStart && now < dstEnd ? -7 : -8) * 60 * 60 * 1000;
-  const pacific = new Date(now.getTime() + offsetMs);
+  const pacific = new Date(now.getTime() + offsetMs + daysAhead * 24 * 60 * 60 * 1000);
   return pacific.toISOString().slice(0, 10);
 }
 

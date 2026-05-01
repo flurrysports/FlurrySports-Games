@@ -7,127 +7,133 @@
   <link rel="icon" type="image/png" href="/images/logo-crown.png">
   <link rel="stylesheet" href="/css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/js/supabase-config.js"></script>
-<script>var supabase = (window.supabase || window.Supabase).createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
+  <script src="/js/supabase-config.js"></script>
+  <script>var supabase = (window.supabase || window.Supabase).createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
   <style>
     .admin-sidebar {
-      width: 260px;
-      flex-shrink: 0;
-      background: var(--card-bg);
-      border-right: 1px solid var(--card-border);
-      min-height: calc(100vh - 68px);
-      padding: 1.5rem 1rem;
+      width: 260px; flex-shrink: 0;
+      background: var(--card-bg); border-right: 1px solid var(--card-border);
+      min-height: calc(100vh - 68px); padding: 1.5rem 1rem;
     }
-    .admin-main {
-      flex: 1;
-      padding: 2rem;
-      max-width: 900px;
-    }
-    .admin-layout {
-      display: flex;
-      position: relative;
-      z-index: 1;
-    }
+    .admin-main { flex: 1; padding: 2rem; max-width: 1000px; }
+    .admin-layout { display: flex; position: relative; z-index: 1; }
     .sidebar-nav { list-style: none; }
     .sidebar-nav li { margin-bottom: 0.25rem; }
     .sidebar-nav a {
-      display: block;
-      padding: 0.6rem 1rem;
-      border-radius: 8px;
-      text-decoration: none;
-      color: var(--gray-light);
-      font-family: 'Barlow Condensed', sans-serif;
-      font-weight: 700;
-      font-size: 0.95rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      cursor: pointer;
-      transition: var(--transition);
+      display: block; padding: 0.6rem 1rem; border-radius: 8px;
+      text-decoration: none; color: var(--gray-light);
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+      font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.06em;
+      cursor: pointer; transition: var(--transition);
     }
-    .sidebar-nav a:hover, .sidebar-nav a.active {
-      background: rgba(245,197,24,0.1);
-      color: var(--gold);
-    }
+    .sidebar-nav a:hover, .sidebar-nav a.active { background: rgba(245,197,24,0.1); color: var(--gold); }
     .sidebar-section {
-      font-size: 0.7rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--gray);
-      padding: 0.5rem 1rem;
-      margin-top: 1rem;
-      margin-bottom: 0.25rem;
+      font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--gray); padding: 0.5rem 1rem; margin-top: 1rem; margin-bottom: 0.25rem;
     }
     .admin-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 14px;
-      padding: 1.75rem;
-      margin-bottom: 1.5rem;
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 14px; padding: 1.75rem; margin-bottom: 1.5rem;
     }
     .admin-card h2 {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-weight: 900;
-      font-size: 1.5rem;
-      text-transform: uppercase;
-      margin-bottom: 1.5rem;
-      color: var(--gold);
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
+      font-size: 1.5rem; text-transform: uppercase; margin-bottom: 1.5rem; color: var(--gold);
     }
     .question-block {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid var(--card-border);
-      border-radius: 10px;
-      padding: 1.25rem;
-      margin-bottom: 1rem;
-      position: relative;
+      background: rgba(255,255,255,0.03); border: 1px solid var(--card-border);
+      border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem; position: relative;
     }
     .question-block .remove-q {
-      position: absolute;
-      top: 0.75rem;
-      right: 0.75rem;
-      background: rgba(255,77,109,0.15);
-      border: none;
-      color: var(--error);
-      border-radius: 6px;
-      width: 28px;
-      height: 28px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: absolute; top: 0.75rem; right: 0.75rem;
+      background: rgba(255,77,109,0.15); border: none; color: var(--error);
+      border-radius: 6px; width: 28px; height: 28px; cursor: pointer;
+      font-size: 0.85rem; display: flex; align-items: center; justify-content: center;
     }
-    .choices-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
-    }
+    .choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem; }
     .quiz-list-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.85rem 1rem;
-      border-radius: 10px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid var(--card-border);
-      margin-bottom: 0.6rem;
-      gap: 1rem;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.85rem 1rem; border-radius: 10px;
+      background: rgba(255,255,255,0.03); border: 1px solid var(--card-border);
+      margin-bottom: 0.6rem; gap: 1rem;
     }
     .quiz-list-item h4 {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-weight: 800;
-      font-size: 1.05rem;
-      text-transform: uppercase;
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+      font-size: 1.05rem; text-transform: uppercase;
     }
-    .rankings-answers-help {
-      font-size: 0.82rem;
-      color: var(--gray);
-      margin-top: 0.35rem;
-      line-height: 1.5;
+    .rankings-answers-help { font-size: 0.82rem; color: var(--gray); margin-top: 0.35rem; line-height: 1.5; }
+
+    /* ── PUZZLE QUEUE STYLES ── */
+    .puzzle-row {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--card-border);
+      border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 0.75rem;
     }
+    .puzzle-row.has-flag { border-color: rgba(255,77,109,0.5); background: rgba(255,77,109,0.04); }
+    .puzzle-row.status-approved { border-left: 3px solid var(--success); }
+    .puzzle-row.status-draft { border-left: 3px solid var(--gold); }
+    .flag-badge {
+      display: inline-block; background: rgba(255,77,109,0.15); color: var(--error);
+      border: 1px solid rgba(255,77,109,0.3); border-radius: 6px;
+      padding: 0.2rem 0.6rem; font-size: 0.75rem; font-weight: 700;
+      font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase;
+      letter-spacing: 0.08em; margin-top: 0.4rem; display: block;
+    }
+    .status-pill {
+      font-size: 0.72rem; padding: 0.2rem 0.6rem; border-radius: 4px;
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase;
+    }
+    .status-pill.approved { background: rgba(0,214,143,0.15); color: var(--success); }
+    .status-pill.draft { background: rgba(245,197,24,0.15); color: var(--gold); }
+
+    /* ── PUZZLE EDITOR MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,0.75);
+      display: flex; align-items: center; justify-content: center; padding: 1rem;
+    }
+    .modal-box {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 16px; padding: 2rem; width: 100%; max-width: 680px;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal-box h3 {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
+      font-size: 1.4rem; text-transform: uppercase; color: var(--gold); margin-bottom: 1.25rem;
+    }
+    .tile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem; }
+    .tile-input-row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.4rem; }
+    .tile-input-row input { flex: 1; }
+    .tile-correct-toggle {
+      width: 36px; height: 36px; border-radius: 6px; border: 1px solid var(--card-border);
+      cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; background: rgba(255,77,109,0.1); color: var(--error);
+      transition: all 0.15s;
+    }
+    .tile-correct-toggle.is-correct { background: rgba(0,214,143,0.15); color: var(--success); border-color: rgba(0,214,143,0.3); }
+
+    /* ── WTP PLAYER PREVIEW ── */
+    .player-preview {
+      display: flex; gap: 1rem; align-items: center;
+      background: rgba(255,255,255,0.03); border: 1px solid var(--card-border);
+      border-radius: 10px; padding: 1rem; margin-top: 0.75rem;
+    }
+    .player-preview img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: #222; }
+    .player-preview-info { font-size: 0.85rem; color: var(--gray-light); }
+    .player-preview-info strong { font-family: 'Barlow Condensed', sans-serif; font-size: 1.1rem; color: var(--white); display: block; }
+
+    /* ── TABS ── */
+    .tab-bar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--card-border); padding-bottom: 0; }
+    .tab-btn {
+      padding: 0.5rem 1.25rem; border-radius: 8px 8px 0 0; cursor: pointer;
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.9rem;
+      text-transform: uppercase; letter-spacing: 0.06em; border: 1px solid transparent;
+      border-bottom: none; background: transparent; color: var(--gray); transition: all 0.15s;
+      position: relative; top: 1px;
+    }
+    .tab-btn.active { background: var(--card-bg); border-color: var(--card-border); color: var(--gold); }
+
     @media (max-width: 768px) {
       .admin-layout { flex-direction: column; }
       .admin-sidebar { width: 100%; min-height: auto; border-right: none; border-bottom: 1px solid var(--card-border); }
+      .tile-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -148,15 +154,11 @@
       <input class="form-input" id="lock-password" type="password" placeholder="••••••••" autocomplete="current-password">
     </div>
     <div class="form-error hidden" id="lock-error" style="margin-bottom:1rem;"></div>
-    <!-- Also accept a simple admin password -->
     <div class="form-group" style="text-align:left;">
       <label class="form-label">OR Admin Password</label>
       <input class="form-input" id="lock-admin-pw" type="password" placeholder="Admin site password">
     </div>
     <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="handleAdminLogin()">Enter Admin Panel</button>
-    <p style="margin-top:1rem;font-size:0.8rem;color:var(--gray);">
-      Set <code style="color:var(--gold);">ADMIN_PASSWORD</code> in <code style="color:var(--gold);">js/supabase-config.js</code>
-    </p>
   </div>
 </div>
 
@@ -177,6 +179,11 @@
       <li><a onclick="showSection('add-quiz')" class="active" id="nav-add-quiz">➕ Add New Quiz</a></li>
       <li><a onclick="showSection('manage-quizzes')" id="nav-manage-quizzes">📋 Manage Quizzes</a></li>
     </ul>
+    <div class="sidebar-section">Daily Games</div>
+    <ul class="sidebar-nav">
+      <li><a onclick="showSection('clean-sweep')" id="nav-clean-sweep">🧹 Clean Sweep</a></li>
+      <li><a onclick="showSection('whos-that-player')" id="nav-whos-that-player">❓ Who's That Player</a></li>
+    </ul>
     <div class="sidebar-section">Stats</div>
     <ul class="sidebar-nav">
       <li><a onclick="showSection('stats')" id="nav-stats">📊 Overview</a></li>
@@ -195,7 +202,6 @@
     <div id="section-add-quiz">
       <div class="admin-card">
         <h2>Add New Quiz</h2>
-
         <div class="form-group">
           <label class="form-label">Quiz Title *</label>
           <input class="form-input" id="q-title" type="text" placeholder="e.g. NBA Finals MVPs Quiz">
@@ -223,15 +229,11 @@
           </div>
         </div>
       </div>
-
-      <!-- MC Questions -->
       <div id="mc-section" class="admin-card">
         <h2>Questions</h2>
         <div id="mc-questions-list"></div>
         <button class="btn btn-outline" onclick="addMCQuestion()">➕ Add Question</button>
       </div>
-
-      <!-- Rankings Section -->
       <div id="rankings-section" class="admin-card hidden">
         <h2>Rankings Challenge</h2>
         <div class="form-group">
@@ -240,11 +242,10 @@
         </div>
         <div class="form-group">
           <label class="form-label">Answers (one per line, in correct order) *</label>
-          <textarea class="form-textarea" id="rank-answers" placeholder="Kareem Abdul-Jabbar&#10;LeBron James&#10;Karl Malone&#10;Kobe Bryant&#10;Michael Jordan" style="min-height:180px;"></textarea>
-          <p class="rankings-answers-help">Enter one name per line in ranked order. Players can answer with full name or last name only.</p>
+          <textarea class="form-textarea" id="rank-answers" placeholder="Kareem Abdul-Jabbar&#10;LeBron James&#10;Karl Malone" style="min-height:180px;"></textarea>
+          <p class="rankings-answers-help">Enter one name per line in ranked order.</p>
         </div>
       </div>
-
       <div style="display:flex;gap:1rem;">
         <button class="btn btn-primary btn-lg" onclick="saveQuiz()">💾 Save Quiz</button>
         <button class="btn btn-ghost" onclick="resetForm()">Reset</button>
@@ -260,9 +261,38 @@
       </div>
     </div>
 
+    <!-- ── CLEAN SWEEP ── -->
+    <div id="section-clean-sweep" class="hidden">
+      <div class="admin-card" style="margin-bottom:1rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+          <h2 style="margin-bottom:0;">🧹 Clean Sweep Puzzles</h2>
+          <button class="btn btn-primary" onclick="openCSCreate()">➕ Create Puzzle</button>
+        </div>
+        <p style="color:var(--gray);font-size:0.85rem;margin-top:0.75rem;margin-bottom:1.25rem;">Showing the next 30 days. Puzzles marked <strong style="color:var(--gold);">Draft</strong> need review before going live. Puzzles with a <strong style="color:var(--error);">⚠ flag</strong> were flagged by the AI verifier.</p>
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="filterCS('all', this)">All</button>
+          <button class="tab-btn" onclick="filterCS('draft', this)">Needs Review</button>
+          <button class="tab-btn" onclick="filterCS('flagged', this)">Flagged ⚠</button>
+          <button class="tab-btn" onclick="filterCS('approved', this)">Approved</button>
+        </div>
+        <div id="cs-list"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- ── WHO'S THAT PLAYER ── -->
+    <div id="section-whos-that-player" class="hidden">
+      <div class="admin-card" style="margin-bottom:1rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+          <h2 style="margin-bottom:0;">❓ Who's That Player</h2>
+          <button class="btn btn-primary" onclick="openWTPCreate()">➕ Schedule Player</button>
+        </div>
+        <p style="color:var(--gray);font-size:0.85rem;margin-top:0.75rem;margin-bottom:1.25rem;">Showing the next 30 days. Draft entries need to be approved before they go live.</p>
+        <div id="wtp-list"><div class="spinner"></div></div>
+      </div>
+    </div>
+
     <!-- ── STATS ── -->
     <div id="section-stats" class="hidden">
-      <!-- Top stat cards -->
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.5rem;">
         <div class="admin-card" style="text-align:center;padding:1.25rem;">
           <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2.5rem;color:var(--gold);" id="stat-q">—</div>
@@ -281,8 +311,6 @@
           <div style="font-size:0.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.1em;">This Week</div>
         </div>
       </div>
-
-      <!-- Daily Games Section -->
       <div class="admin-card" style="margin-bottom:1.5rem;">
         <h2 style="margin-bottom:1.25rem;">Daily Games</h2>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;">
@@ -302,14 +330,10 @@
         <h3 style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray);margin-bottom:0.75rem;">Attempts by Day (last 14 days)</h3>
         <div id="daily-by-day"><div class="spinner"></div></div>
       </div>
-
-      <!-- Quiz plays table -->
       <div class="admin-card" style="margin-bottom:1.5rem;">
         <h2 style="margin-bottom:1.25rem;">Quiz Plays</h2>
         <div id="quiz-plays-table"><div class="spinner"></div></div>
       </div>
-
-      <!-- Recent attempts -->
       <div class="admin-card">
         <h2>Recent Attempts</h2>
         <div id="recent-attempts"><div class="spinner"></div></div>
@@ -319,14 +343,151 @@
   </main>
 </div>
 
+<!-- ══════════════════════════════════════════════════
+     CLEAN SWEEP EDITOR MODAL
+══════════════════════════════════════════════════ -->
+<div id="cs-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3 id="cs-modal-title">Edit Clean Sweep Puzzle</h3>
+    <input type="hidden" id="cs-edit-id">
+
+    <div class="form-group">
+      <label class="form-label">Date *</label>
+      <input class="form-input" id="cs-date" type="date">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Prompt *</label>
+      <input class="form-input" id="cs-prompt" type="text" placeholder="e.g. NFL coaches who have won AP Coach of the Year">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="form-group">
+        <label class="form-label">Sport Category</label>
+        <select class="form-select" id="cs-sport">
+          <option>NFL</option><option>NBA</option><option>MLB</option>
+          <option>NHL</option><option>College</option><option>General</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Difficulty</label>
+        <select class="form-select" id="cs-difficulty">
+          <option value="easy">Easy</option>
+          <option value="medium" selected>Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" style="margin-bottom:0.5rem;">
+        Tiles — Click ✓/✗ to toggle correct/decoy &nbsp;
+        <span style="font-size:0.78rem;color:var(--gray);">(need exactly 5 correct, 4 decoys)</span>
+      </label>
+      <div id="cs-tiles-container"></div>
+      <button class="btn btn-outline btn-sm" style="margin-top:0.5rem;" onclick="addCSTile()">➕ Add Tile</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Edge Case Note <span style="color:var(--gray);font-weight:400;">(optional)</span></label>
+      <textarea class="form-textarea" id="cs-edge-note" placeholder="Any tricky or borderline tiles worth noting..." style="min-height:70px;"></textarea>
+    </div>
+
+    <div id="cs-flag-display" class="hidden" style="background:rgba(255,77,109,0.08);border:1px solid rgba(255,77,109,0.3);border-radius:8px;padding:0.75rem 1rem;margin-bottom:1rem;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;color:var(--error);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.25rem;">⚠ AI Verification Flag</div>
+      <div id="cs-flag-text" style="font-size:0.85rem;color:#f08080;"></div>
+      <button class="btn btn-sm" style="margin-top:0.5rem;background:rgba(255,77,109,0.15);color:var(--error);border:1px solid rgba(255,77,109,0.3);" onclick="clearCSFlag()">Clear Flag</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Status</label>
+      <select class="form-select" id="cs-status">
+        <option value="draft">Draft (needs review)</option>
+        <option value="approved">Approved (goes live)</option>
+      </select>
+    </div>
+
+    <div style="display:flex;gap:0.75rem;justify-content:flex-end;margin-top:1.25rem;">
+      <button class="btn btn-ghost" onclick="closeCSModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCSPuzzle()">💾 Save Puzzle</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     WHO'S THAT PLAYER EDITOR MODAL
+══════════════════════════════════════════════════ -->
+<div id="wtp-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3 id="wtp-modal-title">Schedule Player</h3>
+    <input type="hidden" id="wtp-edit-id">
+
+    <div class="form-group">
+      <label class="form-label">Date *</label>
+      <input class="form-input" id="wtp-date" type="date">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">ESPN Player ID * <span style="color:var(--gray);font-weight:400;">(used for photo)</span></label>
+      <div style="display:flex;gap:0.5rem;">
+        <input class="form-input" id="wtp-espn-id" type="text" placeholder="e.g. 3139477" style="flex:1;">
+        <button class="btn btn-outline" onclick="previewWTPPlayer()">Preview</button>
+      </div>
+      <div style="font-size:0.78rem;color:var(--gray);margin-top:0.35rem;">Find IDs at ESPN.com — the number in the player's URL</div>
+    </div>
+
+    <div id="wtp-player-preview" class="hidden"></div>
+
+    <div class="form-group" style="margin-top:1rem;">
+      <label class="form-label">Player Name *</label>
+      <input class="form-input" id="wtp-name" type="text" placeholder="e.g. Patrick Mahomes">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="form-group">
+        <label class="form-label">Position</label>
+        <input class="form-input" id="wtp-pos" type="text" placeholder="e.g. QB">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Team</label>
+        <input class="form-input" id="wtp-team" type="text" placeholder="e.g. Kansas City Chiefs">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="form-group">
+        <label class="form-label">College</label>
+        <input class="form-input" id="wtp-college" type="text" placeholder="e.g. Texas Tech">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Draft Info</label>
+        <input class="form-input" id="wtp-draft" type="text" placeholder="e.g. 2017 · 1st · Pick 10">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" style="margin-bottom:0.75rem;">Clues <span style="color:var(--gray);font-weight:400;">(5 clues, easiest last)</span></label>
+      <div id="wtp-clues-container"></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Status</label>
+      <select class="form-select" id="wtp-status">
+        <option value="draft">Draft (needs review)</option>
+        <option value="approved">Approved (goes live)</option>
+      </select>
+    </div>
+
+    <div style="display:flex;gap:0.75rem;justify-content:flex-end;margin-top:1.25rem;">
+      <button class="btn btn-ghost" onclick="closeWTPModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveWTPEntry()">💾 Save</button>
+    </div>
+  </div>
+</div>
+
 <script src="/js/auth.js"></script>
 <script>
-  // ─── ADMIN SIMPLE PASSWORD (set this!) ─────────────────────────
-  // You can set this directly here OR load from supabase-config.js
-  // For production, use Supabase Auth admin roles instead.
-  const ADMIN_PASSWORD = 'flurryadmin2025'; // ← CHANGE THIS
-
+  const ADMIN_PASSWORD = 'flurryadmin2025';
   let mcQCount = 0;
+  let _csAllPuzzles = [];
+  let _wtpAllEntries = [];
+  let _csFilter = 'all';
 
   // ─── LOCK SCREEN ──────────────────────────────────────────────
   async function handleAdminLogin() {
@@ -335,44 +496,39 @@
     const adminPw = document.getElementById('lock-admin-pw').value;
     const email = document.getElementById('lock-email').value;
     const password = document.getElementById('lock-password').value;
-
     if (adminPw && adminPw === ADMIN_PASSWORD) {
       sessionStorage.setItem('fs_admin', '1');
       document.getElementById('admin-lock').style.display = 'none';
-      loadManageQuizzes();
-      loadStats();
-      return;
+      loadManageQuizzes(); loadStats(); return;
     }
-
     if (email && password) {
       const { data, error } = await signIn(email, password);
       if (error) { errEl.textContent = error.message; errEl.classList.remove('hidden'); return; }
       sessionStorage.setItem('fs_admin', '1');
       document.getElementById('admin-lock').style.display = 'none';
-      loadManageQuizzes();
-      loadStats();
-      return;
+      loadManageQuizzes(); loadStats(); return;
     }
-
     errEl.textContent = 'Please enter credentials.';
     errEl.classList.remove('hidden');
   }
 
-  function adminLogout() {
-    sessionStorage.removeItem('fs_admin');
-    window.location.href = '/';
-  }
+  function adminLogout() { sessionStorage.removeItem('fs_admin'); window.location.href = '/'; }
 
   // ─── NAVIGATION ───────────────────────────────────────────────
+  const ALL_SECTIONS = ['add-quiz','manage-quizzes','clean-sweep','whos-that-player','stats'];
   function showSection(name) {
-    ['add-quiz','manage-quizzes','stats'].forEach(s => {
+    ALL_SECTIONS.forEach(s => {
       document.getElementById(`section-${s}`).classList.add('hidden');
-      document.getElementById(`nav-${s}`)?.classList.remove('active');
+      const navEl = document.getElementById(`nav-${s}`);
+      if (navEl) navEl.classList.remove('active');
     });
     document.getElementById(`section-${name}`).classList.remove('hidden');
-    document.getElementById(`nav-${name}`)?.classList.add('active');
+    const navEl = document.getElementById(`nav-${name}`);
+    if (navEl) navEl.classList.add('active');
     if (name === 'manage-quizzes') loadManageQuizzes();
     if (name === 'stats') loadStats();
+    if (name === 'clean-sweep') loadCSPuzzles();
+    if (name === 'whos-that-player') loadWTPEntries();
   }
 
   // ─── QUIZ TYPE CHANGE ─────────────────────────────────────────
@@ -408,7 +564,7 @@
         <input class="form-input q-text" type="text" value="${data?.question_text || ''}" placeholder="e.g. Who has the most NBA championships as a player?">
       </div>
       <div class="form-group">
-        <label class="form-label">Answer Choices (the correct answer must match one exactly) *</label>
+        <label class="form-label">Answer Choices *</label>
         <div class="choices-grid">
           <input class="form-input q-choice" type="text" placeholder="A: Choice" value="${data?.choices?.[0] || ''}">
           <input class="form-input q-choice" type="text" placeholder="B: Choice" value="${data?.choices?.[1] || ''}">
@@ -417,7 +573,7 @@
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Correct Answer (must match a choice exactly) *</label>
+        <label class="form-label">Correct Answer *</label>
         <input class="form-input q-answer" type="text" value="${data?.answer || ''}" placeholder="e.g. Bill Russell">
       </div>
       <div class="form-group">
@@ -432,24 +588,14 @@
   async function saveQuiz() {
     const msgEl = document.getElementById('save-message');
     msgEl.classList.add('hidden');
-
     const title = document.getElementById('q-title').value.trim();
     const type = document.getElementById('q-type').value;
     const desc = document.getElementById('q-desc').value.trim();
     const theme = document.getElementById('q-theme').value.trim();
-    const timerVal = document.getElementById('q-timer').value;
-    const timerSec = timerVal ? parseInt(timerVal) : null;
-
+    const timerSec = document.getElementById('q-timer').value ? parseInt(document.getElementById('q-timer').value) : null;
     if (!title) { alert('Quiz title is required.'); return; }
-
-    // Insert quiz
-    const { data: quizData, error: quizErr } = await supabase.from('quizzes').insert({
-      title, description: desc || null, type, theme: theme || null, timer_seconds: timerSec
-    }).select().single();
-
+    const { data: quizData, error: quizErr } = await supabase.from('quizzes').insert({ title, description: desc || null, type, theme: theme || null, timer_seconds: timerSec }).select().single();
     if (quizErr) { msgEl.style.background = 'rgba(255,77,109,0.1)'; msgEl.style.color = 'var(--error)'; msgEl.textContent = 'Error saving quiz: ' + quizErr.message; msgEl.classList.remove('hidden'); return; }
-
-    // Insert questions
     if (type === 'multiple_choice') {
       const blocks = document.querySelectorAll('.question-block');
       const questionRows = [];
@@ -462,7 +608,7 @@
         if (!text || !answer || choices.length < 2) { valid = false; return; }
         questionRows.push({ quiz_id: quizData.id, question_text: text, type: 'multiple_choice', choices, answer, points, sort_order: i });
       });
-      if (!valid) { await supabase.from('quizzes').delete().eq('id', quizData.id); alert('Please fill all question fields (text, at least 2 choices, correct answer).'); return; }
+      if (!valid) { await supabase.from('quizzes').delete().eq('id', quizData.id); alert('Please fill all question fields.'); return; }
       if (questionRows.length === 0) { await supabase.from('quizzes').delete().eq('id', quizData.id); alert('Please add at least one question.'); return; }
       await supabase.from('questions').insert(questionRows);
     } else {
@@ -472,7 +618,6 @@
       const answersArr = answersRaw.split('\n').map(l => l.trim()).filter(Boolean);
       await supabase.from('questions').insert({ quiz_id: quizData.id, question_text: prompt, type: 'rankings', answer: JSON.stringify(answersArr), sort_order: 0 });
     }
-
     msgEl.style.background = 'rgba(0,214,143,0.1)';
     msgEl.style.color = 'var(--success)';
     msgEl.textContent = `✅ Quiz "${title}" saved successfully!`;
@@ -501,54 +646,33 @@
     ]);
     if (error || !quizzes) { container.innerHTML = '<p style="color:var(--error)">Failed to load.</p>'; return; }
     if (quizzes.length === 0) { container.innerHTML = '<p style="color:var(--gray)">No quizzes yet. Add your first one!</p>'; return; }
-
-    // Build play count map
     const playMap = {};
-    (attemptCounts || []).forEach(a => {
-      if (a.quiz_id) playMap[a.quiz_id] = (playMap[a.quiz_id] || 0) + 1;
-    });
-
-    // Store quiz data globally so button handlers can access by id
+    (attemptCounts || []).forEach(a => { if (a.quiz_id) playMap[a.quiz_id] = (playMap[a.quiz_id] || 0) + 1; });
     window._adminQuizzes = quizzes;
     container.innerHTML = quizzes.map(q => {
       const plays = playMap[q.id] || 0;
-      const activeStyle = q.is_active
-        ? 'background:rgba(0,214,143,0.15);color:var(--success);'
-        : 'background:rgba(255,77,109,0.1);color:var(--error);';
-      return [
-        '<div class="quiz-list-item">',
-          '<div style="flex:1;">',
-            '<h4>', q.title, '</h4>',
-            '<div style="font-size:0.8rem;color:var(--gray);margin-top:0.2rem;">',
-              (q.type === 'multiple_choice' ? '🎯 Multiple Choice' : '📋 Rankings'),
-              (q.theme ? ' · ' + q.theme : ''),
-              (q.timer_seconds ? ' · ' + formatTime(q.timer_seconds) + ' timer' : ''),
-            '</div>',
-            '<div style="font-size:0.78rem;color:var(--gold);margin-top:0.3rem;font-family:Barlow Condensed,sans-serif;font-weight:700;">',
-              plays.toLocaleString(), ' play', (plays !== 1 ? 's' : ''),
-            '</div>',
-          '</div>',
-          '<div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">',
-            '<span style="font-size:0.75rem;padding:0.2rem 0.6rem;border-radius:4px;', activeStyle, '">', (q.is_active ? 'Active' : 'Hidden'), '</span>',
-            '<button class="btn btn-ghost btn-sm" data-qid="', q.id, '" data-active="', q.is_active, '" onclick="toggleQuizById(this)">', (q.is_active ? 'Hide' : 'Show'), '</button>',
-            '<button class="btn btn-outline btn-sm" data-qid="', q.id, '" onclick="editQuizById(this)">✏️ Edit</button>',
-            '<a class="btn btn-ghost btn-sm" href="/quiz.html?id=', q.id, '" target="_blank">Preview</a>',
-            '<button class="btn btn-sm" style="background:rgba(255,77,109,0.15);color:var(--error);border:1px solid rgba(255,77,109,0.3);" data-qid="', q.id, '" onclick="deleteQuizById(this)">Delete</button>',
-          '</div>',
-        '</div>'
-      ].join('');
+      const activeStyle = q.is_active ? 'background:rgba(0,214,143,0.15);color:var(--success);' : 'background:rgba(255,77,109,0.1);color:var(--error);';
+      return `<div class="quiz-list-item">
+        <div style="flex:1;">
+          <h4>${q.title}</h4>
+          <div style="font-size:0.8rem;color:var(--gray);margin-top:0.2rem;">${q.type === 'multiple_choice' ? '🎯 Multiple Choice' : '📋 Rankings'}${q.theme ? ' · ' + q.theme : ''}${q.timer_seconds ? ' · ' + formatTime(q.timer_seconds) + ' timer' : ''}</div>
+          <div style="font-size:0.78rem;color:var(--gold);margin-top:0.3rem;font-family:Barlow Condensed,sans-serif;font-weight:700;">${plays.toLocaleString()} play${plays !== 1 ? 's' : ''}</div>
+        </div>
+        <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+          <span style="font-size:0.75rem;padding:0.2rem 0.6rem;border-radius:4px;${activeStyle}">${q.is_active ? 'Active' : 'Hidden'}</span>
+          <button class="btn btn-ghost btn-sm" data-qid="${q.id}" data-active="${q.is_active}" onclick="toggleQuizById(this)">${q.is_active ? 'Hide' : 'Show'}</button>
+          <button class="btn btn-outline btn-sm" data-qid="${q.id}" onclick="editQuizById(this)">✏️ Edit</button>
+          <a class="btn btn-ghost btn-sm" href="/quiz.html?id=${q.id}" target="_blank">Preview</a>
+          <button class="btn btn-sm" style="background:rgba(255,77,109,0.15);color:var(--error);border:1px solid rgba(255,77,109,0.3);" data-qid="${q.id}" onclick="deleteQuizById(this)">Delete</button>
+        </div>
+      </div>`;
     }).join('');
   }
 
   function toggleQuizById(btn) { const id = btn.dataset.qid; const active = btn.dataset.active === 'true'; toggleQuiz(id, active); }
   function editQuizById(btn) { editQuiz(btn.dataset.qid); }
   function deleteQuizById(btn) { deleteQuiz(btn.dataset.qid); }
-
-  async function toggleQuiz(id, current) {
-    await supabase.from('quizzes').update({ is_active: !current }).eq('id', id);
-    loadManageQuizzes();
-  }
-
+  async function toggleQuiz(id, current) { await supabase.from('quizzes').update({ is_active: !current }).eq('id', id); loadManageQuizzes(); }
   async function deleteQuiz(id) {
     if (!confirm('Delete this quiz? This will also delete all questions. Existing attempt scores are preserved.')) return;
     const { error } = await supabase.from('quizzes').delete().eq('id', id);
@@ -561,21 +685,15 @@
     const { data: quiz, error: qErr } = await supabase.from('quizzes').select('*').eq('id', id).single();
     const { data: questions, error: qqErr } = await supabase.from('questions').select('*').eq('quiz_id', id).order('sort_order');
     if (qErr || qqErr) { showToast('Failed to load quiz for editing.', 'error'); return; }
-
-    // Switch to add-quiz section and populate fields
     showSection('add-quiz');
-
-    // Set mode to edit
     window._editQuizId = id;
-    document.querySelector('.admin-card h2').textContent = 'Edit Quiz';
-
+    document.querySelector('#section-add-quiz .admin-card h2').textContent = 'Edit Quiz';
     document.getElementById('q-title').value = quiz.title || '';
     document.getElementById('q-desc').value = quiz.description || '';
     document.getElementById('q-theme').value = quiz.theme || '';
     document.getElementById('q-timer').value = quiz.timer_seconds || '';
     document.getElementById('q-type').value = quiz.type;
     onTypeChange();
-
     if (quiz.type === 'multiple_choice') {
       document.getElementById('mc-questions-list').innerHTML = '';
       mcQCount = 0;
@@ -586,37 +704,22 @@
       try { answers = JSON.parse(questions?.[0]?.answer || '[]'); } catch(e) {}
       document.getElementById('rank-answers').value = answers.join('\n');
     }
-
-    // Update save button
     const saveBtn = document.querySelector('[onclick="saveQuiz()"]');
-    if (saveBtn) {
-      saveBtn.textContent = '💾 Update Quiz';
-      saveBtn.setAttribute('onclick', 'updateQuiz()');
-    }
+    if (saveBtn) { saveBtn.textContent = '💾 Update Quiz'; saveBtn.setAttribute('onclick', 'updateQuiz()'); }
   }
 
   async function updateQuiz() {
     const id = window._editQuizId;
     if (!id) { saveQuiz(); return; }
-
     const title = document.getElementById('q-title').value.trim();
     const type = document.getElementById('q-type').value;
     const desc = document.getElementById('q-desc').value.trim();
     const theme = document.getElementById('q-theme').value.trim();
     const timerSec = document.getElementById('q-timer').value ? parseInt(document.getElementById('q-timer').value) : null;
-
     if (!title) { alert('Quiz title is required.'); return; }
-
-    // Update quiz metadata only (don't touch attempts)
-    const { error: quizErr } = await supabase.from('quizzes').update({
-      title, description: desc || null, type, theme: theme || null, timer_seconds: timerSec
-    }).eq('id', id);
-
+    const { error: quizErr } = await supabase.from('quizzes').update({ title, description: desc || null, type, theme: theme || null, timer_seconds: timerSec }).eq('id', id);
     if (quizErr) { showToast('Error updating quiz: ' + quizErr.message, 'error'); return; }
-
-    // Replace questions (doesn't affect existing attempt scores - scores are stored in attempts table)
     await supabase.from('questions').delete().eq('quiz_id', id);
-
     if (type === 'multiple_choice') {
       const blocks = document.querySelectorAll('.question-block');
       const rows = [];
@@ -633,23 +736,427 @@
       const answersArr = document.getElementById('rank-answers').value.trim().split('\n').map(l => l.trim()).filter(Boolean);
       if (prompt && answersArr.length > 0) await supabase.from('questions').insert({ quiz_id: id, question_text: prompt, type: 'rankings', answer: JSON.stringify(answersArr), sort_order: 0 });
     }
-
     showToast(`"${title}" updated successfully!`, 'success');
     window._editQuizId = null;
-
-    // Reset button
     const saveBtn = document.querySelector('[onclick="updateQuiz()"]');
     if (saveBtn) { saveBtn.textContent = '💾 Save Quiz'; saveBtn.setAttribute('onclick', 'saveQuiz()'); }
-    document.querySelector('.admin-card h2').textContent = 'Add New Quiz';
+    document.querySelector('#section-add-quiz .admin-card h2').textContent = 'Add New Quiz';
     resetForm();
     showSection('manage-quizzes');
   }
 
-  // ─── STATS ─────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════
+  // CLEAN SWEEP
+  // ══════════════════════════════════════════════════
+
+  async function loadCSPuzzles() {
+    const container = document.getElementById('cs-list');
+    container.innerHTML = '<div class="spinner"></div>';
+    const today = new Date().toISOString().slice(0,10);
+    const future = new Date(Date.now() + 31*24*60*60*1000).toISOString().slice(0,10);
+    const { data, error } = await supabase.from('clean_sweep_puzzles')
+      .select('*').gte('date', today).lte('date', future).order('date');
+    if (error) { container.innerHTML = '<p style="color:var(--error)">Failed to load puzzles.</p>'; return; }
+    _csAllPuzzles = data || [];
+    renderCSList();
+  }
+
+  function filterCS(filter, btn) {
+    _csFilter = filter;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderCSList();
+  }
+
+  function renderCSList() {
+    const container = document.getElementById('cs-list');
+    let puzzles = _csAllPuzzles;
+    if (_csFilter === 'draft') puzzles = puzzles.filter(p => p.status === 'draft');
+    else if (_csFilter === 'flagged') puzzles = puzzles.filter(p => p.verification_flag);
+    else if (_csFilter === 'approved') puzzles = puzzles.filter(p => p.status === 'approved');
+
+    if (puzzles.length === 0) {
+      container.innerHTML = '<p style="color:var(--gray);padding:1rem 0;">No puzzles found for this filter.</p>';
+      return;
+    }
+
+    container.innerHTML = puzzles.map(p => {
+      const hasFlag = !!p.verification_flag;
+      const isDraft = p.status === 'draft';
+      const correctCount = (p.correct_tiles || []).length;
+      const decoyCount = (p.decoy_tiles || []).length;
+      const countOk = correctCount === 5 && decoyCount === 4;
+      return `<div class="puzzle-row ${hasFlag ? 'has-flag' : ''} status-${p.status || 'approved'}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+          <div style="flex:1;">
+            <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.3rem;">
+              <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;color:var(--gray);">${p.date}</span>
+              <span class="status-pill ${p.status === 'draft' ? 'draft' : 'approved'}">${p.status === 'draft' ? '⏳ Draft' : '✓ Approved'}</span>
+              <span style="font-size:0.72rem;color:var(--gray);">${p.sport_category || ''} · ${p.difficulty || ''}</span>
+              ${!countOk ? `<span style="font-size:0.72rem;color:var(--error);font-weight:700;">⚠ ${correctCount}/5 correct, ${decoyCount}/4 decoy</span>` : ''}
+            </div>
+            <div style="font-weight:600;font-size:0.95rem;margin-bottom:0.3rem;">${p.prompt || '—'}</div>
+            <div style="font-size:0.8rem;color:var(--gray);">
+              ✅ ${(p.correct_tiles || []).join(', ') || 'none'}<br>
+              ✗ ${(p.decoy_tiles || []).join(', ') || 'none'}
+            </div>
+            ${hasFlag ? `<span class="flag-badge">⚠ ${p.verification_flag}</span>` : ''}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:0.4rem;flex-shrink:0;">
+            ${isDraft ? `<button class="btn btn-sm" style="background:rgba(0,214,143,0.15);color:var(--success);border:1px solid rgba(0,214,143,0.3);" onclick="approveCS('${p.id}')">✓ Approve</button>` : ''}
+            <button class="btn btn-outline btn-sm" onclick="openCSEdit('${p.id}')">✏️ Edit</button>
+            <button class="btn btn-sm" style="background:rgba(255,77,109,0.1);color:var(--error);border:1px solid rgba(255,77,109,0.2);" onclick="deleteCS('${p.id}')">Delete</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function approveCS(id) {
+    const { error } = await supabase.from('clean_sweep_puzzles').update({ status: 'approved', verification_flag: null }).eq('id', id);
+    if (error) { showToast('Error: ' + error.message, 'error'); return; }
+    showToast('Puzzle approved!', 'success');
+    await loadCSPuzzles();
+  }
+
+  async function deleteCS(id) {
+    if (!confirm('Delete this puzzle? This cannot be undone.')) return;
+    const { error } = await supabase.from('clean_sweep_puzzles').delete().eq('id', id);
+    if (error) { showToast('Error: ' + error.message, 'error'); return; }
+    showToast('Puzzle deleted.', 'success');
+    await loadCSPuzzles();
+  }
+
+  // ── CS Modal ──
+  function openCSCreate() {
+    document.getElementById('cs-edit-id').value = '';
+    document.getElementById('cs-modal-title').textContent = 'Create Clean Sweep Puzzle';
+    document.getElementById('cs-date').value = '';
+    document.getElementById('cs-prompt').value = '';
+    document.getElementById('cs-sport').value = 'NFL';
+    document.getElementById('cs-difficulty').value = 'medium';
+    document.getElementById('cs-edge-note').value = '';
+    document.getElementById('cs-status').value = 'draft';
+    document.getElementById('cs-flag-display').classList.add('hidden');
+    // Default 5 correct + 4 decoy tiles
+    const tiles = [
+      {name:'',correct:true},{name:'',correct:true},{name:'',correct:true},{name:'',correct:true},{name:'',correct:true},
+      {name:'',correct:false},{name:'',correct:false},{name:'',correct:false},{name:'',correct:false}
+    ];
+    renderCSTiles(tiles);
+    document.getElementById('cs-modal').classList.remove('hidden');
+  }
+
+  function openCSEdit(id) {
+    const p = _csAllPuzzles.find(x => x.id === id);
+    if (!p) return;
+    document.getElementById('cs-edit-id').value = p.id;
+    document.getElementById('cs-modal-title').textContent = 'Edit Clean Sweep Puzzle';
+    document.getElementById('cs-date').value = p.date || '';
+    document.getElementById('cs-prompt').value = p.prompt || '';
+    document.getElementById('cs-sport').value = p.sport_category || 'NFL';
+    document.getElementById('cs-difficulty').value = p.difficulty || 'medium';
+    document.getElementById('cs-edge-note').value = p.edge_case_note || '';
+    document.getElementById('cs-status').value = p.status || 'approved';
+    if (p.verification_flag) {
+      document.getElementById('cs-flag-display').classList.remove('hidden');
+      document.getElementById('cs-flag-text').textContent = p.verification_flag;
+    } else {
+      document.getElementById('cs-flag-display').classList.add('hidden');
+    }
+    const tiles = (p.tiles_shuffled || []).map(t => ({ name: t.name, correct: t.correct }));
+    renderCSTiles(tiles);
+    document.getElementById('cs-modal').classList.remove('hidden');
+  }
+
+  function closeCSModal() { document.getElementById('cs-modal').classList.add('hidden'); }
+  function clearCSFlag() {
+    document.getElementById('cs-flag-display').classList.add('hidden');
+    document.getElementById('cs-flag-text').textContent = '';
+  }
+
+  function renderCSTiles(tiles) {
+    const container = document.getElementById('cs-tiles-container');
+    container.innerHTML = tiles.map((t, i) => `
+      <div class="tile-input-row" id="cs-tile-row-${i}">
+        <button class="tile-correct-toggle ${t.correct ? 'is-correct' : ''}" onclick="toggleCSTile(${i})" title="${t.correct ? 'Correct' : 'Decoy'}">${t.correct ? '✓' : '✗'}</button>
+        <input class="form-input" type="text" value="${t.name}" placeholder="${t.correct ? 'Correct tile' : 'Decoy tile'}" style="font-size:0.9rem;">
+        <button onclick="removeCSTile(${i})" style="background:none;border:none;color:var(--gray);cursor:pointer;font-size:1rem;padding:0 0.25rem;">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function addCSTile() {
+    const container = document.getElementById('cs-tiles-container');
+    const i = container.children.length;
+    const row = document.createElement('div');
+    row.className = 'tile-input-row';
+    row.id = `cs-tile-row-${i}`;
+    row.innerHTML = `
+      <button class="tile-correct-toggle" onclick="toggleCSTile(${i})" title="Decoy">✗</button>
+      <input class="form-input" type="text" value="" placeholder="Decoy tile" style="font-size:0.9rem;">
+      <button onclick="removeCSTile(${i})" style="background:none;border:none;color:var(--gray);cursor:pointer;font-size:1rem;padding:0 0.25rem;">✕</button>
+    `;
+    container.appendChild(row);
+  }
+
+  function toggleCSTile(i) {
+    const btn = document.querySelector(`#cs-tile-row-${i} .tile-correct-toggle`);
+    const input = document.querySelector(`#cs-tile-row-${i} input`);
+    const isNowCorrect = !btn.classList.contains('is-correct');
+    btn.classList.toggle('is-correct', isNowCorrect);
+    btn.textContent = isNowCorrect ? '✓' : '✗';
+    btn.title = isNowCorrect ? 'Correct' : 'Decoy';
+    input.placeholder = isNowCorrect ? 'Correct tile' : 'Decoy tile';
+  }
+
+  function removeCSTile(i) {
+    const row = document.getElementById(`cs-tile-row-${i}`);
+    if (row) row.remove();
+  }
+
+  function getCSTilesFromForm() {
+    const rows = document.querySelectorAll('#cs-tiles-container .tile-input-row');
+    return Array.from(rows).map(row => ({
+      name: row.querySelector('input').value.trim(),
+      correct: row.querySelector('.tile-correct-toggle').classList.contains('is-correct')
+    })).filter(t => t.name);
+  }
+
+  async function saveCSPuzzle() {
+    const id = document.getElementById('cs-edit-id').value;
+    const date = document.getElementById('cs-date').value;
+    const prompt = document.getElementById('cs-prompt').value.trim();
+    const sport = document.getElementById('cs-sport').value;
+    const difficulty = document.getElementById('cs-difficulty').value;
+    const edgeNote = document.getElementById('cs-edge-note').value.trim();
+    const status = document.getElementById('cs-status').value;
+    const flagCleared = document.getElementById('cs-flag-display').classList.contains('hidden');
+
+    if (!date || !prompt) { alert('Date and prompt are required.'); return; }
+
+    const tiles = getCSTilesFromForm();
+    const correctTiles = tiles.filter(t => t.correct).map(t => t.name);
+    const decoyTiles = tiles.filter(t => !t.correct).map(t => t.name);
+
+    if (correctTiles.length !== 5) { alert(`Need exactly 5 correct tiles. Currently have ${correctTiles.length}.`); return; }
+    if (decoyTiles.length !== 4) { alert(`Need exactly 4 decoy tiles. Currently have ${decoyTiles.length}.`); return; }
+
+    // Shuffle tiles for storage
+    const shuffled = [...tiles].sort(() => Math.random() - 0.5).map(t => ({ name: t.name, correct: t.correct }));
+
+    const payload = {
+      date, prompt, sport_category: sport, difficulty,
+      correct_tiles: correctTiles, decoy_tiles: decoyTiles,
+      tiles_shuffled: shuffled,
+      edge_case_note: edgeNote || null,
+      status,
+      verification_flag: flagCleared ? null : undefined
+    };
+    // Remove undefined keys
+    Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
+
+    let error;
+    if (id) {
+      ({ error } = await supabase.from('clean_sweep_puzzles').update(payload).eq('id', id));
+    } else {
+      ({ error } = await supabase.from('clean_sweep_puzzles').insert(payload));
+    }
+    if (error) { showToast('Error saving puzzle: ' + error.message, 'error'); return; }
+    showToast(id ? 'Puzzle updated!' : 'Puzzle created!', 'success');
+    closeCSModal();
+    await loadCSPuzzles();
+  }
+
+  // ══════════════════════════════════════════════════
+  // WHO'S THAT PLAYER
+  // ══════════════════════════════════════════════════
+
+  async function loadWTPEntries() {
+    const container = document.getElementById('wtp-list');
+    container.innerHTML = '<div class="spinner"></div>';
+    const today = new Date().toISOString().slice(0,10);
+    const future = new Date(Date.now() + 31*24*60*60*1000).toISOString().slice(0,10);
+    const { data, error } = await supabase.from('wtp_daily')
+      .select('*').gte('date', today).lte('date', future).order('date');
+    if (error) { container.innerHTML = '<p style="color:var(--error)">Failed to load entries.</p>'; return; }
+    _wtpAllEntries = data || [];
+    renderWTPList();
+  }
+
+  function renderWTPList() {
+    const container = document.getElementById('wtp-list');
+    if (_wtpAllEntries.length === 0) {
+      container.innerHTML = '<p style="color:var(--gray);padding:1rem 0;">No players scheduled for the next 30 days.</p>';
+      return;
+    }
+    container.innerHTML = _wtpAllEntries.map(e => {
+      const p = e.player_json || {};
+      const espnId = p.espnId || '';
+      const isDraft = e.status === 'draft';
+      const photoUrl = e.photo_url || (espnId ? `https://cdn.nba.com/headshots/nba/latest/260x190/${espnId}.png` : '');
+      return `<div class="puzzle-row status-${e.status || 'approved'}">
+        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+          ${photoUrl ? `<img src="${photoUrl}" onerror="this.style.display='none'" style="width:52px;height:52px;border-radius:50%;object-fit:cover;background:#222;flex-shrink:0;">` : '<div style="width:52px;height:52px;border-radius:50%;background:#222;flex-shrink:0;"></div>'}
+          <div style="flex:1;">
+            <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.25rem;flex-wrap:wrap;">
+              <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;color:var(--gray);">${e.date}</span>
+              <span class="status-pill ${isDraft ? 'draft' : 'approved'}">${isDraft ? '⏳ Draft' : '✓ Approved'}</span>
+            </div>
+            <div style="font-weight:700;font-size:1rem;">${p.name || '—'}</div>
+            <div style="font-size:0.82rem;color:var(--gray);">${p.pos || ''} · ${p.team || ''}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:0.4rem;flex-shrink:0;">
+            ${isDraft ? `<button class="btn btn-sm" style="background:rgba(0,214,143,0.15);color:var(--success);border:1px solid rgba(0,214,143,0.3);" onclick="approveWTP('${e.id}')">✓ Approve</button>` : ''}
+            <button class="btn btn-outline btn-sm" onclick="openWTPEdit('${e.id}')">✏️ Edit</button>
+            <button class="btn btn-sm" style="background:rgba(255,77,109,0.1);color:var(--error);border:1px solid rgba(255,77,109,0.2);" onclick="deleteWTP('${e.id}')">Delete</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function approveWTP(id) {
+    const { error } = await supabase.from('wtp_daily').update({ status: 'approved' }).eq('id', id);
+    if (error) { showToast('Error: ' + error.message, 'error'); return; }
+    showToast('Entry approved!', 'success');
+    await loadWTPEntries();
+  }
+
+  async function deleteWTP(id) {
+    if (!confirm('Delete this scheduled player?')) return;
+    const { error } = await supabase.from('wtp_daily').delete().eq('id', id);
+    if (error) { showToast('Error: ' + error.message, 'error'); return; }
+    showToast('Deleted.', 'success');
+    await loadWTPEntries();
+  }
+
+  // ── WTP Modal ──
+  function buildWTPClues(clues) {
+    const container = document.getElementById('wtp-clues-container');
+    const defaults = [
+      {label:'Clue 1',text:''},{label:'Clue 2',text:''},{label:'Clue 3',text:''},
+      {label:'Clue 4',text:''},{label:'Clue 5',text:''}
+    ];
+    const items = clues && clues.length ? clues : defaults;
+    container.innerHTML = items.slice(0,5).map((c,i) => `
+      <div style="display:grid;grid-template-columns:120px 1fr;gap:0.5rem;margin-bottom:0.5rem;">
+        <input class="form-input wtp-clue-label" type="text" value="${c.label || ''}" placeholder="Label" style="font-size:0.85rem;">
+        <input class="form-input wtp-clue-text" type="text" value="${c.text || ''}" placeholder="Clue ${i+1} text" style="font-size:0.85rem;">
+      </div>
+    `).join('');
+  }
+
+  function openWTPCreate() {
+    document.getElementById('wtp-edit-id').value = '';
+    document.getElementById('wtp-modal-title').textContent = 'Schedule Player';
+    document.getElementById('wtp-date').value = '';
+    document.getElementById('wtp-espn-id').value = '';
+    document.getElementById('wtp-name').value = '';
+    document.getElementById('wtp-pos').value = '';
+    document.getElementById('wtp-team').value = '';
+    document.getElementById('wtp-college').value = '';
+    document.getElementById('wtp-draft').value = '';
+    document.getElementById('wtp-status').value = 'draft';
+    document.getElementById('wtp-player-preview').classList.add('hidden');
+    buildWTPClues([]);
+    document.getElementById('wtp-modal').classList.remove('hidden');
+  }
+
+  function openWTPEdit(id) {
+    const e = _wtpAllEntries.find(x => x.id === id);
+    if (!e) return;
+    const p = e.player_json || {};
+    document.getElementById('wtp-edit-id').value = e.id;
+    document.getElementById('wtp-modal-title').textContent = 'Edit Player Entry';
+    document.getElementById('wtp-date').value = e.date || '';
+    document.getElementById('wtp-espn-id').value = p.espnId || '';
+    document.getElementById('wtp-name').value = p.name || '';
+    document.getElementById('wtp-pos').value = p.pos || '';
+    document.getElementById('wtp-team').value = p.team || '';
+    document.getElementById('wtp-college').value = p.college || '';
+    document.getElementById('wtp-draft').value = p.drafted || '';
+    document.getElementById('wtp-status').value = e.status || 'approved';
+    buildWTPClues(p.clues || []);
+    // Show preview if photo
+    if (e.photo_url || p.espnId) {
+      showWTPPreview(p.name, p.pos, p.team, e.photo_url || buildWTPPhotoUrl(p.espnId, 'nba'));
+    }
+    document.getElementById('wtp-modal').classList.remove('hidden');
+  }
+
+  function closeWTPModal() { document.getElementById('wtp-modal').classList.add('hidden'); }
+
+  function buildWTPPhotoUrl(espnId, league) {
+    if (!espnId) return '';
+    if (league === 'nba' || !league) return `https://cdn.nba.com/headshots/nba/latest/260x190/${espnId}.png`;
+    return `https://a.espncdn.com/i/headshots/nfl/players/full/${espnId}.png`;
+  }
+
+  function showWTPPreview(name, pos, team, photoUrl) {
+    const previewEl = document.getElementById('wtp-player-preview');
+    previewEl.classList.remove('hidden');
+    previewEl.innerHTML = `<div class="player-preview">
+      <img src="${photoUrl}" onerror="this.src=''" alt="${name}">
+      <div class="player-preview-info">
+        <strong>${name || 'Player'}</strong>
+        ${pos || ''} · ${team || ''}
+      </div>
+    </div>`;
+  }
+
+  async function previewWTPPlayer() {
+    const espnId = document.getElementById('wtp-espn-id').value.trim();
+    if (!espnId) { alert('Enter an ESPN ID first.'); return; }
+    const name = document.getElementById('wtp-name').value || 'Player';
+    const pos = document.getElementById('wtp-pos').value || '';
+    const team = document.getElementById('wtp-team').value || '';
+    // Try NBA first, fall back to NFL
+    const nbaUrl = `https://cdn.nba.com/headshots/nba/latest/260x190/${espnId}.png`;
+    showWTPPreview(name, pos, team, nbaUrl);
+  }
+
+  async function saveWTPEntry() {
+    const id = document.getElementById('wtp-edit-id').value;
+    const date = document.getElementById('wtp-date').value;
+    const espnId = document.getElementById('wtp-espn-id').value.trim();
+    const name = document.getElementById('wtp-name').value.trim();
+    const pos = document.getElementById('wtp-pos').value.trim();
+    const team = document.getElementById('wtp-team').value.trim();
+    const college = document.getElementById('wtp-college').value.trim();
+    const drafted = document.getElementById('wtp-draft').value.trim();
+    const status = document.getElementById('wtp-status').value;
+
+    if (!date || !name || !espnId) { alert('Date, player name, and ESPN ID are required.'); return; }
+
+    const clueLabels = [...document.querySelectorAll('.wtp-clue-label')].map(el => el.value.trim());
+    const clueTexts = [...document.querySelectorAll('.wtp-clue-text')].map(el => el.value.trim());
+    const clues = clueLabels.map((label, i) => ({ label, text: clueTexts[i] })).filter(c => c.label && c.text);
+
+    const playerJson = { name, espnId, pos, team, college, drafted, clues };
+    const photoUrl = buildWTPPhotoUrl(espnId, team.toLowerCase().includes('nfl') ? 'nfl' : 'nba');
+
+    const payload = { date, player_json: playerJson, photo_url: photoUrl, status };
+
+    let error;
+    if (id) {
+      ({ error } = await supabase.from('wtp_daily').update(payload).eq('id', id));
+    } else {
+      ({ error } = await supabase.from('wtp_daily').insert(payload));
+    }
+    if (error) { showToast('Error saving entry: ' + error.message, 'error'); return; }
+    showToast(id ? 'Entry updated!' : 'Player scheduled!', 'success');
+    closeWTPModal();
+    await loadWTPEntries();
+  }
+
+  // ══════════════════════════════════════════════════
+  // STATS (unchanged from original)
+  // ══════════════════════════════════════════════════
+  function formatTime(s) { return s >= 60 ? Math.floor(s/60)+'m '+(s%60)+'s' : s+'s'; }
+
   async function loadStats() {
     const oneWeekAgo = new Date(Date.now() - 7*24*60*60*1000).toISOString();
-
-    // Top-level counts
     const [{ count: qc }, { count: ac }, { count: uc }, { count: wc }] = await Promise.all([
       supabase.from('quizzes').select('*', { count: 'exact', head: true }),
       supabase.from('attempts').select('*', { count: 'exact', head: true }),
@@ -661,12 +1168,7 @@
     document.getElementById('stat-u').textContent = (uc || 0).toLocaleString();
     document.getElementById('stat-w').textContent = (wc || 0).toLocaleString();
 
-    // Fetch all attempts for daily game breakdown
-    const { data: allAttempts } = await supabase
-      .from('attempts')
-      .select('quiz_id, created_at')
-      .range(0, 9999);
-
+    const { data: allAttempts } = await supabase.from('attempts').select('quiz_id, created_at').range(0, 9999);
     if (allAttempts) {
       const dqRows   = allAttempts.filter(a => (a.quiz_id||'').startsWith('daily-quiz-'));
       const wtpRows  = allAttempts.filter(a => (a.quiz_id||'').startsWith('wtp-'));
@@ -674,9 +1176,6 @@
       document.getElementById('stat-dq').textContent   = dqRows.length.toLocaleString();
       document.getElementById('stat-wtp').textContent  = wtpRows.length.toLocaleString();
       document.getElementById('stat-snap').textContent = snapRows.length.toLocaleString();
-
-      // By-day table for last 14 days
-      const dailyRows = [...dqRows, ...wtpRows, ...snapRows];
       const dayMap = {};
       const now = new Date();
       for (let i = 13; i >= 0; i--) {
@@ -684,7 +1183,7 @@
         const key = d.toISOString().slice(0,10);
         dayMap[key] = { quiz: 0, wtp: 0, snap: 0 };
       }
-      dailyRows.forEach(a => {
+      [...dqRows, ...wtpRows, ...snapRows].forEach(a => {
         const day = (a.created_at||'').slice(0,10);
         if (!dayMap[day]) return;
         if ((a.quiz_id||'').startsWith('daily-quiz-')) dayMap[day].quiz++;
@@ -697,8 +1196,7 @@
       const tdStyle = 'padding:0.5rem 0.75rem;border-bottom:1px solid rgba(255,255,255,0.04);';
       const numStyle = 'padding:0.5rem 0.75rem;border-bottom:1px solid rgba(255,255,255,0.04);text-align:right;font-family:Barlow Condensed,sans-serif;font-weight:700;color:var(--gold);';
       document.getElementById('daily-by-day').innerHTML =
-        '<table style="' + tbStyle + '">' +
-        '<thead><tr>' +
+        '<table style="' + tbStyle + '"><thead><tr>' +
         '<th style="' + thStyle + '">Date</th>' +
         '<th style="' + thStyle + 'text-align:right;">Daily Quiz</th>' +
         '<th style="' + thStyle + 'text-align:right;">Who&#39;s That Player</th>' +
@@ -706,68 +1204,31 @@
         '<th style="' + thStyle + 'text-align:right;">Total</th>' +
         '</tr></thead><tbody>' +
         dayKeys.map(day => {
-          const r = dayMap[day];
-          const total = r.quiz + r.wtp + r.snap;
-          return '<tr>' +
-            '<td style="' + tdStyle + '">' + day + '</td>' +
+          const r = dayMap[day]; const total = r.quiz + r.wtp + r.snap;
+          return '<tr><td style="' + tdStyle + '">' + day + '</td>' +
             '<td style="' + numStyle + '">' + (r.quiz || '—') + '</td>' +
             '<td style="' + numStyle + '">' + (r.wtp || '—') + '</td>' +
             '<td style="' + numStyle + '">' + (r.snap || '—') + '</td>' +
-            '<td style="' + numStyle + '">' + (total || '—') + '</td>' +
-            '</tr>';
-        }).join('') +
-        '</tbody></table>';
+            '<td style="' + numStyle + '">' + (total || '—') + '</td></tr>';
+        }).join('') + '</tbody></table>';
     }
 
-    // Quiz plays table - filter client-side from allAttempts already fetched
-    const allAttemptsForQuiz = (allAttempts || []).filter(a => {
-      const id = (a.quiz_id || '');
-      return !id.startsWith('daily-quiz-') && !id.startsWith('wtp-') && !id.startsWith('snap-decision');
-    });
-
+    const allAttemptsForQuiz = [];
     const { data: allQuizzes } = await supabase.from('quizzes').select('id, title');
     const quizTitleMap = {};
     (allQuizzes || []).forEach(q => { quizTitleMap[q.id] = q.title; });
-
-    if (allAttemptsForQuiz) {
-      const quizCounts = {};
-      allAttemptsForQuiz.forEach(a => {
-        if (!quizCounts[a.quiz_id]) quizCounts[a.quiz_id] = 0;
-        quizCounts[a.quiz_id]++;
-      });
-      const sorted = Object.entries(quizCounts).sort((a,b) => b[1]-a[1]);
-      const tbStyle = 'width:100%;border-collapse:collapse;font-size:0.85rem;';
-      const thStyle = 'padding:0.5rem 0.75rem;text-align:left;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gray);border-bottom:1px solid var(--card-border);';
-      const tdStyle = 'padding:0.5rem 0.75rem;border-bottom:1px solid rgba(255,255,255,0.04);';
-      const numStyle = 'padding:0.5rem 0.75rem;border-bottom:1px solid rgba(255,255,255,0.04);text-align:right;font-family:Barlow Condensed,sans-serif;font-weight:700;color:var(--gold);';
-      document.getElementById('quiz-plays-table').innerHTML = sorted.length === 0
-        ? '<p style="color:var(--gray)">No quiz plays yet.</p>'
-        : '<table style="' + tbStyle + '">' +
-          '<thead><tr><th style="' + thStyle + '">Quiz</th><th style="' + thStyle + 'text-align:right;">Plays</th></tr></thead>' +
-          '<tbody>' + sorted.map(([id, count]) =>
-            '<tr><td style="' + tdStyle + '">' + (quizTitleMap[id] || id.slice(0,8)+'…') + '</td>' +
-            '<td style="' + numStyle + '">' + count + '</td></tr>'
-          ).join('') + '</tbody></table>';
-    }
-
-    // Recent attempts
-    const { data: recent } = await supabase
-      .from('attempts')
-      .select('quiz_id, score, created_at, profiles(username)')
-      .order('created_at', { ascending: false })
-      .limit(15);
-
+    const { data: recent } = await supabase.from('attempts').select('quiz_id, score, created_at, profiles(username)').order('created_at', { ascending: false }).limit(15);
     const container = document.getElementById('recent-attempts');
     if (!recent || recent.length === 0) { container.innerHTML = '<p style="color:var(--gray)">No attempts yet.</p>'; return; }
     container.innerHTML = recent.map(a => {
       const qid = a.quiz_id || '';
       const label = qid.startsWith('daily-quiz-') ? 'Daily Quiz (' + qid.replace('daily-quiz-','') + ')' :
                     qid.startsWith('wtp-') ? "Who&#39;s That Player (" + qid.replace('wtp-','') + ')' :
-                    qid.startsWith('snap-decision') ? 'Snap Decision' : qid.slice(0,8)+'…';
+                    qid.startsWith('snap-decision') ? 'Snap Decision' :
+                    qid.startsWith('clean-sweep-') ? 'Clean Sweep' : qid.slice(0,8)+'…';
       return '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.65rem 0;border-bottom:1px solid var(--card-border);font-size:0.85rem;">' +
         '<div><strong>' + (a.profiles?.username || 'Guest') + '</strong><span style="color:var(--gray);margin-left:0.5rem;">' + label + '</span></div>' +
-        '<span style="color:var(--gold);font-family:Barlow Condensed,sans-serif;font-weight:800;">' + a.score + ' pts</span>' +
-        '</div>';
+        '<span style="color:var(--gold);font-family:Barlow Condensed,sans-serif;font-weight:800;">' + a.score + ' pts</span></div>';
     }).join('');
   }
 
@@ -778,7 +1239,7 @@
       loadManageQuizzes();
       loadStats();
     }
-    addMCQuestion(); // start with one empty question
+    addMCQuestion();
   });
 </script>
 </body>

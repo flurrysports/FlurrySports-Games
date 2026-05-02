@@ -426,12 +426,18 @@
     </div>
 
     <div class="form-group">
-      <label class="form-label">ESPN Player ID * <span style="color:var(--gray);font-weight:400;">(used for photo)</span></label>
+      <label class="form-label">Player ID * <span style="color:var(--gray);font-weight:400;">(used for photo)</span></label>
       <div style="display:flex;gap:0.5rem;">
         <input class="form-input" id="wtp-espn-id" type="text" placeholder="e.g. 3139477" style="flex:1;">
-        <button class="btn btn-outline" onclick="previewWTPPlayer()">Preview</button>
+        <button class="btn btn-outline" onclick="previewWTPPlayer()">Preview Photo</button>
       </div>
-      <div style="font-size:0.78rem;color:var(--gray);margin-top:0.35rem;">Find IDs at ESPN.com — the number in the player's URL</div>
+      <div style="background:rgba(255,255,255,0.03);border:1px solid var(--card-border);border-radius:8px;padding:0.75rem 1rem;margin-top:0.6rem;font-size:0.8rem;line-height:1.8;color:var(--gray);">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.75rem;color:var(--gold);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.5rem;">📸 How to find the Player ID</div>
+        <div><strong style="color:var(--white);">NFL</strong> — espn.com → search player → open profile → copy number from URL:<br><code style="color:var(--gold);">espn.com/nfl/player/_/id/<strong>3139477</strong>/patrick-mahomes</code></div>
+        <div style="margin-top:0.4rem;"><strong style="color:var(--white);">NBA</strong> — nba.com/players → search player → open profile → copy number from URL:<br><code style="color:var(--gold);">nba.com/player/<strong>2544</strong>/lebron-james</code></div>
+        <div style="margin-top:0.4rem;"><strong style="color:var(--white);">MLB</strong> — mlb.com → search player → open profile → copy number from URL:<br><code style="color:var(--gold);">mlb.com/player/mike-trout-<strong>545361</strong></code></div>
+        <div style="margin-top:0.5rem;color:#f0c060;font-weight:600;">Always click Preview Photo to confirm the image loads correctly before saving.</div>
+      </div>
     </div>
 
     <div id="wtp-player-preview" class="hidden"></div>
@@ -460,6 +466,14 @@
         <input class="form-input" id="wtp-draft" type="text" placeholder="e.g. 2017 · 1st · Pick 10">
       </div>
     </div>
+    <div class="form-group">
+      <label class="form-label">League *</label>
+      <select class="form-select" id="wtp-league">
+        <option value="NFL">NFL</option>
+        <option value="NBA">NBA</option>
+        <option value="MLB">MLB</option>
+      </select>
+    </div>
 
     <div class="form-group">
       <label class="form-label" style="margin-bottom:0.75rem;">Clues <span style="color:var(--gray);font-weight:400;">(5 clues, easiest last)</span></label>
@@ -484,6 +498,8 @@
 <script src="/js/auth.js"></script>
 <script>
   const ADMIN_PASSWORD = 'flurryadmin2025';
+
+  // showToast provided by auth.js
   let mcQCount = 0;
   let _csAllPuzzles = [];
   let _wtpAllEntries = [];
@@ -814,8 +830,8 @@
 
   async function approveCS(id) {
     const { error } = await supabase.from('clean_sweep_puzzles').update({ status: 'approved', verification_flag: null }).eq('id', id);
-    if (error) { showToast('Error: ' + error.message, 'error'); return; }
-    showToast('Puzzle approved!', 'success');
+    if (error) { alert('Error: ' + error.message); return; }
+    alert('✅ Puzzle approved!');
     await loadCSPuzzles();
   }
 
@@ -939,8 +955,8 @@
     const correctTiles = tiles.filter(t => t.correct).map(t => t.name);
     const decoyTiles = tiles.filter(t => !t.correct).map(t => t.name);
 
-    if (correctTiles.length !== 5) { alert(`Need exactly 5 correct tiles. Currently have ${correctTiles.length}.`); return; }
-    if (decoyTiles.length !== 4) { alert(`Need exactly 4 decoy tiles. Currently have ${decoyTiles.length}.`); return; }
+    if (correctTiles.length < 4 || correctTiles.length > 7) { alert(`Need between 4 and 7 correct tiles. Currently have ${correctTiles.length}.`); return; }
+    if (correctTiles.length + decoyTiles.length !== 9) { alert(`Total tiles must equal 9. Currently have ${correctTiles.length + decoyTiles.length}.`); return; }
 
     // Shuffle tiles for storage
     const shuffled = [...tiles].sort(() => Math.random() - 0.5).map(t => ({ name: t.name, correct: t.correct }));
@@ -956,14 +972,25 @@
     // Remove undefined keys
     Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
 
-    let error;
-    if (id) {
-      ({ error } = await supabase.from('clean_sweep_puzzles').update(payload).eq('id', id));
-    } else {
-      ({ error } = await supabase.from('clean_sweep_puzzles').insert(payload));
+    let saveError;
+    try {
+      if (id) {
+        const res = await supabase.from('clean_sweep_puzzles').update(payload).eq('id', id);
+        saveError = res.error;
+      } else {
+        const res = await supabase.from('clean_sweep_puzzles').insert(payload);
+        saveError = res.error;
+      }
+    } catch(e) {
+      alert('Save exception: ' + e.message);
+      return;
     }
-    if (error) { showToast('Error saving puzzle: ' + error.message, 'error'); return; }
-    showToast(id ? 'Puzzle updated!' : 'Puzzle created!', 'success');
+    if (saveError) {
+      console.error('Save error:', saveError);
+      alert('Save failed: ' + saveError.message);
+      return;
+    }
+    alert(id ? '✅ Puzzle updated!' : '✅ Puzzle created!');
     closeCSModal();
     await loadCSPuzzles();
   }
@@ -1077,6 +1104,7 @@
     document.getElementById('wtp-college').value = p.college || '';
     document.getElementById('wtp-draft').value = p.drafted || '';
     document.getElementById('wtp-status').value = e.status || 'approved';
+    document.getElementById('wtp-league').value = e.league || p.league || 'NFL';
     buildWTPClues(p.clues || []);
     // Show preview if photo
     if (e.photo_url || p.espnId) {
@@ -1089,7 +1117,9 @@
 
   function buildWTPPhotoUrl(espnId, league) {
     if (!espnId) return '';
-    if (league === 'nba' || !league) return `https://cdn.nba.com/headshots/nba/latest/260x190/${espnId}.png`;
+    const l = (league || '').toLowerCase();
+    if (l === 'nba') return `https://cdn.nba.com/headshots/nba/latest/260x190/${espnId}.png`;
+    if (l === 'mlb') return `https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/${espnId}/headshot/67/current`;
     return `https://a.espncdn.com/i/headshots/nfl/players/full/${espnId}.png`;
   }
 
@@ -1133,10 +1163,11 @@
     const clueTexts = [...document.querySelectorAll('.wtp-clue-text')].map(el => el.value.trim());
     const clues = clueLabels.map((label, i) => ({ label, text: clueTexts[i] })).filter(c => c.label && c.text);
 
-    const playerJson = { name, espnId, pos, team, college, drafted, clues };
-    const photoUrl = buildWTPPhotoUrl(espnId, team.toLowerCase().includes('nfl') ? 'nfl' : 'nba');
+    const league = document.getElementById('wtp-league').value;
+    const playerJson = { name, espnId, pos, team, college, drafted, league, clues };
+    const photoUrl = buildWTPPhotoUrl(espnId, league.toLowerCase());
 
-    const payload = { date, player_json: playerJson, photo_url: photoUrl, status };
+    const payload = { date, player_json: playerJson, photo_url: photoUrl, status, league, player_name: name };
 
     let error;
     if (id) {
@@ -1144,7 +1175,12 @@
     } else {
       ({ error } = await supabase.from('wtp_daily').insert(payload));
     }
-    if (error) { showToast('Error saving entry: ' + error.message, 'error'); return; }
+    if (error) {
+      console.error('WTP Save error:', error);
+      showToast('Error saving entry: ' + error.message, 'error');
+      alert('Save failed: ' + error.message);
+      return;
+    }
     showToast(id ? 'Entry updated!' : 'Player scheduled!', 'success');
     closeWTPModal();
     await loadWTPEntries();

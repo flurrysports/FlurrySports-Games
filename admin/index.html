@@ -1026,6 +1026,7 @@
       const espnId = p.espnId || '';
       const isDraft = e.status === 'draft';
       const photoUrl = e.photo_url || (espnId ? `https://cdn.nba.com/headshots/nba/latest/260x190/${espnId}.png` : '');
+      const key = e.date; // use date as the unique key
       return `<div class="puzzle-row status-${e.status || 'approved'}">
         <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
           ${photoUrl ? `<img src="${photoUrl}" onerror="this.style.display='none'" style="width:52px;height:52px;border-radius:50%;object-fit:cover;background:#222;flex-shrink:0;">` : '<div style="width:52px;height:52px;border-radius:50%;background:#222;flex-shrink:0;"></div>'}
@@ -1038,27 +1039,27 @@
             <div style="font-size:0.82rem;color:var(--gray);">${p.pos || ''} · ${p.team || ''}</div>
           </div>
           <div style="display:flex;flex-direction:column;gap:0.4rem;flex-shrink:0;">
-            ${isDraft ? `<button class="btn btn-sm" style="background:rgba(0,214,143,0.15);color:var(--success);border:1px solid rgba(0,214,143,0.3);" onclick="approveWTP('${e.id}')">✓ Approve</button>` : ''}
-            <button class="btn btn-outline btn-sm" onclick="openWTPEdit('${e.id}')">✏️ Edit</button>
-            <button class="btn btn-sm" style="background:rgba(255,77,109,0.1);color:var(--error);border:1px solid rgba(255,77,109,0.2);" onclick="deleteWTP('${e.id}')">Delete</button>
+            ${isDraft ? `<button class="btn btn-sm" style="background:rgba(0,214,143,0.15);color:var(--success);border:1px solid rgba(0,214,143,0.3);" onclick="approveWTP('${key}')">✓ Approve</button>` : ''}
+            <button class="btn btn-outline btn-sm" onclick="openWTPEdit('${key}')">✏️ Edit</button>
+            <button class="btn btn-sm" style="background:rgba(255,77,109,0.1);color:var(--error);border:1px solid rgba(255,77,109,0.2);" onclick="deleteWTP('${key}')">Delete</button>
           </div>
         </div>
       </div>`;
     }).join('');
   }
 
-  async function approveWTP(id) {
-    const { error } = await supabase.from('wtp_daily').update({ status: 'approved' }).eq('id', id);
+  async function approveWTP(date) {
+    const { error } = await supabase.from('wtp_daily').update({ status: 'approved' }).eq('date', date);
     if (error) { alert('Error: ' + error.message); return; }
     alert('✅ Entry approved!');
     await loadWTPEntries();
   }
 
-  async function deleteWTP(id) {
+  async function deleteWTP(date) {
     if (!confirm('Delete this scheduled player?')) return;
-    const { error } = await supabase.from('wtp_daily').delete().eq('id', id);
-    if (error) { showToast('Error: ' + error.message, 'error'); return; }
-    showToast('Deleted.', 'success');
+    const { error } = await supabase.from('wtp_daily').delete().eq('date', date);
+    if (error) { alert('Error: ' + error.message); return; }
+    alert('Deleted.');
     await loadWTPEntries();
   }
 
@@ -1094,16 +1095,16 @@
     document.getElementById('wtp-modal').classList.remove('hidden');
   }
 
-  async function openWTPEdit(id) {
+  async function openWTPEdit(date) {
     // Try local array first, fall back to Supabase fetch
-    let e = _wtpAllEntries.find(x => x.id === id);
+    let e = _wtpAllEntries.find(x => x.date === date);
     if (!e) {
-      const { data } = await supabase.from('wtp_daily').select('*').eq('id', id).single();
+      const { data } = await supabase.from('wtp_daily').select('*').eq('date', date).single();
       if (!data) { alert('Could not load entry.'); return; }
       e = data;
     }
     const p = e.player_json || {};
-    document.getElementById('wtp-edit-id').value = e.id;
+    document.getElementById('wtp-edit-id').value = e.date;
     document.getElementById('wtp-modal-title').textContent = 'Edit Player Entry';
     document.getElementById('wtp-date').value = e.date || '';
     document.getElementById('wtp-espn-id').value = p.espnId || '';
@@ -1177,9 +1178,10 @@
 
     const payload = { date, player_json: playerJson, photo_url: photoUrl, status, league, player_name: name };
 
+    const editDate = document.getElementById('wtp-edit-id').value;
     let error;
-    if (id) {
-      ({ error } = await supabase.from('wtp_daily').update(payload).eq('id', id));
+    if (editDate) {
+      ({ error } = await supabase.from('wtp_daily').update(payload).eq('date', editDate));
     } else {
       ({ error } = await supabase.from('wtp_daily').insert(payload));
     }

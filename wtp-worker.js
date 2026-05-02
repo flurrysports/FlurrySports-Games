@@ -87,7 +87,7 @@ async function generateAndStore(env) {
         const photoUrl = await resolvePhotoUrl(player);
         log.push(`Photo: ${photoUrl || 'none'}`);
 
-        await sbFetch(env, 'POST', '/rest/v1/wtp_daily', {
+        await sbFetch(env, 'POST', '/rest/v1/wtp_daily?on_conflict=date', {
           date,
           player_json: player,
           photo_url:   photoUrl,
@@ -252,7 +252,7 @@ async function sbFetch(env, method, path, body = null) {
       'Content-Type':  'application/json',
       'apikey':         env.SUPABASE_SERVICE_KEY,
       'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-      'Prefer':         method === 'POST' ? 'return=representation' : ''
+      'Prefer':         method === 'POST' ? 'return=representation,resolution=merge-duplicates' : ''
     },
     body: body ? JSON.stringify(body) : null
   });

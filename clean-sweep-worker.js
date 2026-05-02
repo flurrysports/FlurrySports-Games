@@ -157,7 +157,7 @@ async function storePuzzle(env, date, puzzle, log) {
     ...puzzle.decoy_tiles.map(n => ({ name: n, correct: false }))
   ]);
 
-  await sbFetch(env, 'POST', '/rest/v1/clean_sweep_puzzles', {
+  await sbFetch(env, 'POST', '/rest/v1/clean_sweep_puzzles?on_conflict=date', {
     date,
     prompt:            puzzle.prompt,
     sport_category:    puzzle.sport_category,
@@ -371,7 +371,7 @@ async function sbFetch(env, method, path, body = null) {
       'Content-Type': 'application/json',
       'apikey': env.SUPABASE_SERVICE_KEY,
       'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-      'Prefer': method === 'POST' ? 'return=representation' : ''
+      'Prefer': method === 'POST' ? 'return=representation,resolution=merge-duplicates' : ''
     },
     body: body ? JSON.stringify(body) : null
   });

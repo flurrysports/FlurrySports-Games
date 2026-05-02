@@ -863,9 +863,13 @@
     document.getElementById('cs-modal').classList.remove('hidden');
   }
 
-  function openCSEdit(id) {
-    const p = _csAllPuzzles.find(x => x.id === id);
-    if (!p) return;
+  async function openCSEdit(id) {
+    let p = _csAllPuzzles.find(x => x.id === id);
+    if (!p) {
+      const { data } = await supabase.from('clean_sweep_puzzles').select('*').eq('id', id).single();
+      if (!data) { alert('Could not load puzzle.'); return; }
+      p = data;
+    }
     document.getElementById('cs-edit-id').value = p.id;
     document.getElementById('cs-modal-title').textContent = 'Edit Clean Sweep Puzzle';
     document.getElementById('cs-date').value = p.date || '';
@@ -1045,8 +1049,8 @@
 
   async function approveWTP(id) {
     const { error } = await supabase.from('wtp_daily').update({ status: 'approved' }).eq('id', id);
-    if (error) { showToast('Error: ' + error.message, 'error'); return; }
-    showToast('Entry approved!', 'success');
+    if (error) { alert('Error: ' + error.message); return; }
+    alert('✅ Entry approved!');
     await loadWTPEntries();
   }
 
@@ -1090,9 +1094,14 @@
     document.getElementById('wtp-modal').classList.remove('hidden');
   }
 
-  function openWTPEdit(id) {
-    const e = _wtpAllEntries.find(x => x.id === id);
-    if (!e) return;
+  async function openWTPEdit(id) {
+    // Try local array first, fall back to Supabase fetch
+    let e = _wtpAllEntries.find(x => x.id === id);
+    if (!e) {
+      const { data } = await supabase.from('wtp_daily').select('*').eq('id', id).single();
+      if (!data) { alert('Could not load entry.'); return; }
+      e = data;
+    }
     const p = e.player_json || {};
     document.getElementById('wtp-edit-id').value = e.id;
     document.getElementById('wtp-modal-title').textContent = 'Edit Player Entry';
@@ -1106,7 +1115,6 @@
     document.getElementById('wtp-status').value = e.status || 'approved';
     document.getElementById('wtp-league').value = e.league || p.league || 'NFL';
     buildWTPClues(p.clues || []);
-    // Show preview if photo
     if (e.photo_url || p.espnId) {
       showWTPPreview(p.name, p.pos, p.team, e.photo_url || buildWTPPhotoUrl(p.espnId, 'nba'));
     }

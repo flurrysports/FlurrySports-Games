@@ -426,12 +426,18 @@
     </div>
 
     <div class="form-group">
-      <label class="form-label">ESPN Player ID * <span style="color:var(--gray);font-weight:400;">(used for photo)</span></label>
+      <label class="form-label">Player ID * <span style="color:var(--gray);font-weight:400;">(used for photo)</span></label>
       <div style="display:flex;gap:0.5rem;">
         <input class="form-input" id="wtp-espn-id" type="text" placeholder="e.g. 3139477" style="flex:1;">
-        <button class="btn btn-outline" onclick="previewWTPPlayer()">Preview</button>
+        <button class="btn btn-outline" onclick="previewWTPPlayer()">Preview Photo</button>
       </div>
-      <div style="font-size:0.78rem;color:var(--gray);margin-top:0.35rem;">Find IDs at ESPN.com — the number in the player's URL</div>
+      <div style="background:rgba(255,255,255,0.03);border:1px solid var(--card-border);border-radius:8px;padding:0.75rem 1rem;margin-top:0.6rem;font-size:0.8rem;line-height:1.8;color:var(--gray);">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.75rem;color:var(--gold);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.5rem;">📸 How to find the Player ID</div>
+        <div><strong style="color:var(--white);">NFL</strong> — espn.com → search player → open profile → copy number from URL:<br><code style="color:var(--gold);">espn.com/nfl/player/_/id/<strong>3139477</strong>/patrick-mahomes</code></div>
+        <div style="margin-top:0.4rem;"><strong style="color:var(--white);">NBA</strong> — nba.com/players → search player → open profile → copy number from URL:<br><code style="color:var(--gold);">nba.com/player/<strong>2544</strong>/lebron-james</code></div>
+        <div style="margin-top:0.4rem;"><strong style="color:var(--white);">MLB</strong> — mlb.com → search player → open profile → copy number from URL:<br><code style="color:var(--gold);">mlb.com/player/mike-trout-<strong>545361</strong></code></div>
+        <div style="margin-top:0.5rem;color:#f0c060;font-weight:600;">Always click Preview Photo to confirm the image loads correctly before saving.</div>
+      </div>
     </div>
 
     <div id="wtp-player-preview" class="hidden"></div>

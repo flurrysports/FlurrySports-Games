@@ -499,15 +499,7 @@
 <script>
   const ADMIN_PASSWORD = 'flurryadmin2025';
 
-  // ─── TOAST (fallback if auth.js version unavailable) ──────────
-  function showToast(msg, type) {
-    if (typeof window._authShowToast === 'function') { window._authShowToast(msg, type); return; }
-    const t = document.createElement('div');
-    t.textContent = msg;
-    t.style.cssText = `position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;padding:0.75rem 1.25rem;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1rem;letter-spacing:0.04em;color:#fff;background:${type==='error'?'rgba(255,77,109,0.95)':'rgba(0,214,143,0.95)'};box-shadow:0 4px 20px rgba(0,0,0,0.4);transition:opacity 0.3s;`;
-    document.body.appendChild(t);
-    setTimeout(() => { t.style.opacity='0'; setTimeout(() => t.remove(), 300); }, 3000);
-  }
+  // showToast provided by auth.js
   let mcQCount = 0;
   let _csAllPuzzles = [];
   let _wtpAllEntries = [];
@@ -838,8 +830,8 @@
 
   async function approveCS(id) {
     const { error } = await supabase.from('clean_sweep_puzzles').update({ status: 'approved', verification_flag: null }).eq('id', id);
-    if (error) { showToast('Error: ' + error.message, 'error'); return; }
-    showToast('Puzzle approved!', 'success');
+    if (error) { alert('Error: ' + error.message); return; }
+    alert('✅ Puzzle approved!');
     await loadCSPuzzles();
   }
 
@@ -980,19 +972,25 @@
     // Remove undefined keys
     Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
 
-    let error;
-    if (id) {
-      ({ error } = await supabase.from('clean_sweep_puzzles').update(payload).eq('id', id));
-    } else {
-      ({ error } = await supabase.from('clean_sweep_puzzles').insert(payload));
-    }
-    if (error) {
-      console.error('Save error:', error);
-      showToast('Error saving puzzle: ' + error.message, 'error');
-      alert('Save failed: ' + error.message);
+    let saveError;
+    try {
+      if (id) {
+        const res = await supabase.from('clean_sweep_puzzles').update(payload).eq('id', id);
+        saveError = res.error;
+      } else {
+        const res = await supabase.from('clean_sweep_puzzles').insert(payload);
+        saveError = res.error;
+      }
+    } catch(e) {
+      alert('Save exception: ' + e.message);
       return;
     }
-    showToast(id ? 'Puzzle updated!' : 'Puzzle created!', 'success');
+    if (saveError) {
+      console.error('Save error:', saveError);
+      alert('Save failed: ' + saveError.message);
+      return;
+    }
+    alert(id ? '✅ Puzzle updated!' : '✅ Puzzle created!');
     closeCSModal();
     await loadCSPuzzles();
   }

@@ -49,6 +49,7 @@ async function generateAndStore(env) {
     const existingDates = new Set(existing.map(r => r.date));
 
     const missingDates = [];
+    const MAX_PER_RUN = 5;
     for (let i = 0; i < 30; i++) {
       const d = getDateString(i);
       if (!existingDates.has(d)) missingDates.push(d);
@@ -67,8 +68,9 @@ async function generateAndStore(env) {
     const recentNames = recent.map(r => r.player_name);
     log.push(`Avoiding: ${recentNames.join(', ') || 'none'}`);
 
-    // Generate one player per missing date
-    for (const date of missingDates) {
+    // Generate one player per missing date (capped per run to avoid subrequest limits)
+    const datesToProcess = missingDates.slice(0, MAX_PER_RUN);
+    for (const date of datesToProcess) {
       log.push(`\n--- Generating for ${date} ---`);
       try {
         let player = null;

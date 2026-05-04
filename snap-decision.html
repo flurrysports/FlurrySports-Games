@@ -6,8 +6,21 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/images/logo-crown.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
 <meta charset="UTF-8">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="FlurrySports Games">
+  <meta property="og:title" content="Snap Decision — FlurrySports Games">
+  <meta property="og:description" content="You're the offensive coordinator. Pick the right play before the clock runs out. New game every day.">
+  <meta property="og:url" content="https://games.flurrysports.org/snap-decision.html">
+  <meta property="og:image" content="https://games.flurrysports.org/images/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Snap Decision — FlurrySports Games">
+  <meta name="twitter:description" content="You're the offensive coordinator. Pick the right play before the clock runs out. New game every day.">
+  <meta name="twitter:image" content="https://games.flurrysports.org/images/og-image.png">
+  <meta name="description" content="You're the offensive coordinator. Pick the right play before the clock runs out. New game every day.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Snap Decision — FlurrySports</title>
+<title>Snap Decision — FlurrySports Games</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,400;0,600;0,700;1,400&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -502,7 +515,10 @@ function hasAttemptedLocally(id) {
 // Daily snap: clean up old static key and stale results, update start button
 (function() {
   try {
-    const today = (function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
+    const today = (function(){
+      function _ptOff(d){const y=d.getUTCFullYear();const s=new Date(Date.UTC(y,2,14-(new Date(Date.UTC(y,2,1)).getUTCDay()+6)%7,10));const e=new Date(Date.UTC(y,10,7-(new Date(Date.UTC(y,10,1)).getUTCDay()+6)%7,9));return(d>=s&&d<e)?-7*60:-8*60;}
+      const d=new Date();const pt=new Date(d.getTime()+_ptOff(d)*60000);return pt.toISOString().slice(0,10);
+    })();
     const gameId = 'snap-decision-' + today;
 
     // Remove old static 'snap-decision-v1' from fs_attempted so it never blocks play
@@ -1595,9 +1611,17 @@ const ALL_PLAYS = [
 // DAILY GAME LOGIC
 // ═══════════════════════════════════════
 
-function getTodayString() {
-  const d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+function getPacificOffsetMinutes(d) {
+  const y = d.getUTCFullYear();
+  const dstStart = new Date(Date.UTC(y, 2, 14 - (new Date(Date.UTC(y, 2, 1)).getUTCDay() + 6) % 7, 10));
+  const dstEnd   = new Date(Date.UTC(y, 10, 7 - (new Date(Date.UTC(y, 10, 1)).getUTCDay() + 6) % 7, 9));
+  return (d >= dstStart && d < dstEnd) ? -7 * 60 : -8 * 60;
+}
+function getTodayString(utcDate) {
+  const d = utcDate || new Date();
+  const offsetMs = getPacificOffsetMinutes(d) * 60 * 1000;
+  const pacific = new Date(d.getTime() + offsetMs);
+  return pacific.toISOString().slice(0, 10);
 }
 
 function getDailyGameId() {
@@ -1894,6 +1918,7 @@ async function showTouchdown(isReplay) {
   if (!isReplay) {
     storeSnapResult({ type:'td', score: finalScore, playHistory, decisionTimes });
     markAttemptedLocally(getDailyGameId());
+    if (typeof updateStreak === 'function') updateStreak();
     try {
       const user = await getCurrentUser();
       if (user && typeof saveAttempt === 'function') {
@@ -1928,6 +1953,7 @@ async function showLoss(headline, desc, badge, isReplay) {
   if (!isReplay) {
     storeSnapResult({ type:'loss', score, playHistory, currentPlay, headline, desc, badge });
     markAttemptedLocally(getDailyGameId());
+    if (typeof updateStreak === 'function') updateStreak();
     try {
       const user = await getCurrentUser();
       if (user && typeof saveAttempt === 'function') {

@@ -344,11 +344,11 @@ function shareScore(quizTitle, score, quizUrl) {
 
 // ─── UNIFIED SHARE SECTION (matches quiz.html style) ─────────────
 function buildShareSection(gameTitle, score, extraLine) {
-  const msg = 'I scored ' + score.toLocaleString() + ' pts on ' + gameTitle + ' — FlurrySports Games! Can you beat me? https://flurrysportsgames.pages.dev';
+  const msg = 'I scored ' + score.toLocaleString() + ' pts on ' + gameTitle + ' — FlurrySports Games! Can you beat me? https://games.flurrysports.org';
   const encoded = encodeURIComponent(msg);
   window._shareLinks = {
     sms: 'sms:?body=' + encoded,
-    facebook: 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent('https://flurrysportsgames.pages.dev') + '&quote=' + encoded,
+    facebook: 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent('https://games.flurrysports.org') + '&quote=' + encoded,
     x: 'https://twitter.com/intent/tweet?text=' + encoded
   };
   return '<div class="share-section">' +
@@ -370,7 +370,7 @@ function triggerShare(platform) {
 }
 
 function buildShareText(gameTitle, score, emoji, extraLine) {
-  const base = `FlurrySports · ${gameTitle}\n${emoji}\nScore: ${score.toLocaleString()} pts${extraLine ? '\n' + extraLine : ''}\nPlay at flurrysportsgames.pages.dev`;
+  const base = `FlurrySports · ${gameTitle}\n${emoji}\nScore: ${score.toLocaleString()} pts${extraLine ? '\n' + extraLine : ''}\nPlay at games.flurrysports.org`;
   return base;
 }
 
@@ -393,7 +393,7 @@ function showShareModal(shareText) {
       <div style="background:rgba(255,255,255,0.04);border:1px solid var(--card-border);border-radius:10px;padding:1rem;font-family:monospace;font-size:0.83rem;color:var(--gray-light);white-space:pre-wrap;margin-bottom:1.25rem;">${shareText}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
         <a href="https://twitter.com/intent/tweet?text=${encoded}" target="_blank" class="btn btn-ghost" style="justify-content:center;">🐦 Post on X</a>
-        <a href="https://www.facebook.com/sharer/sharer.php?u=https://flurrysportsgames.pages.dev&quote=${encoded}" target="_blank" class="btn btn-ghost" style="justify-content:center;">📘 Facebook</a>
+        <a href="https://www.facebook.com/sharer/sharer.php?u=https://games.flurrysports.org&quote=${encoded}" target="_blank" class="btn btn-ghost" style="justify-content:center;">📘 Facebook</a>
       </div>
       <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="navigator.clipboard.writeText(window._shareModalText||'').then(()=>showToast('Copied! ✓','success'))">📋 Copy to Clipboard</button>
     </div>

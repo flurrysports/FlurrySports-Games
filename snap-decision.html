@@ -482,7 +482,7 @@ function hasAttemptedLocally(id) {
 <!-- ═══════════════════════════════════════
      START SCREEN
 ════════════════════════════════════════ -->
-<nav style="position:sticky;top:0;z-index:100;background:rgba(8,12,46,0.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(245,197,24,0.15);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:44px;">
+<nav style="position:sticky;top:0;z-index:100;background:rgba(0,0,0,0.97);backdrop-filter:blur(12px);border-bottom:1px solid rgba(245,197,24,0.15);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:44px;">
   <a href="/" style="display:flex;align-items:center;text-decoration:none;">
     <img src="/images/logo-yeti-orange.png" alt="FlurrySports" style="height:38px;width:auto;">
   </a>
@@ -567,6 +567,7 @@ function hasAttemptedLocally(id) {
       <div class="hud-item">
         <div class="hud-val" id="scoreDisplay">0</div>
         <div class="hud-lbl">Points</div>
+        <div id="pendingDisplay" style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:#E8A020;letter-spacing:0.08em;text-align:center;min-height:14px;"></div>
       </div>
     </div>
   </div>
@@ -1665,6 +1666,7 @@ const TIMER_DURATION = 4;
 
 let currentPlay = 0;
 let score = 0;
+let pendingScore = 0;  // accumulated points — only awarded on final correct pick
 let playHistory = [];
 let decisionTimes = [];
 let timerInterval = null;
@@ -1749,6 +1751,7 @@ async function startGame() {
   document.getElementById('startScreen').style.display = 'none';
   currentPlay = 0;
   score = 0;
+  pendingScore = 0;
   playHistory = [];
   decisionTimes = [];
   showCountdown(() => {
@@ -1840,24 +1843,27 @@ function handlePick(option, playIdx) {
 
   if (result === 'correct') {
     const pts = calcPoints(playIdx, decisionTime);
-    score += pts;
-    updateScore();
+    pendingScore += pts;
     playHistory.push('correct');
     if (isLastPlay) {
-      score += TD_BONUS;
+      // Final correct pick — award all accumulated points + TD bonus
+      score = pendingScore + TD_BONUS;
       updateScore();
-      showFlash('correct', 'COMPLETED!', `+${pts} pts — Touchdown!`, () => showTouchdown());
+      showFlash('correct', 'TOUCHDOWN!', `+${pts} pts — Drive complete!`, () => showTouchdown());
     } else {
-      showFlash('correct', 'COMPLETED!', `+${pts} pts`, () => { currentPlay++; loadPlay(currentPlay); });
+      // Show pending points earned but not yet scored
+      showFlash('correct', 'GREAT READ!', `+${pts} pts banked`, () => { currentPlay++; loadPlay(currentPlay); });
     }
   } else if (result === 'neutral') {
     const isRunPlay = option.type.includes('Run');
     playHistory.push('neutral');
     if (isLastPlay) {
+      // Neutral on final play — lose all pending points
+      pendingScore = 0;
       showFlash('neutral-run', 'TURNOVER ON DOWNS', 'Drive ended — no score', () => showLoss('TURNOVER ON DOWNS', "So close — you stalled on 4th down. Lace up your cleats tomorrow.", 'Stalled on 4th down'));
     } else {
       if (isRunPlay) {
-        showFlash('neutral-run', 'STONEWALLED!', 'No gain — try again', () => { currentPlay++; loadPlay(currentPlay); });
+        showFlash('neutral-run', 'STONEWALLED!', 'No gain — drive continues', () => { currentPlay++; loadPlay(currentPlay); });
       } else {
         showFlash('neutral-pass', 'INCOMPLETE!', 'Incomplete pass — drive continues', () => { currentPlay++; loadPlay(currentPlay); });
       }
@@ -1890,6 +1896,10 @@ function showFlash(type, main, sub, callback) {
 
 function updateScore() {
   document.getElementById('scoreDisplay').textContent = score.toLocaleString();
+  const pendingEl = document.getElementById('pendingDisplay');
+  if (pendingEl) {
+    pendingEl.textContent = pendingScore > 0 ? '🔒 ' + pendingScore.toLocaleString() + ' banked' : '';
+  }
 }
 
 function getStreakDisplay() {
@@ -1991,6 +2001,10 @@ function showCountdown(callback) {
 
 function clearTimers() {
   clearInterval(timerInterval);
+}
+
+function resetGame() {
+  window.location.href = '/';
 }
 
 </script>

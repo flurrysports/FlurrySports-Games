@@ -6,9 +6,17 @@
   <title>Admin — FlurrySports Trivia</title>
   <link rel="icon" type="image/png" href="/images/logo-crown.png">
   <link rel="stylesheet" href="/css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="/js/supabase-config.js"></script>
-  <script>var supabase = (window.supabase || window.Supabase).createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
+  <script>
+  (function() {
+    var _lib = window.supabase || window.Supabase;
+    if (!_lib) { console.error('Supabase CDN failed to load'); return; }
+    var _create = _lib.createClient || (_lib.default && _lib.default.createClient);
+    if (!_create) { console.error('createClient not found'); return; }
+    window.supabase = _create(SUPABASE_URL, SUPABASE_ANON_KEY);
+  })();
+  </script>
   <style>
     .admin-sidebar {
       width: 260px; flex-shrink: 0;

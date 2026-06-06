@@ -6,7 +6,7 @@
   <title>Seed Quizzes — FlurrySports Admin</title>
   <link rel="icon" type="image/png" href="/images/logo-crown.png">
   <link rel="stylesheet" href="/css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="/js/supabase-config.js"></script>
 <script>var supabase = (window.supabase || window.Supabase).createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
 </head>
@@ -19,8 +19,6 @@
   <div id="seed-log" style="text-align:left;font-size:0.85rem;color:var(--gray-light);line-height:2;"></div>
 </div>
 
-<script src="/js/supabase-config.js"></script>
-<script>const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
 <script src="/js/seed-quizzes.js"></script>
 <script>
   async function runSeed() {

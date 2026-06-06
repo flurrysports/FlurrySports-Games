@@ -273,6 +273,9 @@ function showPostGameAuthPrompt(gameId, score, gameType, gameTitle, onClaimed) {
         <span id="pg-switch-text">Don't have an account? </span>
         <a id="pg-switch-link" onclick="togglePostGameMode()" style="cursor:pointer;color:var(--gold);">Sign Up</a>
       </div>
+      <div style="margin-top:0.5rem;text-align:center;">
+        <a onclick="showForgotPassword()" style="cursor:pointer;color:var(--gray);font-size:0.82rem;text-decoration:underline;">Forgot password?</a>
+      </div>
       <button onclick="document.getElementById('postgame-auth-modal').remove()" style="width:100%;background:transparent;border:none;color:var(--gray);margin-top:0.75rem;cursor:pointer;font-size:0.85rem;padding:0.5rem;">Skip — don't save score</button>
     </div>
   `;
@@ -280,6 +283,20 @@ function showPostGameAuthPrompt(gameId, score, gameType, gameTitle, onClaimed) {
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
   window._pgMode = 'login';
   window._pgOnClaimed = onClaimed;
+}
+
+async function showForgotPassword() {
+  const email = document.getElementById('pg-email') ? document.getElementById('pg-email').value.trim() : '';
+  const input = email || prompt('Enter your email address:');
+  if (!input) return;
+  const { error } = await supabase.auth.resetPasswordForEmail(input, {
+    redirectTo: 'https://games.flurrysports.org/reset-password.html'
+  });
+  if (error) {
+    showToast('Error: ' + error.message, 'error');
+  } else {
+    showToast('Password reset email sent! Check your inbox.', 'success');
+  }
 }
 
 function togglePostGameMode() {
@@ -339,11 +356,11 @@ function shareScore(quizTitle, score, quizUrl) {
 
 // ─── UNIFIED SHARE SECTION (matches quiz.html style) ─────────────
 function buildShareSection(gameTitle, score, extraLine) {
-  const msg = 'I scored ' + score.toLocaleString() + ' pts on ' + gameTitle + ' — FlurrySports Games! Can you beat me? https://flurrysportsgames.pages.dev';
+  const msg = 'I scored ' + score.toLocaleString() + ' pts on ' + gameTitle + ' — FlurrySports Games! Can you beat me? https://games.flurrysports.org';
   const encoded = encodeURIComponent(msg);
   window._shareLinks = {
     sms: 'sms:?body=' + encoded,
-    facebook: 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent('https://flurrysportsgames.pages.dev') + '&quote=' + encoded,
+    facebook: 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent('https://games.flurrysports.org') + '&quote=' + encoded,
     x: 'https://twitter.com/intent/tweet?text=' + encoded
   };
   return '<div class="share-section">' +
@@ -365,7 +382,7 @@ function triggerShare(platform) {
 }
 
 function buildShareText(gameTitle, score, emoji, extraLine) {
-  const base = `FlurrySports · ${gameTitle}\n${emoji}\nScore: ${score.toLocaleString()} pts${extraLine ? '\n' + extraLine : ''}\nPlay at flurrysportsgames.pages.dev`;
+  const base = `FlurrySports · ${gameTitle}\n${emoji}\nScore: ${score.toLocaleString()} pts${extraLine ? '\n' + extraLine : ''}\nPlay at games.flurrysports.org`;
   return base;
 }
 
@@ -388,7 +405,7 @@ function showShareModal(shareText) {
       <div style="background:rgba(255,255,255,0.04);border:1px solid var(--card-border);border-radius:10px;padding:1rem;font-family:monospace;font-size:0.83rem;color:var(--gray-light);white-space:pre-wrap;margin-bottom:1.25rem;">${shareText}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
         <a href="https://twitter.com/intent/tweet?text=${encoded}" target="_blank" class="btn btn-ghost" style="justify-content:center;">🐦 Post on X</a>
-        <a href="https://www.facebook.com/sharer/sharer.php?u=https://flurrysportsgames.pages.dev&quote=${encoded}" target="_blank" class="btn btn-ghost" style="justify-content:center;">📘 Facebook</a>
+        <a href="https://www.facebook.com/sharer/sharer.php?u=https://games.flurrysports.org&quote=${encoded}" target="_blank" class="btn btn-ghost" style="justify-content:center;">📘 Facebook</a>
       </div>
       <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="navigator.clipboard.writeText(window._shareModalText||'').then(()=>showToast('Copied! ✓','success'))">📋 Copy to Clipboard</button>
     </div>
@@ -642,9 +659,12 @@ function showStreakModal() {
 }
 
 function handleStreakRevive() {
-  alert('Payment integration: Replace the Stripe link in js/auth.js to enable $1 streak revival. For now, reviving for free as a test!');
+  // TODO: Wire up Stripe payment before re-enabling the revive button.
+  // When ready, replace this with a Stripe checkout redirect and call
+  // reviveStreak() only after confirmed payment (use ?streak_revived=1 redirect).
   reviveStreak();
   document.getElementById('streak-modal')?.remove();
+  showToast('Streak revived! Play today to keep it going! 🔥', 'success');
 }
 
 (function checkStreakReviveRedirect() {

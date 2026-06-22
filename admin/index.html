@@ -109,6 +109,13 @@
     .tile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem; }
     .tile-input-row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.4rem; }
     .tile-input-row input { flex: 1; }
+    .ff-answer-row { background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-radius: 8px; padding: 0.6rem 0.7rem; margin-bottom: 0.5rem; }
+    .ff-answer-row-top { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.4rem; }
+    .ff-answer-rank { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 0.85rem; color: var(--gray); width: 1.4rem; flex-shrink: 0; }
+    .ff-answer-text { flex: 2; }
+    .ff-answer-points { flex: 0 0 80px; }
+    .ff-answer-row-bottom { display: flex; gap: 0.5rem; }
+    .ff-answer-row-bottom input { font-size: 0.78rem; }
     .tile-correct-toggle {
       width: 36px; height: 36px; border-radius: 6px; border: 1px solid var(--card-border);
       cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; justify-content: center;
@@ -191,6 +198,8 @@
     <ul class="sidebar-nav">
       <li><a onclick="showSection('clean-sweep')" id="nav-clean-sweep">🧹 Clean Sweep</a></li>
       <li><a onclick="showSection('whos-that-player')" id="nav-whos-that-player">❓ Who's That Player</a></li>
+      <li><a onclick="showSection('flurry-feud')" id="nav-flurry-feud">📣 Flurry Feud</a></li>
+      <li><a onclick="showSection('flurry-feud-submissions')" id="nav-flurry-feud-submissions">💬 FF Crowd Submissions</a></li>
     </ul>
     <div class="sidebar-section">Stats</div>
     <ul class="sidebar-nav">
@@ -296,6 +305,36 @@
         </div>
         <p style="color:var(--gray);font-size:0.85rem;margin-top:0.75rem;margin-bottom:1.25rem;">Showing the next 30 days. Draft entries need to be approved before they go live.</p>
         <div id="wtp-list"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- ── FLURRY FEUD ── -->
+    <div id="section-flurry-feud" class="hidden">
+      <div class="admin-card" style="margin-bottom:1rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+          <h2 style="margin-bottom:0;">📣 Flurry Feud Boards</h2>
+          <button class="btn btn-primary" onclick="openFFCreate()">➕ Create Board</button>
+        </div>
+        <p style="color:var(--gray);font-size:0.85rem;margin-top:0.75rem;margin-bottom:1.25rem;">Showing the next 30 days. Boards marked <strong style="color:var(--gold);">Draft</strong> need review before going live. <strong>Source</strong> shows whether a board was AI-generated or built from crowd submissions.</p>
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="filterFF('all', this)">All</button>
+          <button class="tab-btn" onclick="filterFF('draft', this)">Needs Review</button>
+          <button class="tab-btn" onclick="filterFF('approved', this)">Approved</button>
+        </div>
+        <div id="ff-list"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- ── FLURRY FEUD — CROWD SUBMISSIONS ── -->
+    <div id="section-flurry-feud-submissions" class="hidden">
+      <div class="admin-card" style="margin-bottom:1rem;">
+        <h2 style="margin-bottom:0;">💬 Flurry Feud — Question Pool &amp; Crowd Submissions</h2>
+        <p style="color:var(--gray);font-size:0.85rem;margin-top:0.75rem;margin-bottom:1.25rem;">Every question listed below is sitting beyond your 30-day horizon — these are exactly the questions players see post-game when asked to submit their own answer. Once a question hits 100 submissions, the worker builds its board primarily from those real answers. Read through here for inspiration when writing boards by hand, delete spam/junk submissions, or add your own question to the pool.</p>
+        <div style="display:flex;gap:0.5rem;margin-bottom:1.25rem;">
+          <input class="form-input" id="ff-new-pool-question" type="text" placeholder="Write a new question, e.g. Name something every NFL kicker fears" style="flex:1;" onkeydown="if(event.key==='Enter')addFFPoolQuestion()">
+          <button class="btn btn-primary" onclick="addFFPoolQuestion()" style="flex-shrink:0;">➕ Add to Pool</button>
+        </div>
+        <div id="ff-submissions-list"><div class="spinner"></div></div>
       </div>
     </div>
 
@@ -503,6 +542,59 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════
+     FLURRY FEUD EDITOR MODAL
+══════════════════════════════════════════════════ -->
+<div id="ff-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3 id="ff-modal-title">Create Flurry Feud Board</h3>
+    <input type="hidden" id="ff-edit-id">
+    <input type="hidden" id="ff-edit-pool-id">
+
+    <div class="form-group">
+      <label class="form-label">Date *</label>
+      <input class="form-input" id="ff-date" type="date">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Question *</label>
+      <input class="form-input" id="ff-question" type="text" placeholder="e.g. Name a reason fans rage-quit their fantasy team mid-season">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" style="margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center;">
+        <span>Answers — need 5 to 7, points must total exactly 1000</span>
+        <span id="ff-points-sum" class="cond" style="font-weight:800;font-size:1rem;">0 / 1000</span>
+      </label>
+      <div id="ff-answers-container"></div>
+      <button class="btn btn-outline btn-sm" style="margin-top:0.5rem;" onclick="addFFAnswerRow()">➕ Add Answer</button>
+      <button class="btn btn-outline btn-sm" style="margin-top:0.5rem;" onclick="autoBalanceFFPoints()">⚖️ Auto-balance points to 1000</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="form-group">
+        <label class="form-label">Source</label>
+        <select class="form-select" id="ff-source">
+          <option value="manual">Manual</option>
+          <option value="ai">AI-generated</option>
+          <option value="crowd">Crowd-clustered</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-select" id="ff-status">
+          <option value="draft">Draft (needs review)</option>
+          <option value="approved">Approved (goes live)</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:0.75rem;justify-content:flex-end;margin-top:1.25rem;">
+      <button class="btn btn-ghost" onclick="closeFFModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveFFPuzzle()">💾 Save Board</button>
+    </div>
+  </div>
+</div>
+
 <script src="/js/auth.js"></script>
 <script>
   const ADMIN_PASSWORD = 'flurryadmin2025';
@@ -512,6 +604,9 @@
   let _csAllPuzzles = [];
   let _wtpAllEntries = [];
   let _csFilter = 'all';
+  let _ffAllPuzzles = [];
+  let _ffFilter = 'all';
+  let _ffSubmissionsData = [];
 
   // ─── LOCK SCREEN ──────────────────────────────────────────────
   async function handleAdminLogin() {
@@ -539,7 +634,7 @@
   function adminLogout() { sessionStorage.removeItem('fs_admin'); window.location.href = '/'; }
 
   // ─── NAVIGATION ───────────────────────────────────────────────
-  const ALL_SECTIONS = ['add-quiz','manage-quizzes','clean-sweep','whos-that-player','stats'];
+  const ALL_SECTIONS = ['add-quiz','manage-quizzes','clean-sweep','whos-that-player','flurry-feud','flurry-feud-submissions','stats'];
   function showSection(name) {
     ALL_SECTIONS.forEach(s => {
       document.getElementById(`section-${s}`).classList.add('hidden');
@@ -553,6 +648,8 @@
     if (name === 'stats') loadStats();
     if (name === 'clean-sweep') loadCSPuzzles();
     if (name === 'whos-that-player') loadWTPEntries();
+    if (name === 'flurry-feud') loadFFPuzzles();
+    if (name === 'flurry-feud-submissions') loadFFSubmissions();
   }
 
   // ─── QUIZ TYPE CHANGE ─────────────────────────────────────────
@@ -1202,6 +1299,325 @@
     showToast(id ? 'Entry updated!' : 'Player scheduled!', 'success');
     closeWTPModal();
     await loadWTPEntries();
+  }
+
+  // ══════════════════════════════════════════════════
+  // FLURRY FEUD — BOARDS
+  // ══════════════════════════════════════════════════
+
+  async function loadFFPuzzles() {
+    const container = document.getElementById('ff-list');
+    container.innerHTML = '<div class="spinner"></div>';
+    const today = new Date().toISOString().slice(0,10);
+    const future = new Date(Date.now() + 31*24*60*60*1000).toISOString().slice(0,10);
+    const { data, error } = await supabase.from('flurry_feud_puzzles')
+      .select('*').gte('date', today).lte('date', future).order('date');
+    if (error) { container.innerHTML = '<p style="color:var(--error)">Failed to load boards.</p>'; return; }
+    _ffAllPuzzles = data || [];
+    renderFFList();
+  }
+
+  function filterFF(filter, btn) {
+    _ffFilter = filter;
+    document.querySelectorAll('#section-flurry-feud .tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderFFList();
+  }
+
+  function renderFFList() {
+    const container = document.getElementById('ff-list');
+    let puzzles = _ffAllPuzzles;
+    if (_ffFilter === 'draft') puzzles = puzzles.filter(p => p.status === 'draft');
+    else if (_ffFilter === 'approved') puzzles = puzzles.filter(p => p.status === 'approved');
+
+    if (puzzles.length === 0) {
+      container.innerHTML = '<p style="color:var(--gray);padding:1rem 0;">No boards found for this filter.</p>';
+      return;
+    }
+
+    container.innerHTML = puzzles.map(p => {
+      const isDraft = p.status === 'draft';
+      const ans = p.answers || [];
+      const sum = ans.reduce((s,a) => s + (Number(a.points)||0), 0);
+      const sumOk = sum === 1000 && ans.length >= 5 && ans.length <= 7;
+      const sourceLabel = p.source === 'crowd' ? '👥 Crowd' : (p.source === 'manual' ? '✍️ Manual' : '🤖 AI');
+      return `<div class="puzzle-row status-${p.status || 'draft'}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+          <div style="flex:1;">
+            <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.3rem;flex-wrap:wrap;">
+              <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;color:var(--gray);">${p.date}</span>
+              <span class="status-pill ${isDraft ? 'draft' : 'approved'}">${isDraft ? '⏳ Draft' : '✓ Approved'}</span>
+              <span style="font-size:0.72rem;color:var(--gray);">${sourceLabel} · ${ans.length} answers · ${p.crowd_submission_count || 0} submissions</span>
+              ${!sumOk ? `<span style="font-size:0.72rem;color:var(--error);font-weight:700;">⚠ points sum to ${sum}, need 1000</span>` : ''}
+            </div>
+            <div style="font-weight:600;font-size:0.95rem;margin-bottom:0.3rem;">${p.question || '—'}</div>
+            <div style="font-size:0.8rem;color:var(--gray);">
+              ${ans.map(a => `${a.rank}. ${a.text} (${a.points})`).join(' · ')}
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:0.4rem;flex-shrink:0;">
+            ${isDraft ? `<button class="btn btn-sm" style="background:rgba(0,214,143,0.15);color:var(--success);border:1px solid rgba(0,214,143,0.3);" onclick="approveFF('${p.id}')">✓ Approve</button>` : ''}
+            <button class="btn btn-outline btn-sm" onclick="openFFEdit('${p.id}')">✏️ Edit</button>
+            <button class="btn btn-sm" style="background:rgba(255,77,109,0.1);color:var(--error);border:1px solid rgba(255,77,109,0.2);" onclick="deleteFF('${p.id}')">Delete</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function approveFF(id) {
+    const { error } = await supabase.from('flurry_feud_puzzles').update({ status: 'approved' }).eq('id', id);
+    if (error) { alert('Error: ' + error.message); return; }
+    showToast('✅ Board approved!', 'success');
+    await loadFFPuzzles();
+  }
+
+  async function deleteFF(id) {
+    if (!confirm('Delete this board? This cannot be undone.')) return;
+    const { error } = await supabase.from('flurry_feud_puzzles').delete().eq('id', id);
+    if (error) { showToast('Error: ' + error.message, 'error'); return; }
+    showToast('Board deleted.', 'success');
+    await loadFFPuzzles();
+  }
+
+  // ── FF Modal ──
+  function openFFCreate() {
+    document.getElementById('ff-edit-id').value = '';
+    document.getElementById('ff-edit-pool-id').value = '';
+    document.getElementById('ff-modal-title').textContent = 'Create Flurry Feud Board';
+    document.getElementById('ff-date').value = '';
+    document.getElementById('ff-question').value = '';
+    document.getElementById('ff-source').value = 'manual';
+    document.getElementById('ff-status').value = 'draft';
+    renderFFAnswerRows([
+      { rank:1, text:'', points:'', keywords:'', aliases:'' },
+      { rank:2, text:'', points:'', keywords:'', aliases:'' },
+      { rank:3, text:'', points:'', keywords:'', aliases:'' },
+      { rank:4, text:'', points:'', keywords:'', aliases:'' },
+      { rank:5, text:'', points:'', keywords:'', aliases:'' }
+    ]);
+    document.getElementById('ff-modal').classList.remove('hidden');
+  }
+
+  async function openFFEdit(id) {
+    let p = _ffAllPuzzles.find(x => x.id === id);
+    if (!p) {
+      const { data } = await supabase.from('flurry_feud_puzzles').select('*').eq('id', id).single();
+      if (!data) { alert('Could not load board.'); return; }
+      p = data;
+    }
+    document.getElementById('ff-edit-id').value = p.id;
+    document.getElementById('ff-edit-pool-id').value = p.question_pool_id || '';
+    document.getElementById('ff-modal-title').textContent = 'Edit Flurry Feud Board';
+    document.getElementById('ff-date').value = p.date || '';
+    document.getElementById('ff-question').value = p.question || '';
+    document.getElementById('ff-source').value = p.source || 'manual';
+    document.getElementById('ff-status').value = p.status || 'draft';
+    const rows = (p.answers || []).map(a => ({
+      rank: a.rank, text: a.text, points: a.points,
+      keywords: (a.keywords || []).join(', '),
+      aliases: (a.aliases || []).join(', ')
+    }));
+    renderFFAnswerRows(rows.length ? rows : [{ rank:1, text:'', points:'', keywords:'', aliases:'' }]);
+    document.getElementById('ff-modal').classList.remove('hidden');
+  }
+
+  function closeFFModal() { document.getElementById('ff-modal').classList.add('hidden'); }
+
+  function renderFFAnswerRows(rows) {
+    const container = document.getElementById('ff-answers-container');
+    container.innerHTML = rows.map((r, i) => `
+      <div class="ff-answer-row" id="ff-answer-row-${i}">
+        <div class="ff-answer-row-top">
+          <span class="ff-answer-rank">#${i+1}</span>
+          <input class="form-input ff-answer-text" type="text" value="${(r.text||'').replace(/"/g,'&quot;')}" placeholder="Answer text" oninput="updateFFPointsSum()">
+          <input class="form-input ff-answer-points" type="number" value="${r.points||''}" placeholder="Points" oninput="updateFFPointsSum()">
+          <button onclick="removeFFAnswerRow(${i})" style="background:none;border:none;color:var(--gray);cursor:pointer;font-size:1rem;padding:0 0.25rem;">✕</button>
+        </div>
+        <div class="ff-answer-row-bottom">
+          <input class="form-input" type="text" value="${(r.keywords||'').replace(/"/g,'&quot;')}" placeholder="keywords, comma, separated">
+          <input class="form-input" type="text" value="${(r.aliases||'').replace(/"/g,'&quot;')}" placeholder="aliases, comma, separated">
+        </div>
+      </div>
+    `).join('');
+    updateFFPointsSum();
+  }
+
+  function addFFAnswerRow() {
+    const container = document.getElementById('ff-answers-container');
+    const count = container.children.length;
+    if (count >= 7) { alert('Maximum 7 answers.'); return; }
+    const rows = getFFAnswersFromForm(true);
+    rows.push({ rank: rows.length+1, text:'', points:'', keywords:'', aliases:'' });
+    renderFFAnswerRows(rows);
+  }
+
+  function removeFFAnswerRow(i) {
+    const container = document.getElementById('ff-answers-container');
+    if (container.children.length <= 5) { alert('Minimum 5 answers.'); return; }
+    const rows = getFFAnswersFromForm(true);
+    rows.splice(i, 1);
+    renderFFAnswerRows(rows);
+  }
+
+  function getFFAnswersFromForm(rawStrings) {
+    const rows = document.querySelectorAll('#ff-answers-container .ff-answer-row');
+    return Array.from(rows).map((row, i) => {
+      const text = row.querySelector('.ff-answer-text').value.trim();
+      const points = row.querySelector('.ff-answer-points').value;
+      const kwInput = row.querySelectorAll('.ff-answer-row-bottom input')[0].value;
+      const alInput = row.querySelectorAll('.ff-answer-row-bottom input')[1].value;
+      if (rawStrings) return { rank: i+1, text, points, keywords: kwInput, aliases: alInput };
+      return {
+        rank: i+1, text, points: Number(points) || 0,
+        keywords: kwInput.split(',').map(s=>s.trim()).filter(Boolean),
+        aliases: alInput.split(',').map(s=>s.trim()).filter(Boolean)
+      };
+    });
+  }
+
+  function updateFFPointsSum() {
+    const rows = document.querySelectorAll('#ff-answers-container .ff-answer-points');
+    const sum = Array.from(rows).reduce((s, el) => s + (Number(el.value) || 0), 0);
+    const el = document.getElementById('ff-points-sum');
+    el.textContent = sum + ' / 1000';
+    el.style.color = sum === 1000 ? 'var(--success)' : 'var(--error)';
+  }
+
+  function autoBalanceFFPoints() {
+    const rows = document.querySelectorAll('#ff-answers-container .ff-answer-points');
+    const raw = Array.from(rows).map(el => Number(el.value) || 0);
+    const rawSum = raw.reduce((s,v) => s+v, 0) || 1;
+    let running = 0;
+    raw.forEach((v, i) => {
+      const pts = i === raw.length - 1 ? 1000 - running : Math.round(v / rawSum * 1000);
+      running += pts;
+      rows[i].value = pts;
+    });
+    updateFFPointsSum();
+  }
+
+  async function saveFFPuzzle() {
+    const id = document.getElementById('ff-edit-id').value;
+    const poolId = document.getElementById('ff-edit-pool-id').value;
+    const date = document.getElementById('ff-date').value;
+    const question = document.getElementById('ff-question').value.trim();
+    const source = document.getElementById('ff-source').value;
+    const status = document.getElementById('ff-status').value;
+
+    if (!date || !question) { alert('Date and question are required.'); return; }
+
+    const answers = getFFAnswersFromForm(false).filter(a => a.text);
+    if (answers.length < 5 || answers.length > 7) { alert(`Need between 5 and 7 answers. Currently have ${answers.length}.`); return; }
+    const sum = answers.reduce((s,a) => s+a.points, 0);
+    if (sum !== 1000) { alert(`Points must total exactly 1000. Currently total ${sum}. Try "Auto-balance".`); return; }
+
+    const payload = {
+      date, question, answers, num_answers: answers.length, source, status,
+      question_pool_id: poolId || null
+    };
+
+    let saveError;
+    try {
+      if (id) {
+        ({ error: saveError } = await supabase.from('flurry_feud_puzzles').update(payload).eq('id', id));
+      } else {
+        ({ error: saveError } = await supabase.from('flurry_feud_puzzles').insert(payload));
+      }
+    } catch(e) {
+      alert('Save exception: ' + e.message);
+      return;
+    }
+    if (saveError) {
+      console.error('FF Save error:', saveError);
+      alert('Save failed: ' + saveError.message);
+      return;
+    }
+    showToast(id ? 'Board updated!' : 'Board created!', 'success');
+    closeFFModal();
+    await loadFFPuzzles();
+  }
+
+  // ══════════════════════════════════════════════════
+  // FLURRY FEUD — CROWD SUBMISSIONS REVIEW
+  // ══════════════════════════════════════════════════
+
+  async function addFFPoolQuestion() {
+    const input = document.getElementById('ff-new-pool-question');
+    const question = input.value.trim();
+    if (!question) { alert('Type a question first.'); return; }
+    const { error } = await supabase.from('flurry_feud_question_pool').insert({ question, status: 'unscheduled' });
+    if (error) {
+      if (error.code === '23505') { alert('That question already exists in the pool.'); }
+      else { showToast('Error: ' + error.message, 'error'); }
+      return;
+    }
+    input.value = '';
+    showToast('Question added to the pool!', 'success');
+    await loadFFSubmissions();
+  }
+
+  async function loadFFSubmissions() {
+    const container = document.getElementById('ff-submissions-list');
+    container.innerHTML = '<div class="spinner"></div>';
+
+    const { data: pool, error: poolErr } = await supabase.from('flurry_feud_question_pool')
+      .select('id, question, status, created_at').eq('status', 'unscheduled').order('created_at', { ascending: true });
+    if (poolErr) { container.innerHTML = '<p style="color:var(--error)">Failed to load question pool.</p>'; return; }
+
+    const { data: subs, error: subErr } = await supabase.from('flurry_feud_submissions')
+      .select('id, question_pool_id, submission_text, created_at').order('created_at', { ascending: false }).limit(2000);
+    if (subErr) { container.innerHTML = '<p style="color:var(--error)">Failed to load submissions.</p>'; return; }
+
+    const grouped = {};
+    (subs || []).forEach(s => {
+      if (!grouped[s.question_pool_id]) grouped[s.question_pool_id] = [];
+      grouped[s.question_pool_id].push(s);
+    });
+    _ffSubmissionsData = grouped;
+
+    const withCounts = (pool || []).map(q => ({ ...q, submissions: grouped[q.id] || [] }))
+      .sort((a,b) => b.submissions.length - a.submissions.length);
+
+    if (withCounts.length === 0) {
+      container.innerHTML = '<p style="color:var(--gray);padding:1rem 0;">No pool questions yet — the worker will generate some on its next run.</p>';
+      return;
+    }
+
+    container.innerHTML = withCounts.map(q => {
+      const count = q.submissions.length;
+      const nearThreshold = count >= 100;
+      return `<div class="puzzle-row" style="margin-bottom:0.75rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+          <div style="font-weight:600;font-size:0.92rem;flex:1;">${q.question}</div>
+          <span class="status-pill ${nearThreshold ? 'approved' : 'draft'}">${count} submission${count===1?'':'s'}${nearThreshold ? ' · ready for crowd-build' : ''}</span>
+          <button class="btn btn-sm" style="background:rgba(255,77,109,0.1);color:var(--error);border:1px solid rgba(255,77,109,0.2);" onclick="deleteFFPoolQuestion('${q.id}')">Delete question</button>
+        </div>
+        ${count > 0 ? `<details><summary style="cursor:pointer;color:var(--gray);font-size:0.8rem;">View ${count} submission${count===1?'':'s'}</summary>
+          <div style="margin-top:0.5rem;max-height:220px;overflow-y:auto;">
+            ${q.submissions.map(s => `<div style="display:flex;justify-content:space-between;gap:0.5rem;padding:0.3rem 0;border-bottom:1px solid var(--card-border);font-size:0.82rem;">
+              <span>${s.submission_text}</span>
+              <button onclick="deleteFFSubmission('${s.id}')" style="background:none;border:none;color:var(--gray);cursor:pointer;flex-shrink:0;">✕</button>
+            </div>`).join('')}
+          </div>
+        </details>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  async function deleteFFSubmission(id) {
+    const { error } = await supabase.from('flurry_feud_submissions').delete().eq('id', id);
+    if (error) { showToast('Error: ' + error.message, 'error'); return; }
+    showToast('Submission removed.', 'success');
+    await loadFFSubmissions();
+  }
+
+  async function deleteFFPoolQuestion(id) {
+    if (!confirm('Delete this question and all its submissions? This cannot be undone.')) return;
+    const { error } = await supabase.from('flurry_feud_question_pool').delete().eq('id', id);
+    if (error) { showToast('Error: ' + error.message, 'error'); return; }
+    showToast('Question deleted.', 'success');
+    await loadFFSubmissions();
   }
 
   // ══════════════════════════════════════════════════

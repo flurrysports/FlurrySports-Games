@@ -129,6 +129,7 @@
     <button class="cat-tab" id="cat-snap" onclick="setCat('snap_decision')">🏈 Snap Decision</button>
     <button class="cat-tab" id="cat-wtp" onclick="setCat('whos_that_player')">❓ Who's That, Player?</button>
     <button class="cat-tab" id="cat-cs" onclick="setCat('clean_sweep')">✅ Clean Sweep</button>
+    <button class="cat-tab" id="cat-ff" onclick="setCat('flurry_feud')">📣 Flurry Feud</button>
   </div>
 
   <!-- Top 3 podium (overall only) -->
@@ -165,8 +166,8 @@
 
   function setCat(c) {
     currentCat = c;
-    ['overall','trivia','snap_decision','whos_that_player','clean_sweep'].forEach(x => {
-      const btnId = x === 'overall' ? 'cat-overall' : x === 'trivia' ? 'cat-trivia' : x === 'snap_decision' ? 'cat-snap' : x === 'whos_that_player' ? 'cat-wtp' : 'cat-cs';
+    ['overall','trivia','snap_decision','whos_that_player','clean_sweep','flurry_feud'].forEach(x => {
+      const btnId = x === 'overall' ? 'cat-overall' : x === 'trivia' ? 'cat-trivia' : x === 'snap_decision' ? 'cat-snap' : x === 'whos_that_player' ? 'cat-wtp' : x === 'clean_sweep' ? 'cat-cs' : 'cat-ff';
       const btn = document.getElementById(btnId);
       if (btn) btn.classList.toggle('active', x === c);
     });
@@ -183,7 +184,8 @@
     return id.startsWith('daily-quiz-') ||
            id.startsWith('snap-decision') ||
            id.startsWith('wtp-') ||
-           id.startsWith('clean-sweep-');
+           id.startsWith('clean-sweep-') ||
+           id.startsWith('flurry-feud-');
   }
 
   async function loadLeaderboard() {
@@ -219,6 +221,7 @@
         if (currentCat === 'snap_decision') return id.startsWith('snap-decision');
         if (currentCat === 'whos_that_player') return id.startsWith('wtp-');
         if (currentCat === 'clean_sweep') return id.startsWith('clean-sweep-');
+        if (currentCat === 'flurry_feud') return id.startsWith('flurry-feud-');
         return true;
       });
     }

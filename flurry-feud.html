@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/images/logo-crown.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+<meta charset="UTF-8">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FlurrySports Games">
+<meta property="og:title" content="Flurry Feud — FlurrySports Games">
+<meta property="og:description" content="Survey says! Type your answers, fill the board, survive three strikes. A new crowdsourced sports opinion question every day.">
+<meta property="og:url" content="https://games.flurrysports.org/flurry-feud.html">
+<meta property="og:image" content="https://games.flurrysports.org/images/og-image-flurry-feud.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Flurry Feud — FlurrySports Games">
+<meta name="twitter:description" content="Survey says! Type your answers, fill the board, survive three strikes.">
+<meta name="twitter:image" content="https://games.flurrysports.org/images/og-image-flurry-feud.png">
+<meta name="description" content="Survey says! Type your answers, fill the board, survive three strikes. A new crowdsourced sports opinion question every day.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Flurry Feud — FlurrySports Games</title>
+<link rel="stylesheet" href="/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/js/supabase-config.js"></script>
+<script>
+(function() {
+  var _lib = window.supabase || window.Supabase;
+  var _create = _lib.createClient || (_lib.default && _lib.default.createClient);
+  window.supabase = _create(SUPABASE_URL, SUPABASE_ANON_KEY);
+})();
+</script>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ff-navy: #0d0b26;
+  --ff-navy-card: #15132f;
+  --ff-navy-mid: #1d1a44;
+  --ff-navy-border: #2a275c;
+  --ff-ice: #7ECEF0;
+  --ff-ice-text: #A4DCF4;
+  --ff-ice-dim: rgba(126,206,240,0.14);
+  --ff-red: #ef4444;
+  --ff-red-bg: rgba(239,68,68,0.18);
+  --ff-muted: #7a76a0;
+  --ff-faint: #4d4878;
+}
+
+html, body { height: 100%; }
+body {
+  background: var(--ff-navy);
+  color: #fff;
+  font-family: 'Barlow', sans-serif;
+  overflow: hidden;
+}
+body::before { display: none !important; }
+.cond { font-family: 'Barlow Condensed', sans-serif; }
+
+/* ── NO-SCROLL SHELL ──────────────────────────────────────────────────────── */
+.ff-wrap {
+  height: 100dvh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+.ff-card {
+  width: min(420px, 100%);
+  height: min(100dvh - 20px, 740px);
+  background: var(--ff-navy-card);
+  border: 1px solid var(--ff-navy-border);
+  border-radius: 18px;
+  padding: clamp(12px, 2.4dvh, 20px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 1.1dvh, 10px);
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── SCREENS ── */
+.ff-screen { display: none; height: 100%; flex-direction: column; gap: inherit; min-height: 0; }
+.ff-screen.active { display: flex; }
+
+/* ── HEADER ── */
+.ff-header { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.ff-brand { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+.ff-brand-badge { width: 26px; height: 26px; border-radius: 7px; background: var(--ff-ice); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ff-brand-name { font-weight: 800; font-size: clamp(13px, 2.4dvh, 15px); color: #fff; letter-spacing: 0.01em; }
+.ff-brand-name span { color: var(--ff-ice); }
+.ff-streak-pill {
+  font-weight: 700; font-size: 10px; background: var(--ff-ice-dim); color: var(--ff-ice-text);
+  padding: 3px 10px; border-radius: 20px; white-space: nowrap;
+}
+
+/* ── SURVEY RIBBON + QUESTION ── */
+.ff-ribbon-row { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.ff-ribbon {
+  font-weight: 800; font-size: 10px; letter-spacing: 0.06em; background: var(--ff-ice);
+  color: var(--ff-navy-card); padding: 3px 10px; border-radius: 5px;
+}
+.ff-question-card { background: var(--ff-navy-mid); border-radius: 10px; padding: 10px 13px; flex-shrink: 0; }
+.ff-question-eyebrow { font-size: 9px; color: var(--ff-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.ff-question-text { font-weight: 700; font-size: clamp(13px, 2.6dvh, 16px); line-height: 1.2; }
+
+/* ── STRIKES ── */
+.ff-strikes { display: flex; gap: 7px; flex-shrink: 0; }
+.ff-strike-box {
+  width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--ff-navy-border);
+  display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px;
+  color: var(--ff-faint); flex-shrink: 0;
+}
+.ff-strike-box.used { border-color: var(--ff-red); background: var(--ff-red-bg); color: #fff; }
+@keyframes ffPop { 0% { transform: scale(0.8); opacity: 0.3; } 60% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes ffShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.ff-pop { animation: ffPop 0.3s cubic-bezier(.34,1.56,.64,1); }
+.ff-shake { animation: ffShake 0.3s ease; }
+
+/* ── BOARD ── */
+.ff-board { flex: 1; display: grid; gap: 5px; min-height: 0; }
+.ff-row { display: flex; align-items: center; gap: 10px; border-radius: 8px; padding: 0 12px; min-height: 0; }
+.ff-row.hidden-row { background: var(--ff-navy); border: 1px solid #221f4a; }
+.ff-row.revealed-row { background: var(--ff-navy-mid); border: 1px solid var(--ff-ice); }
+.ff-badge {
+  width: clamp(24px, 5dvh, 30px); height: clamp(24px, 5dvh, 30px); border-radius: 50%; background: var(--ff-ice);
+  color: var(--ff-navy-card); font-weight: 800; font-size: clamp(11px, 2dvh, 13px);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.ff-row-text { flex: 1; font-size: clamp(11px, 2.1dvh, 13px); }
+.ff-row.hidden-row .ff-row-text { color: var(--ff-faint); }
+.ff-row.revealed-row .ff-row-text { color: #fff; font-weight: 600; }
+.ff-row.missed-row .ff-row-text { color: var(--ff-faint); text-decoration: line-through; }
+.ff-row.missed-row .ff-badge { background: var(--ff-navy-border); color: var(--ff-faint); }
+
+/* ── INPUT ROW ── */
+.ff-input-row { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.ff-input {
+  flex: 1; background: var(--ff-navy-mid); border: 1.5px solid var(--ff-navy-border); border-radius: 10px;
+  padding: 9px 12px; color: #fff; font-size: 13px; outline: none; font-family: 'Barlow', sans-serif;
+  min-width: 0;
+}
+.ff-input:focus { border-color: var(--ff-ice); }
+.ff-go-btn {
+  background: var(--ff-ice); color: var(--ff-navy-card); border: none; border-radius: 10px;
+  padding: 0 16px; height: 38px; font-weight: 800; font-size: 14px; cursor: pointer; flex-shrink: 0;
+  font-family: 'Barlow Condensed', sans-serif;
+}
+.ff-go-btn:disabled { opacity: 0.5; cursor: default; }
+.ff-timer {
+  width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--ff-ice); display: flex;
+  align-items: center; justify-content: center; font-weight: 800; font-size: 12px; color: var(--ff-ice);
+  flex-shrink: 0; font-family: 'Barlow Condensed', sans-serif;
+}
+.ff-timer.low { border-color: var(--ff-red); color: var(--ff-red); }
+
+.ff-msg { text-align: center; font-size: 11px; font-weight: 600; height: 14px; color: var(--ff-muted); flex-shrink: 0; }
+
+/* ── FOOTER POINTS ── */
+.ff-points-footer { background: var(--ff-navy-mid); border-radius: 10px; padding: 8px; text-align: center; flex-shrink: 0; }
+.ff-points-label { font-size: 9px; color: var(--ff-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.ff-points-value { font-weight: 800; font-size: clamp(20px, 4dvh, 26px); color: var(--ff-ice); line-height: 1.1; }
+
+/* ── BUTTONS ── */
+.ff-btn-row { display: flex; gap: 8px; flex-shrink: 0; }
+.ff-btn-outline {
+  flex: 1; background: transparent; border: 1.5px solid var(--ff-navy-border); color: #fff;
+  border-radius: 10px; padding: 10px; font-weight: 700; font-size: 12px; cursor: pointer;
+  font-family: 'Barlow Condensed', sans-serif; text-align: center; text-decoration: none; display: block;
+}
+.ff-btn-solid {
+  flex: 1; background: var(--ff-ice); border: none; color: var(--ff-navy-card);
+  border-radius: 10px; padding: 10px; font-weight: 800; font-size: 12px; cursor: pointer;
+  font-family: 'Barlow Condensed', sans-serif; text-align: center; text-decoration: none; display: block;
+}
+
+/* ── LOADING ── */
+.ff-loading { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+.ff-spinner { width: 28px; height: 28px; border: 3px solid var(--ff-navy-border); border-top-color: var(--ff-ice); border-radius: 50%; animation: ffSpin 0.8s linear infinite; }
+@keyframes ffSpin { to { transform: rotate(360deg); } }
+
+/* ── END SCREEN ── */
+.ff-end-scroll { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.ff-result-banner { text-align: center; flex-shrink: 0; }
+.ff-result-eyebrow { font-weight: 800; font-size: 10px; letter-spacing: 0.08em; color: var(--ff-ice-text); margin-bottom: 2px; }
+.ff-result-score { font-weight: 800; font-size: clamp(28px, 5dvh, 40px); line-height: 1; }
+.ff-result-sub { font-size: 10px; color: var(--ff-muted); margin-top: 2px; }
+.ff-stat-row { display: flex; gap: 6px; flex-shrink: 0; }
+.ff-stat-box { flex: 1; background: var(--ff-navy-mid); border-radius: 10px; padding: 6px; text-align: center; }
+.ff-stat-box .v { font-weight: 800; font-size: 14px; }
+.ff-stat-box .l { font-size: 7px; color: var(--ff-muted); text-transform: uppercase; }
+.ff-recap { background: var(--ff-navy); border-radius: 10px; padding: 8px 10px; }
+.ff-recap-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 1px solid #221f4a; font-size: 10px; }
+.ff-recap-row:last-child { border-bottom: none; }
+.ff-crowd-box { background: var(--ff-navy-mid); border: 1px solid var(--ff-navy-border); border-radius: 10px; padding: 11px; }
+.ff-crowd-tag { font-weight: 800; font-size: 8px; letter-spacing: 0.06em; background: var(--ff-ice-dim); color: var(--ff-ice); padding: 2px 7px; border-radius: 9px; }
+.ff-crowd-question { font-weight: 700; font-size: 12px; margin: 6px 0 7px; line-height: 1.25; }
+.ff-crowd-row { display: flex; gap: 6px; }
+.ff-crowd-input { flex: 1; background: var(--ff-navy); border: 1.5px solid var(--ff-navy-border); border-radius: 8px; padding: 7px 9px; color: #fff; font-size: 11px; outline: none; font-family: 'Barlow', sans-serif; min-width: 0; }
+.ff-crowd-add { background: var(--ff-ice); color: var(--ff-navy-card); border: none; border-radius: 8px; padding: 0 12px; font-weight: 800; font-size: 11px; cursor: pointer; flex-shrink: 0; font-family: 'Barlow Condensed', sans-serif; }
+.ff-crowd-hint { font-size: 8px; color: var(--ff-faint); margin-top: 5px; line-height: 1.3; }
+.ff-crowd-skip { font-size: 9px; color: var(--ff-muted); text-align: center; margin-top: 6px; cursor: pointer; text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="ff-wrap">
+<div class="ff-card">
+
+  <!-- ── LOADING ── -->
+  <div id="ff-loading-screen" class="ff-screen active">
+    <div class="ff-loading">
+      <div class="ff-spinner"></div>
+      <div style="font-size:12px;color:var(--ff-muted);">Loading today's board...</div>
+    </div>
+  </div>
+
+  <!-- ── ALREADY PLAYED ── -->
+  <div id="ff-played-screen" class="ff-screen">
+    <div class="ff-header">
+      <a class="ff-brand" href="/">
+        <div class="ff-brand-badge">
+          <svg width="15" height="15" viewBox="0 0 52 52" fill="none">
+            <path d="M6 24 L20 18 V34 L6 28 Z" fill="#0d0b26"/>
+            <path d="M20 18 L40 10 V42 L20 34 Z" fill="none" stroke="#0d0b26" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M14 30 L16 40" stroke="#0d0b26" stroke-width="3" stroke-linecap="round"/>
+            <path d="M40 18 C44 20 44 32 40 34" stroke="#0d0b26" stroke-width="3" stroke-linecap="round" fill="none"/>
+          </svg>
+        </div>
+        <span class="ff-brand-name">Flurry <span>Feud</span></span>
+      </a>
+    </div>
+    <div class="ff-loading">
+      <div style="font-size:32px;">✅</div>
+      <div style="font-weight:800;font-size:16px;">Already played today!</div>
+      <div style="font-size:11px;color:var(--ff-muted);">Come back tomorrow for a new question.</div>
+      <div class="ff-points-value" id="ff-played-score" style="margin-top:6px;">0</div>
+      <div style="font-size:10px;color:var(--ff-muted);">your score today</div>
+    </div>
+    <div class="ff-btn-row">
+      <a href="/leaderboard.html" class="ff-btn-outline">Leaderboard</a>
+      <a href="/" class="ff-btn-solid">Back to home</a>
+    </div>
+  </div>
+
+  <!-- ── PLAYING ── -->
+  <div id="ff-game-screen" class="ff-screen">
+    <div class="ff-header">
+      <a class="ff-brand" href="/">
+        <div class="ff-brand-badge">
+          <svg width="15" height="15" viewBox="0 0 52 52" fill="none">
+            <path d="M6 24 L20 18 V34 L6 28 Z" fill="#0d0b26"/>
+            <path d="M20 18 L40 10 V42 L20 34 Z" fill="none" stroke="#0d0b26" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M14 30 L16 40" stroke="#0d0b26" stroke-width="3" stroke-linecap="round"/>
+            <path d="M40 18 C44 20 44 32 40 34" stroke="#0d0b26" stroke-width="3" stroke-linecap="round" fill="none"/>
+          </svg>
+        </div>
+        <span class="ff-brand-name">Flurry <span>Feud</span></span>
+      </a>
+      <span class="ff-streak-pill" id="ff-streak-pill">Daily</span>
+    </div>
+
+    <div class="ff-ribbon-row">
+      <span class="ff-ribbon">SURVEY SAYS</span>
+    </div>
+
+    <div class="ff-question-card">
+      <div class="ff-question-eyebrow">Today's question</div>
+      <div class="ff-question-text" id="ff-question-text">Loading...</div>
+    </div>
+
+    <div class="ff-strikes" id="ff-strikes"></div>
+
+    <div class="ff-board" id="ff-board"></div>
+
+    <div class="ff-input-row">
+      <input id="ff-input" class="ff-input" type="text" placeholder="Type your answer..." autocomplete="off">
+      <button id="ff-submit" class="ff-go-btn">GO</button>
+      <div id="ff-timer" class="ff-timer">10</div>
+    </div>
+
+    <div class="ff-msg" id="ff-msg"></div>
+
+    <div class="ff-points-footer">
+      <div class="ff-points-label">Points</div>
+      <div class="ff-points-value" id="ff-points-value">0</div>
+    </div>
+  </div>
+
+  <!-- ── END SCREEN ── -->
+  <div id="ff-end-screen" class="ff-screen">
+    <div class="ff-header">
+      <a class="ff-brand" href="/">
+        <div class="ff-brand-badge">
+          <svg width="15" height="15" viewBox="0 0 52 52" fill="none">
+            <path d="M6 24 L20 18 V34 L6 28 Z" fill="#0d0b26"/>
+            <path d="M20 18 L40 10 V42 L20 34 Z" fill="none" stroke="#0d0b26" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M14 30 L16 40" stroke="#0d0b26" stroke-width="3" stroke-linecap="round"/>
+            <path d="M40 18 C44 20 44 32 40 34" stroke="#0d0b26" stroke-width="3" stroke-linecap="round" fill="none"/>
+          </svg>
+        </div>
+        <span class="ff-brand-name">Flurry <span>Feud</span></span>
+      </a>
+    </div>
+
+    <div class="ff-end-scroll">
+      <div class="ff-result-banner">
+        <div class="ff-result-eyebrow" id="ff-result-eyebrow">BOARD CLEARED</div>
+        <div class="ff-result-score" id="ff-result-score">0</div>
+        <div class="ff-result-sub" id="ff-result-sub">points out of 1,000 today</div>
+      </div>
+
+      <div class="ff-stat-row">
+        <div class="ff-stat-box"><div class="v" id="ff-stat-found">0/0</div><div class="l">Found</div></div>
+        <div class="ff-stat-box"><div class="v" id="ff-stat-strikes">0</div><div class="l">Strikes</div></div>
+        <div class="ff-stat-box"><div class="v" id="ff-stat-streak">0</div><div class="l">Day streak</div></div>
+      </div>
+
+      <div class="ff-recap" id="ff-recap"></div>
+
+      <div class="ff-crowd-box" id="ff-crowd-box">
+        <span class="ff-crowd-tag">CROWDSOURCED</span>
+        <div class="ff-crowd-question" id="ff-crowd-question">What's YOUR answer to a future question?</div>
+        <div class="ff-crowd-row">
+          <input id="ff-crowd-input" class="ff-crowd-input" type="text" placeholder="Your answer...">
+          <button id="ff-crowd-add" class="ff-crowd-add">Add</button>
+        </div>
+        <div class="ff-crowd-hint">Top fan answers may show up on a future board.</div>
+        <div class="ff-crowd-skip" id="ff-crowd-skip">Skip</div>
+      </div>
+
+      <div id="ff-share-area"></div>
+
+      <div class="ff-btn-row">
+        <a href="/leaderboard.html" class="ff-btn-outline">Leaderboard</a>
+        <a href="/" class="ff-btn-solid">Home</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────────────────────────────────────
+const GUESS_TIME = 25;
+let puzzle = null;
+let todayGameId = '';
+let answers = [];
+let revealed = [];
+let strikes = 0;
+let points = 0;
+let over = false;
+let timeLeft = GUESS_TIME;
+let timerInterval = null;
+let endReason = '';
+let currentPoolQuestion = null;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FUZZY MATCHING
+// ─────────────────────────────────────────────────────────────────────────────
+function normalize(s) {
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 .]/g, '').replace(/\s+/g, ' ').trim();
+}
+function levenshtein(a, b) {
+  const dp = [];
+  for (let i = 0; i <= a.length; i++) dp.push([i]);
+  for (let j = 1; j <= b.length; j++) dp[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j-1], dp[i-1][j], dp[i][j-1]);
+    }
+  }
+  return dp[a.length][b.length];
+}
+function similarity(a, b) {
+  const d = levenshtein(a, b);
+  const m = Math.max(a.length, b.length) || 1;
+  return 1 - d / m;
+}
+function isMatch(guessRaw, ans) {
+  const g = normalize(guessRaw);
+  if (!g) return false;
+  const keywords = ans.keywords || [];
+  for (const k of keywords) { if (g.indexOf(normalize(k)) >= 0) return true; }
+  const phrases = [ans.text].concat(ans.aliases || []).map(normalize);
+  for (const p of phrases) {
+    if (g === p) return true;
+    if (g.length >= 4 && similarity(g, p) >= 0.72) return true;
+  }
+  return false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FALLBACK PUZZLE — used if Supabase fetch fails or no row exists for today
+// ─────────────────────────────────────────────────────────────────────────────
+function fallbackPuzzle() {
+  return {
+    question: "Name a reason fans rage-quit their fantasy team mid-season",
+    answers: [
+      { rank: 1, text: "Star player gets injured", points: 260, keywords: ["injur","hurt"], aliases: ["someone gets hurt","key player hurt","got injured"] },
+      { rank: 2, text: "Lose the championship by 0.2 points", points: 220, keywords: ["champ","point2","tenth",".2"], aliases: ["lost by point two","barely lose finals","close championship loss"] },
+      { rank: 3, text: "Trade offers get ignored", points: 160, keywords: ["trade"], aliases: ["nobody trades","no one responds to trades"] },
+      { rank: 4, text: "Waiver wire luck runs dry", points: 140, keywords: ["waiver"], aliases: ["bad waiver luck","no waiver luck"] },
+      { rank: 5, text: "Kicker outscores the WR1", points: 120, keywords: ["kicker"], aliases: ["kicker scores more","kicker beats wr1"] },
+      { rank: 6, text: "Benched player goes off for 30 points", points: 100, keywords: ["bench"], aliases: ["benched player explodes","sat the wrong guy"] }
+    ]
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────────────────────
+async function ffInit() {
+  const today = getTodayString();
+  todayGameId = 'flurry-feud-' + today;
+
+  try {
+    const fetchPromise = supabase.from('flurry_feud_puzzles').select('*').eq('date', today).eq('status', 'approved').single();
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000));
+    const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
+    if (data && data.answers && !error) {
+      puzzle = data;
+    } else {
+      puzzle = fallbackPuzzle();
+    }
+  } catch (e) {
+    puzzle = fallbackPuzzle();
+  }
+
+  answers = (puzzle.answers || []).slice().sort((a, b) => a.rank - b.rank);
+
+  const played = hasAttemptedLocally(todayGameId);
+  if (played) { await showAlreadyPlayed(); return; }
+
+  try {
+    const checkPromise = hasAttemptedQuiz(todayGameId);
+    const checkTimeout = new Promise(resolve => setTimeout(() => resolve(false), 3000));
+    const alreadyPlayed = await Promise.race([checkPromise, checkTimeout]);
+    if (alreadyPlayed) { await showAlreadyPlayed(); return; }
+  } catch (e) {}
+
+  startGame();
+}
+
+async function showAlreadyPlayed() {
+  showScreen('ff-played-screen');
+  try {
+    const cookieId = getCookieId();
+    const { data } = await supabase.from('attempts').select('score').eq('quiz_id', todayGameId).eq('cookie_id', cookieId).order('created_at', { ascending: false }).limit(1).single();
+    document.getElementById('ff-played-score').textContent = data ? data.score.toLocaleString() : '—';
+  } catch (e) {
+    document.getElementById('ff-played-score').textContent = '—';
+  }
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.ff-screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GAME START / RENDER
+// ─────────────────────────────────────────────────────────────────────────────
+function startGame() {
+  document.getElementById('ff-question-text').textContent = puzzle.question;
+  revealed = answers.map(() => false);
+  strikes = 0; points = 0; over = false; endReason = '';
+
+  const { streak } = getStreakDisplay();
+  document.getElementById('ff-streak-pill').textContent = streak > 0 ? streak + '-day streak' : 'Daily';
+
+  renderStrikes();
+  renderBoard();
+  updatePoints();
+  showScreen('ff-game-screen');
+
+  document.getElementById('ff-submit').onclick = submitGuess;
+  document.getElementById('ff-input').onkeydown = function(e) { if (e.key === 'Enter') submitGuess(); };
+  document.getElementById('ff-input').focus();
+
+  startTimer();
+}
+
+function renderStrikes() {
+  const el = document.getElementById('ff-strikes');
+  el.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const box = document.createElement('div');
+    box.className = 'ff-strike-box' + (i < strikes ? ' used ff-pop' : '');
+    box.textContent = i < strikes ? 'X' : '';
+    el.appendChild(box);
+  }
+}
+
+function renderBoard() {
+  const el = document.getElementById('ff-board');
+  el.innerHTML = '';
+  el.style.gridTemplateRows = 'repeat(' + answers.length + ', 1fr)';
+
+  answers.forEach((a, i) => {
+    const rev = revealed[i];
+    const row = document.createElement('div');
+    const missed = over && !rev;
+    row.className = 'ff-row ' + (rev ? 'revealed-row ff-pop' : (missed ? 'missed-row' : 'hidden-row'));
+
+    const badge = document.createElement('div');
+    badge.className = 'ff-badge cond';
+    badge.textContent = rev ? a.points : (i + 1);
+
+    const txt = document.createElement('div');
+    txt.className = 'ff-row-text';
+    txt.textContent = rev ? a.text : (missed ? a.text : '???');
+
+    row.appendChild(badge);
+    row.appendChild(txt);
+    el.appendChild(row);
+  });
+}
+
+function updatePoints() {
+  document.getElementById('ff-points-value').textContent = points.toLocaleString();
+}
+
+function flashMsg(text, color) {
+  const el = document.getElementById('ff-msg');
+  el.textContent = text;
+  el.style.color = color || 'var(--ff-muted)';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TIMER — resets every guess, expiry counts as a strike
+// ─────────────────────────────────────────────────────────────────────────────
+function stopTimer() { if (timerInterval) { clearInterval(timerInterval); timerInterval = null; } }
+function startTimer() {
+  stopTimer();
+  timeLeft = GUESS_TIME;
+  updateTimerUI();
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    if (timeLeft <= 0) { stopTimer(); handleStrike(true); }
+    else updateTimerUI();
+  }, 1000);
+}
+function updateTimerUI() {
+  const el = document.getElementById('ff-timer');
+  el.textContent = timeLeft;
+  el.classList.toggle('low', timeLeft <= 3);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GUESSING
+// ─────────────────────────────────────────────────────────────────────────────
+function submitGuess() {
+  if (over) return;
+  const input = document.getElementById('ff-input');
+  const val = input.value;
+  input.value = '';
+  if (!val || !val.trim()) return;
+
+  let idx = -1;
+  for (let i = 0; i < answers.length; i++) {
+    if (!revealed[i] && isMatch(val, answers[i])) { idx = i; break; }
+  }
+
+  if (idx >= 0) {
+    revealed[idx] = true;
+    points += answers[idx].points;
+    renderBoard();
+    updatePoints();
+    flashMsg('+' + answers[idx].points + ' pts!', '#7de89a');
+    if (revealed.every(Boolean)) { endGame('cleared'); }
+    else { startTimer(); }
+  } else {
+    handleStrike(false);
+  }
+}
+
+function handleStrike(timedOut) {
+  if (over) return;
+  strikes++;
+  renderStrikes();
+  const board = document.getElementById('ff-board');
+  board.classList.add('ff-shake');
+  setTimeout(() => board.classList.remove('ff-shake'), 300);
+  flashMsg(timedOut ? "Time's up!" : 'Not on the board', '#fca5a5');
+  if (strikes >= 3) { endGame('strikes'); }
+  else { startTimer(); }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// END GAME — strictly two outcomes: all answers found (1000 pts) or 3 strikes
+// ─────────────────────────────────────────────────────────────────────────────
+async function endGame(reason) {
+  over = true;
+  endReason = reason;
+  stopTimer();
+  document.getElementById('ff-submit').disabled = true;
+  document.getElementById('ff-input').disabled = true;
+  renderBoard();
+
+  const allFound = revealed.every(Boolean);
+  setTimeout(() => showEndScreen(reason, allFound), reason === 'strikes' ? 700 : 300);
+}
+
+async function showEndScreen(reason, allFound) {
+  const totalPossible = answers.reduce((s, a) => s + a.points, 0);
+
+  document.getElementById('ff-result-eyebrow').textContent = allFound ? 'BOARD CLEARED' : 'GAME OVER';
+  document.getElementById('ff-result-score').textContent = points.toLocaleString();
+  document.getElementById('ff-result-score').style.color = allFound ? 'var(--ff-ice)' : '#fff';
+  document.getElementById('ff-result-sub').textContent = 'points out of ' + totalPossible.toLocaleString() + ' today';
+
+  document.getElementById('ff-stat-found').textContent = revealed.filter(Boolean).length + '/' + answers.length;
+  document.getElementById('ff-stat-strikes').textContent = strikes;
+  const { streak } = getStreakDisplay();
+  document.getElementById('ff-stat-streak').textContent = streak;
+
+  const recapEl = document.getElementById('ff-recap');
+  recapEl.innerHTML = answers.map((a, i) => {
+    const found = revealed[i];
+    const mark = found ? '✓' : '✗';
+    const color = found ? 'var(--ff-ice-text)' : 'var(--ff-faint)';
+    const style = found ? '' : 'text-decoration:line-through;';
+    return '<div class="ff-recap-row"><span style="color:' + color + ';' + style + '">' + mark + ' ' + a.text + '</span>' +
+      '<span class="cond" style="font-weight:800;color:' + color + ';">' + a.points + '</span></div>';
+  }).join('');
+
+  showScreen('ff-end-screen');
+
+  document.getElementById('ff-share-area').innerHTML = buildShareSection('Flurry Feud', points,
+    revealed.filter(Boolean).length + '/' + answers.length + ' answers found');
+
+  const user = await getCurrentUser();
+  await saveAttempt(todayGameId, points, null,
+    { found: revealed.filter(Boolean).length, total: answers.length, strikes, endReason: reason, answers: answers.map((a, i) => ({ text: a.text, points: a.points, found: revealed[i] })) },
+    'flurry_feud'
+  );
+
+  if (!user && points > 0) {
+    setTimeout(() => showPostGameAuthPrompt(todayGameId, points, 'flurry_feud', 'Flurry Feud'), 800);
+  }
+
+  loadNextCrowdQuestion();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CROWDSOURCE FOLLOW-UP — pulls a future (unscheduled) question, chains
+// ─────────────────────────────────────────────────────────────────────────────
+function getAnsweredPoolIds() {
+  try { return JSON.parse(localStorage.getItem('ff_answered_pool_ids') || '[]'); }
+  catch (e) { return []; }
+}
+function markPoolIdAnswered(id) {
+  const ids = getAnsweredPoolIds();
+  ids.push(id);
+  localStorage.setItem('ff_answered_pool_ids', JSON.stringify(ids.slice(-200)));
+}
+
+async function loadNextCrowdQuestion() {
+  const box = document.getElementById('ff-crowd-box');
+  try {
+    const answeredIds = getAnsweredPoolIds();
+    const excludeId = puzzle && puzzle.question_pool_id ? puzzle.question_pool_id : null;
+
+    const { data, error } = await supabase
+      .from('flurry_feud_question_pool')
+      .select('id, question')
+      .eq('status', 'unscheduled')
+      .order('created_at', { ascending: true })
+      .limit(60);
+
+    if (error || !data || data.length === 0) { box.style.display = 'none'; return; }
+
+    const candidates = data.filter(q => q.id !== excludeId && answeredIds.indexOf(q.id) === -1);
+    if (candidates.length === 0) { box.style.display = 'none'; return; }
+
+    currentPoolQuestion = candidates[Math.floor(Math.random() * candidates.length)];
+    document.getElementById('ff-crowd-question').textContent = currentPoolQuestion.question;
+    document.getElementById('ff-crowd-input').value = '';
+    box.style.display = '';
+  } catch (e) {
+    box.style.display = 'none';
+  }
+}
+
+async function submitCrowdAnswer() {
+  if (!currentPoolQuestion) return;
+  const input = document.getElementById('ff-crowd-input');
+  const val = input.value.trim();
+  if (!val) return;
+
+  try {
+    await supabase.from('flurry_feud_submissions').insert({
+      question_pool_id: currentPoolQuestion.id,
+      submission_text: val,
+      cookie_id: getCookieId()
+    });
+    markPoolIdAnswered(currentPoolQuestion.id);
+    flashCrowdThanks();
+  } catch (e) {
+    flashCrowdThanks();
+  }
+}
+
+function flashCrowdThanks() {
+  const box = document.getElementById('ff-crowd-box');
+  const original = box.innerHTML;
+  box.innerHTML = '<div style="text-align:center;padding:4px 0;"><div style="font-size:11px;font-weight:700;color:var(--ff-ice-text);">Thanks! Added to the crowd data.</div></div>';
+  setTimeout(async () => {
+    box.innerHTML = original;
+    document.getElementById('ff-crowd-add').onclick = submitCrowdAnswer;
+    document.getElementById('ff-crowd-input').onkeydown = function(e) { if (e.key === 'Enter') submitCrowdAnswer(); };
+    document.getElementById('ff-crowd-skip').onclick = () => { document.getElementById('ff-crowd-box').style.display = 'none'; };
+    await loadNextCrowdQuestion();
+  }, 1200);
+}
+
+document.addEventListener('click', function(e) {
+  if (e.target && e.target.id === 'ff-crowd-add') submitCrowdAnswer();
+  if (e.target && e.target.id === 'ff-crowd-skip') document.getElementById('ff-crowd-box').style.display = 'none';
+});
+document.addEventListener('keydown', function(e) {
+  if (e.target && e.target.id === 'ff-crowd-input' && e.key === 'Enter') submitCrowdAnswer();
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BOOT — wait for auth.js, with fallback stubs if it never loads
+// ─────────────────────────────────────────────────────────────────────────────
+function waitForAuth(cb, tries) {
+  tries = tries || 0;
+  if (typeof getTodayString === 'function' && typeof hasAttemptedLocally === 'function') {
+    cb();
+  } else if (tries < 50) {
+    setTimeout(() => waitForAuth(cb, tries + 1), 50);
+  } else {
+    window.getTodayString = function() { return new Date().toISOString().slice(0, 10); };
+    window.hasAttemptedLocally = function() { return false; };
+    window.hasAttemptedQuiz = async function() { return false; };
+    window.getCurrentUser = async function() { return null; };
+    window.saveAttempt = async function() { return null; };
+    window.getStreakDisplay = function() { return { fire: false, streak: 0 }; };
+    window.showPostGameAuthPrompt = function() {};
+    window.buildShareSection = function() { return ''; };
+    window.getCookieId = function() { return 'guest-' + Math.random().toString(36).slice(2); };
+    cb();
+  }
+}
+waitForAuth(function() { ffInit(); });
+</script>
+
+<script src="/js/auth.js"></script>
+</body>
+</html>
